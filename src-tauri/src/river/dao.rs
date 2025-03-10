@@ -453,6 +453,7 @@ impl Dao {
     fn drift2json(
         &self,
         title: &String,
+        description: Option<&String>,
         involved_moais: Option<&Vec<String>>,
         start_time: &Phase,
         end_time: Option<&Phase>,
@@ -463,6 +464,9 @@ impl Dao {
             "start_time": start_time,
             "start_time_dt": start_time.phase2iso8601()?,
         });
+        if let Some(description) = description {
+            json_obj["description"] = serde_json::json!(description);
+        }
         if let Some(end_time) = end_time {
             json_obj["end_time"] = serde_json::to_value(end_time).map_err(|e| e.to_string())?;
             json_obj["end_time_dt"] = serde_json::Value::String(end_time.phase2iso8601()?);
@@ -499,6 +503,7 @@ impl Dao {
                     // Build the complete JSON object at once
                     let json_obj = self.drift2json(
                         drift.title(),
+                        drift.description(),
                         drift.moais(),
                         drift.start_time(),
                         drift.end_time(),
@@ -534,6 +539,7 @@ impl Dao {
                         if moai_ids.contains(id) {
                             let json_obj = self.drift2json(
                                 drift.title(),
+                                drift.description(),
                                 drift.moais(),
                                 drift.start_time(),
                                 drift.end_time(),
@@ -569,6 +575,7 @@ impl Dao {
                             for drift in drifts {
                                 let json_obj = self.drift2json(
                                     drift.title(),
+                                    drift.description(),
                                     drift.moais(),
                                     drift.start_time(),
                                     drift.end_time(),
@@ -582,6 +589,7 @@ impl Dao {
                                 for (title, start_time) in juncture {
                                     let json_obj = self.drift2json(
                                         title,
+                                        None,
                                         Some(&vec![moai.id().clone()]),
                                         start_time,
                                         None,

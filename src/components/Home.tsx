@@ -4,15 +4,10 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useFileContext } from '../context/FileContext';
 import { invoke } from '@tauri-apps/api/core';
 import { useSnackbar } from '../context/SnackContext';
-import { Button } from "@/components/ui/button"
-import { Terminal, FileUp } from "lucide-react"
- 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert"
+import { Button } from '@/components/ui/button';
+import { Terminal, FileUp } from 'lucide-react';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 /**
  * 首页组件 - 负责文件选择和导航到主界面
@@ -27,22 +22,29 @@ const Home: React.FC = () => {
     const { showMessage } = useSnackbar();
 
     // Letter variations
-    const variations = useMemo(() => ({
-        r: ['ℝ', 'ℜ', 'ℛ', '℟', 'ჩ', 'ᖇ','Ꮢ','ᚱ'],
-        i: ['Ꭵ', 'ί', 'Ï'],
-        v: ['Ꮙ', '∨', '℣'],
-        e: ['℮', '€', 'є','ε']
-    }), []);
+    const variations = useMemo(
+        () => ({
+            r: ['ℝ', 'ℜ', 'ℛ', '℟', 'ჩ', 'ᖇ', 'Ꮢ', 'ᚱ'],
+            i: ['Ꭵ', 'ί', 'Ï'],
+            v: ['Ꮙ', '∨', '℣'],
+            e: ['℮', '€', 'є', 'ε'],
+        }),
+        [],
+    );
 
     // State for current displayed text
     const [displayText, setDisplayText] = useState<string>('River');
 
     // Generate a random stylized River
     const generateStylizedRiver = () => {
-        const randomR = variations.r[Math.floor(Math.random() * variations.r.length)];
-        const randomI = variations.i[Math.floor(Math.random() * variations.i.length)];
-        const randomV = variations.v[Math.floor(Math.random() * variations.v.length)];
-        const randomE = variations.e[Math.floor(Math.random() * variations.e.length)];
+        const randomR =
+            variations.r[Math.floor(Math.random() * variations.r.length)];
+        const randomI =
+            variations.i[Math.floor(Math.random() * variations.i.length)];
+        const randomV =
+            variations.v[Math.floor(Math.random() * variations.v.length)];
+        const randomE =
+            variations.e[Math.floor(Math.random() * variations.e.length)];
         return `${randomR}${randomI}${randomV}${randomE}r`;
     };
 
@@ -55,11 +57,12 @@ const Home: React.FC = () => {
 
         const animate = () => {
             if (iterationCount >= totalIterations) return;
-            
+
             iterationCount++;
             // Calculate delay using easeOutQuad timing function
             const progress = iterationCount / totalIterations;
-            const delay = startDelay + (maxDelay - startDelay) * (progress * progress);
+            const delay =
+                startDelay + (maxDelay - startDelay) * (progress * progress);
 
             setTimeout(() => {
                 setDisplayText(generateStylizedRiver());
@@ -127,7 +130,8 @@ const Home: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-7rem)] p-6 space-y-8">
             <div className="text-center space-y-2">
                 <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-                    Welcome to <span className="text-blue-700">{displayText}</span>
+                    Welcome to{' '}
+                    <span className="text-blue-700">{displayText}</span>
                 </h1>
                 <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight text-muted-foreground">
                     请选择一个YAML/YML文件开始操作
@@ -135,8 +139,8 @@ const Home: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center w-full max-w-md space-y-6">
-                <Button 
-                    size="lg" 
+                <Button
+                    size="lg"
                     onClick={handleFileSelect}
                     className="w-full flex items-center justify-center gap-2"
                 >

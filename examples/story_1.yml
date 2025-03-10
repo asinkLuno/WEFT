@@ -1,0 +1,73 @@
+story:
+    title: story_1
+    description: story_1，采用格里高利历纪年。
+    date_mode: 'Gregorian'
+moai:
+    escalopia:
+        full_name: '艾斯卡罗比亚'
+        description: '一个国家，也许在地球上的某个地方。'
+    big_boom:
+        full_name: '大爆炸'
+        description: '这是大爆炸，我们以此纪年。'
+        juncture:
+            birthday: &big_boom [0]
+        base_time: *big_boom
+        年号: 大爆炸
+
+
+
+    amika:
+        full_name: '阿麦卡'
+        description: '这是阿麦卡，她出生在大爆炸后10年的春天。'
+        juncture:
+            birthday:
+                &amika_birthday [*big_boom, "大爆炸", 10, 4, 3]
+        base_time: *amika_birthday
+
+    fajra:
+        full_name: '法嘉'
+        description: '这是法嘉，她的生日是阿麦卡生日后一个月零三天。'
+        juncture:
+            birthday: &fajra_birthday [*amika_birthday, 0, 1, 3]
+        base_time: *fajra_birthday
+
+moai_link:
+    '艾斯卡罗比亚的公民们':
+        - moais: [amika, fajra]
+          relations: 朋友
+          bidirectional: true
+
+drift:
+    '夏天':
+        - start_time: [*amika_birthday, 12, 4, 0, 14, 30]
+          end_time: [*amika_birthday, 12, 4, 0, 15, ]
+          moais: [fajra, amika]
+          title: '法嘉和阿麦卡在河边野餐。'
+          description: '她们约定两点半开始'
+        - start_time: [*amika_birthday, 12, 4, 0, 14, 29, 59]
+          moais: [fajra]
+          title: '法嘉到河边了'
+          description: '还好她没迟到。'
+    '春天':
+        - start_time: [*amika_birthday, 12 ]
+          moais: [amika,fajra]
+          title: '阿麦卡和法嘉一起度过12岁生日。'
+        - start_time: [*fajra_birthday, 12 ]
+          moais: [amika,fajra]
+          title: '法嘉和阿麦卡一起度过12岁生日。'
+        
+
+narrative:
+    '一年中的故事':
+        subject:
+          - 夏天
+          - 春天
+    '法嘉的世界':
+      subject:
+        - 夏天
+        - 春天
+        - amika
+      observer:
+        - fajra
+
+   

@@ -23,9 +23,7 @@ const MoaiFlow: React.FC = () => {
                             id: category,
                         }),
                         key: category,
-                        content: (
-                                <GanttChart data={moai_flow} />
-                        ),
+                        content: <GanttChart data={moai_flow} />,
                     }),
                 ),
             );
@@ -51,6 +49,15 @@ const MoaiFlow: React.FC = () => {
         }
         setActiveTab(newValue);
     };
+    if (!moaiFlowList || Object.keys(moaiFlowList).length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center bg-background">
+                <p className="text-xl text-muted-foreground">
+                    暂无可用MoaiFlow
+                </p>
+            </div>
+        );
+    }
 
     return (
         <RiverVerticalTabs

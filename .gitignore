@@ -24,7 +24,5 @@ dist-ssr
 *.sw?
 
 repomix-output.txt
-*.yml
-*.yaml
 
 .VSCodeCounter/

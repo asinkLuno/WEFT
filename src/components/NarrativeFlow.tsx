@@ -13,7 +13,9 @@ const NarrativeFlow: React.FC = () => {
 
     useEffect(() => {
         if (!narrativeFlowList || !title) return;
-        const index = Object.keys(narrativeFlowList).findIndex((t) => t === title);
+        const index = Object.keys(narrativeFlowList).findIndex(
+            (t) => t === title,
+        );
         if (index !== -1) {
             setActiveTab(index);
         }
@@ -32,16 +34,23 @@ const NarrativeFlow: React.FC = () => {
         ([category, narrative_flow]) => ({
             label: category,
             key: category,
-            content: (
-                    <GanttChart data={narrative_flow} />
-            ),
+            content: <GanttChart data={narrative_flow} />,
         }),
     );
+    if (!narrativeFlowList || Object.keys(narrativeFlowList).length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center bg-background">
+                <p className="text-xl text-muted-foreground">
+                    暂无可用narrativeFlow
+                </p>
+            </div>
+        );
+    }
 
     return (
-        <RiverVerticalTabs 
-            tabs={tabs} 
-            value={activeTab} 
+        <RiverVerticalTabs
+            tabs={tabs}
+            value={activeTab}
             onChange={handleChange}
             sortTabs={true}
             sortKey={(tab) => tab.label}

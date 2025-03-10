@@ -18,13 +18,7 @@ import DriftFlow from './DriftFlow';
 import MoaiFlow from './MoaiFlow';
 import NarrativeFlow from './NarrativeFlow';
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TabConfig {
     label: string;
@@ -32,8 +26,6 @@ interface TabConfig {
     component: React.ReactNode;
     fetchData?: () => Promise<void>;
 }
-
-
 
 export default function RiverTabs() {
     const navigate = useNavigate();
@@ -77,8 +69,6 @@ export default function RiverTabs() {
         }
     }, [moaiLinkList, setMoaiLinkList]); // Fixed dependency array
 
-    
-
     const fetchDriftFlowList = useCallback(async () => {
         if (driftFlowList === undefined) {
             const result = await invoke<CateFlowContextType>('drift_flow');
@@ -101,7 +91,7 @@ export default function RiverTabs() {
     }, [narrativeFlowList, setNarrativeFlowList]);
     const tabs: TabConfig[] = [
         {
-            label: '简介',
+            label: 'Story',
             path: '/intro',
             component: <StoryInfo />,
             fetchData: fetchStory,
@@ -113,18 +103,19 @@ export default function RiverTabs() {
             fetchData: fetchMoais,
         },
         {
-            label: 'Moai关系',
+            label: 'MoaiLink',
             path: '/moai_link',
             component: <MoaiLink />,
             fetchData: fetchMoaiLinks,
-        },{
+        },
+        {
             label: 'NarrativeFlow',
             path: '/narrativeflow',
             component: <NarrativeFlow />,
             fetchData: fetchNarrativeFlowList,
         },
         {
-            label: 'TimeFlow',
+            label: 'DriftFlow',
             path: '/driftflow',
             component: <DriftFlow />,
             fetchData: fetchDriftFlowList,
@@ -196,21 +187,23 @@ export default function RiverTabs() {
 
     return (
         <div className="flex-1 flex flex-col overflow-auto h-full w-full">
-            <Tabs defaultValue={String(activeTab)} onValueChange={(value) => setActiveTab(Number(value))}>
-                
+            <Tabs
+                defaultValue={String(activeTab)}
+                onValueChange={(value) => setActiveTab(Number(value))}
+            >
                 <TabsList className={`grid w-full grid-cols-6`}>
+                    {tabs.map((tab, index) => (
+                        <TabsTrigger value={String(index)}>
+                            {tab.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
                 {tabs.map((tab, index) => (
-            <TabsTrigger value={String(index)}>
-                {tab.label}
-            </TabsTrigger>
-        ))}
-      </TabsList>
-      {tabs.map((tab, index) => (
                     <TabsContent value={String(index)}>
                         {tab.component}
                     </TabsContent>
                 ))}
-      </Tabs>
+            </Tabs>
         </div>
     );
 }

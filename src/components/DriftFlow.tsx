@@ -32,14 +32,21 @@ const DriftFlow: React.FC = () => {
             label: category,
             key: category,
             content: (
-                <div
-                    className="h-[calc(100vh-28px-48px)] w-[calc(100vw-225px-48px)] overflow-auto"
-                >
+                <div className="h-[calc(100vh-28px-48px)] w-[calc(100vw-225px-48px)] overflow-auto">
                     <GanttChart data={drift_flow} />
                 </div>
             ),
-        })
+        }),
     );
+    if (!driftFlowList || Object.keys(driftFlowList).length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center bg-background">
+                <p className="text-xl text-muted-foreground">
+                    暂无可用DriftFlow
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1">

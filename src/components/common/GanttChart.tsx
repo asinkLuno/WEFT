@@ -772,7 +772,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                     }}
                 >
                     {hoveredTask.description && (
-                        <div style={{ fontWeight: 'bold', }}>
+                        <div style={{ fontWeight: 'bold' }}>
                             {hoveredTask.description}
                         </div>
                     )}
@@ -787,8 +787,6 @@ const GanttChart: React.FC<GanttChartProps> = ({
                         {hoveredTask.startTime}
                         {hoveredTask.endTime ? `-${hoveredTask.endTime}` : ''}
                     </div>
-
-                    
 
                     {hoveredTask.moais && hoveredTask.moais.length > 0 && (
                         <div
@@ -808,16 +806,17 @@ const GanttChart: React.FC<GanttChartProps> = ({
                             {hoveredTask.moais.map((moai, index) => (
                                 <div key={index} style={{ marginTop: '4px' }}>
                                     <MoaiName id={moai.id} />:{' '}
-                                    {!moai.start_time_duration && !moai.end_time_duration
-                                        ? "参与" 
-                                        : (
-                                            <>
-                                                {moai.start_time_duration}
-                                                {moai.end_time_duration
-                                                    ? ` - ${moai.end_time_duration}`
-                                                    : ''}
-                                            </>
-                                        )}
+                                    {!moai.start_time_duration &&
+                                    !moai.end_time_duration ? (
+                                        '参与'
+                                    ) : (
+                                        <>
+                                            {moai.start_time_duration}
+                                            {moai.end_time_duration
+                                                ? ` - ${moai.end_time_duration}`
+                                                : ''}
+                                        </>
+                                    )}
                                 </div>
                             ))}
                         </div>
