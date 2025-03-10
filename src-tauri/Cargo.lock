@@ -3,6 +3,31 @@
 version = 4
 
 [[package]]
+name = "River"
+version = "0.0.1"
+dependencies = [
+ "either",
+ "log",
+ "notify",
+ "notify-debouncer-full",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "strum",
+ "strum_macros",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-shell",
+ "tokio",
+ "toml 0.8.20",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3606,31 +3631,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "rust-river"
-version = "0.0.1"
-dependencies = [
- "either",
- "log",
- "notify",
- "notify-debouncer-full",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "strum",
- "strum_macros",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-shell",
- "tokio",
- "toml 0.8.20",
 ]
 
 [[package]]

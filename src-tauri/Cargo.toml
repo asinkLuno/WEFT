@@ -1,5 +1,5 @@
 [package]
-name = "rust-river"
+name = "River"
 version = "0.0.1"
 description = "Build your river."
 authors = ["asinkLuno"]
