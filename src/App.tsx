@@ -9,109 +9,89 @@ import RiverTabs from './components/RiverTabs';
 import Footer from './components/Footer';
 import React from 'react';
 
-import { SnackbarProvider } from './context/SnackContext';
-import { DaoProvider } from './context/DaoContext';
+import { Toaster } from '@/components/ui/sonner';
 
 const AppContent: React.FC = () => {
     return (
-        <SnackbarProvider>
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route
-                    path="/tabs"
-                    element={<Navigate to="/intro" replace />}
-                />
-                <Route
-                    path="/intro"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moai"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moai/:id"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moai_link/:graphKey"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moai_link"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/narrativeflow"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/narrativeflow/:graphKey"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/driftflow"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/driftflow/:graphKey"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moaiflow"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-                <Route
-                    path="/moaiflow/:title"
-                    element={
-                        <DaoProvider>
-                            <RiverTabs />
-                        </DaoProvider>
-                    }
-                />
-            </Routes>
-            <Footer />
-        </SnackbarProvider>
+            <div className="flex flex-col min-h-screen">
+                        <Toaster />
+                <main className="flex-grow">
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route
+                            path="/tabs"
+                            element={<Navigate to="/intro" replace />}
+                        />
+                        <Route
+                            path="/intro"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moai"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moai/:id"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moai_link/:graphKey"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moai_link"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/narrativeflow"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/narrativeflow/:graphKey"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/driftflow"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/driftflow/:graphKey"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moaiflow"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                        <Route
+                            path="/moaiflow/:title"
+                            element={
+                                <RiverTabs />
+                            }
+                        />
+                    </Routes>
+                </main>
+                <Footer />
+            </div>
     );
 };
 

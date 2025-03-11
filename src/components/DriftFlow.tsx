@@ -1,14 +1,57 @@
 import React, { useEffect, useState } from 'react';
-import { useDaoContext } from '../context/DaoContext';
+import { CateFlowContextType, processFlowData } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { useNavigate, useParams } from 'react-router-dom';
 import GanttChart from './common/GanttChart';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { UnlistenFn } from '@tauri-apps/api/event';
 
 const DriftFlow: React.FC = () => {
     const navigate = useNavigate();
-    const { driftFlowList } = useDaoContext();
+    const [driftFlowList, setDriftFlowList] = useState<CateFlowContextType | undefined>(undefined);
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
+    const [tabs, setTabs] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchDriftFlowList = async () => {
+            const result = await invoke<CateFlowContextType>('drift_flow');
+            setDriftFlowList(processFlowData(result));
+        };
+        fetchDriftFlowList();
+
+        let unlisten: UnlistenFn;
+        const setupListener = async () => {
+            unlisten = await listen<CateFlowContextType>('file-changed', async () => {
+                await fetchDriftFlowList();
+            });
+        };
+        setupListener();
+
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!driftFlowList) return;
+
+        const loadTabData = async () => {
+            const tabs = Object.entries(driftFlowList || {}).map(
+                ([category, narrative_flow]) => ({
+                    label: category,
+                    key: category,
+                    content: <GanttChart data={narrative_flow} />,
+                }),
+            );
+            setTabs(tabs);
+        };
+
+        loadTabData();
+    }, [driftFlowList]);
 
     useEffect(() => {
         if (!driftFlowList || !title) return;
@@ -27,17 +70,6 @@ const DriftFlow: React.FC = () => {
         setActiveTab(newValue);
     };
 
-    const tabs = Object.entries(driftFlowList || {}).map(
-        ([category, drift_flow]) => ({
-            label: category,
-            key: category,
-            content: (
-                <div className="h-[calc(100vh-28px-48px)] w-[calc(100vw-225px-48px)] overflow-auto">
-                    <GanttChart data={drift_flow} />
-                </div>
-            ),
-        }),
-    );
     if (!driftFlowList || Object.keys(driftFlowList).length === 0) {
         return (
             <div className="flex h-full items-center justify-center bg-background">

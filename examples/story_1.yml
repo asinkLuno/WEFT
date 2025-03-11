@@ -12,13 +12,13 @@ moai:
     juncture:
       birthday: &big_boom [10]
     base_time: *big_boom
-    year_name: &dbz 大爆炸
+    纪年法: &jnf [*big_boom,"大爆炸"]
 
   amika:
     full_name: "阿麦卡"
-    description: "这是阿麦卡，她出生在大爆炸后10年的春天。"
+    description: "这是阿麦卡，她出生在大爆炸后10年的春天的四月。"
     juncture:
-      birthday: &amika_birthday [*big_boom, *dbz, 10, 4, 3]
+      birthday: &amika_birthday [*jnf,10,4,2]
     base_time: *amika_birthday
     material:
       - Constellation

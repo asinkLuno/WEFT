@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { scaleTime, scaleBand } from 'd3-scale';
 import { timeFormat } from 'd3-time-format';
-import { FlowContextType, humanizeTime } from '../../context/DaoContext';
+import { FlowContextType, humanizeTime } from '../../types/flow';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import './GanttChart.css';
 import { invoke } from '@tauri-apps/api/core';

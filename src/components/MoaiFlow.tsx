@@ -1,16 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { useDaoContext } from '../context/DaoContext';
+import { CateFlowContextType, processFlowData } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import GanttChart from './common/GanttChart';
 import { useNavigate, useParams } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { UnlistenFn } from '@tauri-apps/api/event';
 
 const MoaiFlow: React.FC = () => {
     const navigate = useNavigate();
-    const { moaiFlowList } = useDaoContext();
+    const [moaiFlowList, setMoaiFlowList] = useState<CateFlowContextType | undefined>(undefined);
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchMoaiFlowList = async () => {
+            const result = await invoke<CateFlowContextType>('moai_flow');
+            setMoaiFlowList(processFlowData(result));
+        };
+        fetchMoaiFlowList();
+
+        let unlisten: UnlistenFn;
+        const setupListener = async () => {
+            unlisten = await listen<CateFlowContextType>('file-changed', async () => {
+                await fetchMoaiFlowList();
+            });
+        };
+        setupListener();
+
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (!moaiFlowList) return;

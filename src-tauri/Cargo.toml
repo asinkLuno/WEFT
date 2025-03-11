@@ -21,12 +21,9 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 serde_yaml = "0.9.34"
-toml = "0.8.20"
 either = "1.13.0"
 regex = "1.11.1"
-tokio = "1.43.0"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
@@ -36,5 +33,6 @@ tauri-plugin-notification = "2.2.1"
 notify-debouncer-full = "0.5.0"
 strum = "0.27.1"
 strum_macros = "0.27.1"
+serde_json = "1.0.140"
 
 # 编译选项：https://v2.tauri.app/concept/size/

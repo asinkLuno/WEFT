@@ -1,22 +1,52 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useDaoContext } from '../context/DaoContext';
+import { useNavigate } from 'react-router-dom';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import RelationGraph from './common/RelationGraph';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+interface MoaiLinkNode {
+    id: string;
+    text: string;
+    nodeShape?: number;
+}
+interface MoaiLinkLine {
+    from: string;
+    to: string;
+    relations?: string;
+    bidirectional: boolean;
+}
+export interface MoaiLinkContextType {
+    moai_nodes: MoaiLinkNode[];
+    moai_links: MoaiLinkLine[];
+}
+
+type MoaiLinkListContextType = { [key: string]: MoaiLinkContextType };
+
 
 const MoaiLink: React.FC = () => {
     const navigate = useNavigate();
-    const { moaiLinkList } = useDaoContext();
-    const { title } = useParams<{ title?: string }>();
+    const [moaiLinkList, setMoaiLinkList] = useState<MoaiLinkListContextType | undefined>(undefined);
     const [activeTab, setActiveTab] = useState(0);
 
     useEffect(() => {
-        if (!moaiLinkList || !title) return;
-        const index = Object.keys(moaiLinkList).findIndex((t) => t === title);
-        if (index !== -1) {
-            setActiveTab(index);
-        }
-    }, [title, moaiLinkList]);
+        const fetchMoaiLinkList = async () => {
+            const result = await invoke<MoaiLinkListContextType>('get_all_moai_links');
+            setMoaiLinkList(result);
+        };
+        fetchMoaiLinkList();
+        let unlisten: UnlistenFn;
+        const setupListener = async () => {
+            unlisten = await listen<MoaiLinkListContextType>('file-changed', async () => {
+                await fetchMoaiLinkList();
+            });
+        };
+        setupListener();
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
 
     const handleChange = useCallback(
         (event: React.SyntheticEvent, newValue: number) => {

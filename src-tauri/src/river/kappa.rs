@@ -81,6 +81,7 @@ impl KappaFace {
         match Dao::new(file_path) {
             Ok(dao) => {
                 self.dao = Some(dao);
+
                 Ok(())
             }
             Err(e) => Err(format!("Failed to re-read Dao: {:?}", e)),

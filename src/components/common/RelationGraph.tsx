@@ -6,7 +6,7 @@ import React, {
     useCallback,
 } from 'react';
 import * as d3 from 'd3';
-import { MoaiLinkContextType } from '../../context/DaoContext';
+import { MoaiLinkContextType } from '../MoaiLink';
 
 interface SimulationNode extends d3.SimulationNodeDatum {
     id: string;

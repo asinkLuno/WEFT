@@ -359,7 +359,6 @@ impl Phase {
             }
         }
     }
-    /// 公开接口：将相位转换为非递归表示
     pub fn de_recursive(&self) -> Result<PhaseNoRecusive, String> {
         let mut base_time = self.base_time.clone();
         let mut ref_time = self.ref_time.clone();
@@ -474,6 +473,7 @@ impl<'de> Deserialize<'de> for Phase {
         }
 
         match (base_time, ref_time, &base_time_name) {
+            //FIXME:再检查一下这个条件是否完备
             (Some(bt), rt, btn) => {
                 Phase::validate(&bt, &rt).map_err(DeError::custom)?;
                 Ok(Phase {

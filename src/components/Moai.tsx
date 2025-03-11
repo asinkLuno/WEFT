@@ -1,23 +1,91 @@
-import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { humanizeTime, useDaoContext } from '../context/DaoContext';
+import { humanizeTime, PhaseContextType } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useState } from 'react';
+import { logError } from '@/utils/logger';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+
+
+export interface MoaiContextType {
+    full_name?: string;
+    base_time?: PhaseContextType;
+    description?: string;
+    juncture: Record<string, PhaseContextType> | null;
+    [key: string]: any; // 用于 extra_props 的动态属性
+}
+
+export type MoaiListContextType = { [key: string]: MoaiContextType };
+
+
+const loadAllMoaiFullNames = async (moaiList: MoaiListContextType) => {
+    try {
+        const moaiEntries = Object.entries(moaiList);
+        const fullNames = await Promise.all(
+            moaiEntries.map(async ([id]) => ({
+                id,
+                fullName: await invoke<string>('get_moai_full_name', { id }),
+            }))
+        );
+        return Object.fromEntries(
+            fullNames.map(({ id, fullName }) => [id, fullName])
+        );
+    } catch (error) {
+        logError(`Failed to load all Moai full names: ${error}`);
+        return Object.fromEntries(
+            Object.keys(moaiList).map(id => [id, id])
+        );
+    }
+};
 
 const MoaiList: React.FC = () => {
     const navigate = useNavigate();
-    const { moaiList } = useDaoContext();
-    const [value, setValue] = React.useState(0);
-    const [tabs, setTabs] = React.useState<any[]>([]);
+    const [moaiList, setMoaiList] = useState<MoaiListContextType | undefined>(undefined);
+    const [moaiFullNames, setMoaiFullNames] = useState<Record<string, string>>({});
+    const [value, setValue] = useState(0);
+    const [tabs, setTabs] = useState<any[]>([]);
 
-    React.useEffect(() => {
+    // 获取Moai列表数据
+    useEffect(() => {
+        let unlisten: UnlistenFn;
+        
+        const fetchMoaiList = async () => {
+            try {
+                const moaiListData = await invoke<MoaiListContextType>('get_all_moais');
+                setMoaiList(moaiListData);
+                const fullNames = await loadAllMoaiFullNames(moaiListData);
+                setMoaiFullNames(fullNames);
+            } catch (error) {
+                logError(`Failed to fetch moai list: ${error}`);
+            }
+        };
+
+        // 设置文件变化监听器
+        const setupListener = async () => {
+            unlisten = await listen<MoaiListContextType>('file-changed', async () => {
+                await fetchMoaiList();
+            });
+        };
+
+        // 初始化时获取数据并设置监听器
+        fetchMoaiList();
+        setupListener();
+
+        // 清理函数
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
         if (!moaiList) return;
 
         const loadTabData = async () => {
-            const moaiEntries = Object.entries(moaiList);
-            const loadedTabs = await Promise.all(
-                moaiEntries.map(async ([id, moai]) => ({
-                    label: await invoke<string>('get_moai_full_name', { id }),
+            try {
+                const loadedTabs = Object.entries(moaiList).map(([id, moai]) => ({
+                    label: moaiFullNames[id] || id,
                     key: id,
                     content: (
                         <>
@@ -88,13 +156,15 @@ const MoaiList: React.FC = () => {
                                 )}
                         </>
                     ),
-                })),
-            );
-            setTabs(loadedTabs);
+                }));
+                setTabs(loadedTabs);
+            } catch (error) {
+                logError(`Failed to load tab data: ${error}`);
+            }
         };
 
         loadTabData();
-    }, [moaiList]);
+    }, [moaiList, moaiFullNames]);
 
     const handleChange = (_: React.SyntheticEvent, newValue: number) => {
         const moaiEntries = Object.entries(moaiList || {});

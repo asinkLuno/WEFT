@@ -1,9 +1,8 @@
 use crate::river::phase::{sub_phase, Phase};
-use log::logger;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::{
-    cmp::{Eq, Ordering},
+    cmp::Eq,
     collections::{HashMap, HashSet},
     fs,
     hash::{Hash, Hasher},
@@ -11,11 +10,7 @@ use std::{
 };
 use strum_macros::EnumString;
 
-use super::{
-    material::{get_constellation, get_material, Constellation},
-    phase,
-};
-
+use super::material::{get_constellation, get_material};
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Moai {
     #[serde(skip)]
@@ -117,7 +112,6 @@ impl MoaiLink {
         self.bidirectional.unwrap_or(false) // 返回值或如果为None则为false
     }
 }
-
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum DateMode {
     Gregorian,
@@ -130,7 +124,13 @@ pub struct Story {
     description: Option<String>,
     date_mode: Option<DateMode>, // 日期模式：格里高利历、中国农历
 }
+impl PartialEq for Story {
+    fn eq(&self, other: &Self) -> bool {
+        self.title == other.title && self.description == other.description
+    }
+}
 
+impl Eq for Story {}
 impl Story {
     pub fn date_mode(&self) -> Option<&DateMode> {
         self.date_mode.as_ref()
