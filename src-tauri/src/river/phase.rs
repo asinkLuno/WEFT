@@ -139,11 +139,6 @@ where
                         result[unit_index] += unit_range[1];
                         result[unit_index - 1] -= 1;
                     } else {
-                        // while result[unit_index] < unit_range[0] {
-                        //     result[unit_index] += unit_range[1];
-                        //     result[unit_index - 1] -= 1;
-                        // }
-
                         let deficit = unit_range[0] - result[unit_index];
                         let units_to_borrow = (deficit + unit_range[1] - 1) / unit_range[1];
                         result[unit_index] += units_to_borrow * unit_range[1];
@@ -163,11 +158,6 @@ where
                         result[unit_index] -= unit_range[1];
                         result[unit_index - 1] += 1;
                     } else {
-                        // while result[unit_index] > unit_range[1] {
-                        //     result[unit_index] -= unit_range[1];
-                        //     result[unit_index - 1] += 1;
-                        // }
-
                         let excess = result[unit_index] - unit_range[1];
                         let units_to_carry = (excess + unit_range[1] - 1) / unit_range[1];
                         result[unit_index] -= units_to_carry * unit_range[1];
@@ -196,7 +186,7 @@ where
                     operation,
                 )?;
                 add_time_vec(vec1, vec2, result, unit_index, true, depth + 1, operation)?;
-                return Ok(());
+                // return Ok(());
             }
         }
         if !extra_case {
@@ -573,8 +563,8 @@ mod tests {
 
     #[test]
     fn test_sub_phase() -> Result<(), String> {
-        let mut v1 = [2024, 2, 30, 0, 0, 0];
-        let mut v2 = [0, 0, 1, 0, 0, 0];
+        let mut v1 = [2024, 0, -3, 0, 0, 0];
+        let mut v2 = [0, 0, 0, 0, 0, 0];
         let mut result = [0; Phase::MAX_LENGTH];
         add_time_vec(
             &mut v1,
