@@ -23,7 +23,7 @@ const Footer: React.FC = () => {
         }
     };
     return (
-        <footer className="bg-primary text-primary-foreground border-border fixed right-0 bottom-0 left-0 flex h-7 items-center justify-between border-t font-mono text-xs shadow-sm">
+        <footer className="bg-primary text-primary-foreground border-border fixed right-0 bottom-0 left-0 flex h-7 items-center justify-between border-t px-4 font-mono text-xs shadow-sm">
             <div>{filePath ? `绑定文件：${filePath}` : '未绑定文件'}</div>
             {filePath && (
                 <Button

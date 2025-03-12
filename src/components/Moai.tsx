@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { humanizeTime, PhaseContextType } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { logError } from '@/utils/logger';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
@@ -44,18 +44,18 @@ const MoaiList: React.FC = () => {
     );
     const [value, setValue] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
+    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
+        unlisten: null,
+    });
 
     // 获取Moai列表数据
     useEffect(() => {
-        let unlisten: UnlistenFn;
-
         const fetchMoaiList = async () => {
             try {
                 const moaiListData =
                     await invoke<MoaiListContextType>('get_all_moais');
                 setMoaiList(moaiListData);
-                const fullNames = await loadAllMoaiFullNames(moaiListData);
-                setMoaiFullNames(fullNames);
+                setMoaiFullNames(await loadAllMoaiFullNames(moaiListData));
             } catch (error) {
                 logError(`Failed to fetch moai list: ${error}`);
             }
@@ -63,7 +63,12 @@ const MoaiList: React.FC = () => {
 
         // 设置文件变化监听器
         const setupListener = async () => {
-            unlisten = await listen<MoaiListContextType>(
+            // 确保没有重复设置监听器
+            if (listenerRef.current.unlisten) {
+                await listenerRef.current.unlisten();
+            }
+
+            listenerRef.current.unlisten = await listen<MoaiListContextType>(
                 'file-changed',
                 async () => {
                     await fetchMoaiList();
@@ -77,8 +82,9 @@ const MoaiList: React.FC = () => {
 
         // 清理函数
         return () => {
-            if (unlisten) {
-                unlisten();
+            if (listenerRef.current.unlisten) {
+                listenerRef.current.unlisten();
+                listenerRef.current.unlisten = null;
             }
         };
     }, []);

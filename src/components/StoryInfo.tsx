@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Book, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
@@ -11,6 +11,10 @@ export interface StoryContextType {
 
 const StoryInfo: React.FC = () => {
     const [story, setStory] = useState<StoryContextType | null>(null);
+    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
+        unlisten: null,
+    });
+
     useEffect(() => {
         const fetchStory = async () => {
             try {
@@ -24,9 +28,13 @@ const StoryInfo: React.FC = () => {
         fetchStory();
 
         // 监听故事变化
-        let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<StoryContextType>(
+            // 确保没有重复设置监听器
+            if (listenerRef.current.unlisten) {
+                await listenerRef.current.unlisten();
+            }
+
+            listenerRef.current.unlisten = await listen<StoryContextType>(
                 'file-changed',
                 async () => {
                     await fetchStory();
@@ -37,8 +45,10 @@ const StoryInfo: React.FC = () => {
         setupListener();
 
         return () => {
-            if (unlisten) {
-                unlisten();
+            // 组件卸载时清理监听器
+            if (listenerRef.current.unlisten) {
+                listenerRef.current.unlisten();
+                listenerRef.current.unlisten = null;
             }
         };
     }, []);

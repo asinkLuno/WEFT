@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CateFlowContextType, processFlowData } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import GanttChart from './common/GanttChart';
@@ -15,6 +15,10 @@ const NarrativeFlow: React.FC = () => {
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
+    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
+        unlisten: null,
+    });
+
     useEffect(() => {
         const fetchNarrativeFlowList = async () => {
             const result = await invoke<CateFlowContextType>('narrative_flow');
@@ -22,9 +26,13 @@ const NarrativeFlow: React.FC = () => {
         };
         fetchNarrativeFlowList();
 
-        let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<CateFlowContextType>(
+            // 确保没有重复设置监听器
+            if (listenerRef.current.unlisten) {
+                await listenerRef.current.unlisten();
+            }
+
+            listenerRef.current.unlisten = await listen<CateFlowContextType>(
                 'file-changed',
                 async () => {
                     await fetchNarrativeFlowList();
@@ -34,8 +42,10 @@ const NarrativeFlow: React.FC = () => {
         setupListener();
 
         return () => {
-            if (unlisten) {
-                unlisten();
+            // 组件卸载时清理监听器
+            if (listenerRef.current.unlisten) {
+                listenerRef.current.unlisten();
+                listenerRef.current.unlisten = null;
             }
         };
     }, []);

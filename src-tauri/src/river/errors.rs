@@ -6,9 +6,9 @@ pub enum RiverError {
     FileNotFound(String),
     #[error("Unsupported file type: `{0}`, supported types are yaml and yml.")]
     UnsupportedFileType(String),
-    #[error("Failed to read file content.")]
+    #[error(transparent)]
     FailedToReadFileContent(#[from] std::io::Error),
-    #[error("Failed to parse YAML.")]
+    #[error(transparent)]
     FailedToParseYaml(#[from] serde_yaml::Error),
 
     #[error("Moai is not defined in Dao.")]

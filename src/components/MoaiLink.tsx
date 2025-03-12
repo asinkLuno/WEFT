@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, {
+    useEffect,
+    useMemo,
+    useState,
+    useCallback,
+    useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import RelationGraph from './common/RelationGraph';
@@ -28,6 +34,9 @@ const MoaiLink: React.FC = () => {
         MoaiLinkListContextType | undefined
     >(undefined);
     const [activeTab, setActiveTab] = useState(0);
+    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
+        unlisten: null,
+    });
 
     useEffect(() => {
         const fetchMoaiLinkList = async () => {
@@ -36,19 +45,28 @@ const MoaiLink: React.FC = () => {
             setMoaiLinkList(result);
         };
         fetchMoaiLinkList();
-        let unlisten: UnlistenFn;
+
         const setupListener = async () => {
-            unlisten = await listen<MoaiLinkListContextType>(
-                'file-changed',
-                async () => {
-                    await fetchMoaiLinkList();
-                },
-            );
+            // 确保没有重复设置监听器
+            if (listenerRef.current.unlisten) {
+                await listenerRef.current.unlisten();
+            }
+
+            listenerRef.current.unlisten =
+                await listen<MoaiLinkListContextType>(
+                    'file-changed',
+                    async () => {
+                        await fetchMoaiLinkList();
+                    },
+                );
         };
         setupListener();
+
         return () => {
-            if (unlisten) {
-                unlisten();
+            // 组件卸载时清理监听器
+            if (listenerRef.current.unlisten) {
+                listenerRef.current.unlisten();
+                listenerRef.current.unlisten = null;
             }
         };
     }, []);

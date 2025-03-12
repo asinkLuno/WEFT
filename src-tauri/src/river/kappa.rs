@@ -123,7 +123,6 @@ pub fn watch_file(app_handle: tauri::AppHandle, file_path: String) -> Result<(),
                                     .emit("file-changed", ())
                                     .unwrap_or_else(|e| log::error!("Emit failed: {}", e));
                             }
-
                             EventKind::Modify(ModifyKind::Name(
                                 RenameMode::From | RenameMode::Both,
                             )) => {

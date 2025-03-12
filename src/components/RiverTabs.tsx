@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFileContext } from '../context/FileContext';
 import { listen } from '@tauri-apps/api/event';
@@ -60,6 +60,10 @@ export default function RiverTabs() {
         return tabs.findIndex((tab) => path.includes(tab.path)) || 0;
     });
 
+    // 添加 refs 跟踪监听器
+    const unlistenStopRef = useRef<(() => void) | null>(null);
+    const unlistenDaoFailedRef = useRef<(() => void) | null>(null);
+
     useEffect(() => {
         const currentTab = tabs[activeTab];
         if (currentTab.fetchData) {
@@ -69,9 +73,25 @@ export default function RiverTabs() {
             });
         }
     }, [activeTab, navigate]);
+
+    // 事件监听器应该只设置一次
     useEffect(() => {
+        let mounted = true;
+
         const setupListeners = async () => {
             try {
+                // 确保先清理之前的监听器（如果存在）
+                if (unlistenStopRef.current) {
+                    unlistenStopRef.current();
+                    unlistenStopRef.current = null;
+                }
+
+                if (unlistenDaoFailedRef.current) {
+                    unlistenDaoFailedRef.current();
+                    unlistenDaoFailedRef.current = null;
+                }
+
+                // 设置新的监听器
                 const unlistenStop = await listen('stop-watching', () => {
                     setFilePath(undefined);
                     navigate('/');
@@ -80,22 +100,45 @@ export default function RiverTabs() {
                 const unlistenDaoFailed = await listen(
                     'dao-update-failed',
                     (event) => {
-                        logError(`文件更新失败: ${event.payload}`); // [^1]
+                        logError(`文件更新失败: ${event.payload}`);
                     },
                 );
 
-                return () => {
+                // 只有组件仍然挂载时才保存引用
+                if (mounted) {
+                    unlistenStopRef.current = unlistenStop;
+                    unlistenDaoFailedRef.current = unlistenDaoFailed;
+                } else {
+                    // 如果组件已卸载，立即清理
                     unlistenStop();
                     unlistenDaoFailed();
-                };
+                }
             } catch (err) {
                 logError(`Failed to setup listeners: ${err}`);
-                navigate('/');
+                if (mounted) {
+                    navigate('/');
+                }
             }
         };
 
         setupListeners();
-    }, [activeTab, setFilePath, navigate]);
+
+        // 返回清理函数
+        return () => {
+            mounted = false;
+
+            // 清理监听器
+            if (unlistenStopRef.current) {
+                unlistenStopRef.current();
+                unlistenStopRef.current = null;
+            }
+
+            if (unlistenDaoFailedRef.current) {
+                unlistenDaoFailedRef.current();
+                unlistenDaoFailedRef.current = null;
+            }
+        };
+    }, []); // 空依赖数组，确保监听器只设置一次
 
     return (
         <div className="flex h-full w-full flex-col overflow-auto">
