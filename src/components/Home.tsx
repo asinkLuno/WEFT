@@ -4,10 +4,13 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useFileContext } from '../context/FileContext';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
-import { Terminal, FileUp } from 'lucide-react';
+import { Terminal, FileUp, Clock, ExternalLink } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logSuccess, logError, logInfo } from '@/utils/logger';
+import { load, Store } from '@tauri-apps/plugin-store';
+import { Separator } from '@/components/ui/separator';
+
 // Letter variations moved outside the component
 const variations = {
     r: ['ℝ', 'ℜ', 'ℛ', '℟', 'ჩ', 'ᖇ', 'Ꮢ', 'ᚱ'],
@@ -61,6 +64,33 @@ const Home: React.FC = () => {
 
     // State for current displayed text
     const [displayText, setDisplayText] = useState<string>('River');
+    // State for store
+    const [store, setStore] = useState<Store | null>(null);
+    // State for recent files
+    const [recentFiles, setRecentFiles] = useState<string[]>([]);
+
+    // Load store and recent files
+    useEffect(() => {
+        const initStore = async () => {
+            try {
+                const storeInstance = await load('settings.json', {
+                    autoSave: true,
+                });
+                setStore(storeInstance);
+
+                // Get recent files from store
+                const storedRecentFiles =
+                    await storeInstance.get<string[]>('recent_files');
+                if (storedRecentFiles) {
+                    setRecentFiles(storedRecentFiles);
+                }
+            } catch (err) {
+                logError(`Failed to load store: ${err}`);
+            }
+        };
+
+        initStore();
+    }, []);
 
     // Animation effect
     useEffect(() => {
@@ -72,6 +102,50 @@ const Home: React.FC = () => {
             setDisplayText(generateStylizedRiver());
         };
     }, []); // Run once on mount
+
+    /**
+     * Update recent files list
+     * @param filePath The file path to add to recent files
+     */
+    const updateRecentFiles = async (filePath: string) => {
+        if (!store) return;
+
+        try {
+            // Create a new array with the current file at the beginning
+            let updatedRecentFiles = [filePath];
+
+            // Add previous recent files, excluding the current one to avoid duplicates
+            if (recentFiles && recentFiles.length > 0) {
+                updatedRecentFiles = [
+                    filePath,
+                    ...recentFiles.filter((path) => path !== filePath),
+                ].slice(0, 3); // Keep only the 3 most recent files
+            }
+
+            // Update state and store
+            setRecentFiles(updatedRecentFiles);
+            await store.set('recent_files', updatedRecentFiles);
+        } catch (err) {
+            logError(`Failed to update recent files: ${err}`);
+        }
+    };
+
+    /**
+     * Handle opening a file from recent files
+     * @param filePath The file path to open
+     */
+    const handleOpenRecentFile = async (filePath: string) => {
+        try {
+            setFilePath(filePath);
+            await invoke('watch_file', { filePath });
+            await updateRecentFiles(filePath);
+            logSuccess(`文件已成功加载：${filePath}`);
+            navigate('/tabs');
+        } catch (err) {
+            logError(`文件加载失败：${err}`);
+            setFilePath(undefined);
+        }
+    };
 
     /**
      * 处理文件选择操作
@@ -95,7 +169,7 @@ const Home: React.FC = () => {
                 try {
                     setFilePath(file_path as string);
                     await invoke('watch_file', { filePath: file_path });
-                    // 显示成功提示
+                    await updateRecentFiles(file_path as string);
                     logSuccess(`文件已成功加载：${file_path}`);
                     // 导航到主界面
                     navigate('/tabs');
@@ -138,6 +212,31 @@ const Home: React.FC = () => {
                     <FileUp className="h-5 w-5" />
                     选择YAML文件
                 </Button>
+
+                {recentFiles && recentFiles.length > 0 && (
+                    <div className="w-full">
+                        <Separator className="my-2" />
+                        <div className="mb-2 flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <h4 className="font-medium">最近打开的文件</h4>
+                        </div>
+                        <div className="space-y-2">
+                            {recentFiles.map((filePath, index) => (
+                                <Button
+                                    key={index}
+                                    variant="link"
+                                    className="w-full justify-start truncate text-left"
+                                    onClick={() =>
+                                        handleOpenRecentFile(filePath)
+                                    }
+                                >
+                                    <ExternalLink className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">{filePath}</span>
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <Alert className="w-full">
                     <Terminal className="h-4 w-4" />
