@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
 use super::dao::DateMode;
-
+use super::errors::RiverError;
 const MAX_DEPTH: usize = 1000;
 
 fn operate_vectors<F>(
@@ -25,7 +25,7 @@ fn get_unit_chinese(
     time_vec: &mut [i32; Phase::MAX_LENGTH],
     unit_index: usize,
     extra_case: bool,
-) -> Result<Option<([i32; 2], bool)>, String> {
+) -> Result<Option<([i32; 2], bool)>, RiverError> {
     // 中国农历。简化计算，采用19年7闰
     match unit_index {
         1 => {
@@ -68,7 +68,7 @@ fn get_unit_chinese(
         3 => Ok(Some(([0, 24], false))), // 时 (0-23)
         4 => Ok(Some(([0, 60], false))), // 分 (0-59)
         5 => Ok(Some(([0, 60], false))), // 秒 (0-59)
-        _ => Err("Unit index out of range".into()),
+        _ => Err(RiverError::PhaseUnitIndexOutOfRange),
     }
 }
 
@@ -76,7 +76,7 @@ fn get_unit_gregorian(
     time_vec: &mut [i32; Phase::MAX_LENGTH],
     unit_index: usize,
     extra_case: bool,
-) -> Result<Option<([i32; 2], bool)>, String> {
+) -> Result<Option<([i32; 2], bool)>, RiverError> {
     match unit_index {
         1 => Ok(Some(([0, 12], false))), //月
         2 => {
@@ -106,7 +106,7 @@ fn get_unit_gregorian(
         3 => Ok(Some(([0, 24], false))),
         4 => Ok(Some(([0, 60], false))),
         5 => Ok(Some(([0, 60], false))),
-        _ => Err("Unit index out of range".into()),
+        _ => Err(RiverError::PhaseUnitIndexOutOfRange),
     }
 }
 
@@ -118,13 +118,17 @@ fn add_time_vec<F>(
     extra_case: bool,
     depth: usize,
     operation: &F,
-) -> Result<(), String>
+) -> Result<(), RiverError>
 where
-    F: Fn(&mut [i32; Phase::MAX_LENGTH], usize, bool) -> Result<Option<([i32; 2], bool)>, String>,
+    F: Fn(
+        &mut [i32; Phase::MAX_LENGTH],
+        usize,
+        bool,
+    ) -> Result<Option<([i32; 2], bool)>, RiverError>,
 {
     // Check if we've exceeded the maximum recursion depth
     if depth > MAX_DEPTH {
-        return Err(format!("Maximum recursion depth ({}) exceeded", MAX_DEPTH));
+        return Err(RiverError::MaximumRecursionDepthExceeded(MAX_DEPTH));
     }
     result[unit_index] = vec1[unit_index] + vec2[unit_index] + result[unit_index];
     vec1[unit_index] = 0;
@@ -207,7 +211,7 @@ where
 // New function to get the appropriate date calculation function based on DateMode
 pub fn get_date_calculator(
     date_mode: Option<&DateMode>,
-) -> impl Fn(&mut [i32; Phase::MAX_LENGTH], usize, bool) -> Result<Option<([i32; 2], bool)>, String>
+) -> impl Fn(&mut [i32; Phase::MAX_LENGTH], usize, bool) -> Result<Option<([i32; 2], bool)>, RiverError>
 {
     match date_mode {
         Some(DateMode::Chinese) => get_unit_chinese,
@@ -223,7 +227,7 @@ pub struct PhaseNoRecusive {
 }
 
 impl PhaseNoRecusive {
-    pub fn absolute_time(&self) -> Result<[i32; Phase::MAX_LENGTH], String> {
+    pub fn absolute_time(&self) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
         match &self.ref_time {
             Some(ref_time) => Ok(operate_vectors(&self.base_time, ref_time, |a, b| a + b)),
             None => Ok(self.base_time.clone()),
@@ -233,7 +237,7 @@ impl PhaseNoRecusive {
     pub fn humanize(
         &self,
         date_mode: Option<&DateMode>,
-    ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), String> {
+    ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), RiverError> {
         let mut vec1 = [0; Phase::MAX_LENGTH];
         let mut vec2;
         let mut result = [0; Phase::MAX_LENGTH];
@@ -251,7 +255,7 @@ impl PhaseNoRecusive {
                 )?;
                 Ok((Some(base_time_name.clone()), result))
             }
-            (Some(_), None) => Err(format!("base_time_name is not allowed without ref_time")),
+            (Some(_), None) => Err(RiverError::BaseTimeNameConflict),
             _ => {
                 vec2 = self.absolute_time()?;
                 add_time_vec(
@@ -287,16 +291,16 @@ pub struct Phase {
 impl Phase {
     pub const MAX_LENGTH: usize = 6;
 
-    fn check_vec(vec: &[i32; Phase::MAX_LENGTH]) -> Result<(), String> {
+    fn check_vec(vec: &[i32; Phase::MAX_LENGTH]) -> Result<(), RiverError> {
         if vec[1..].iter().any(|&x| x < 0) {
-            return Err("sub_year_part must be nonnegative".into());
+            return Err(RiverError::SubYearPartMustBeNonnegative);
         }
         Ok(())
     }
     fn validate(
         base_time: &BaseTime,
         ref_time: &Option<[i32; Phase::MAX_LENGTH]>,
-    ) -> Result<(), String> {
+    ) -> Result<(), RiverError> {
         match base_time {
             BaseTime::Vec(vec) => {
                 Phase::check_vec(vec)?;
@@ -317,7 +321,7 @@ impl Phase {
         base_time: &mut BaseTime,
         ref_time: &mut Option<[i32; Phase::MAX_LENGTH]>,
         base_time_name: &mut Option<String>,
-    ) -> Result<PhaseNoRecusive, String> {
+    ) -> Result<PhaseNoRecusive, RiverError> {
         match base_time {
             BaseTime::Vec(this_base_time) => Ok(PhaseNoRecusive {
                 base_time: this_base_time.clone(),
@@ -328,7 +332,7 @@ impl Phase {
                 if base_time_name.is_none() {
                     *base_time_name = phase.base_time_name.clone();
                 } else if phase.base_time_name.is_some() {
-                    return Err("base_time_name conflict detected".into());
+                    return Err(RiverError::BaseTimeNameConflict);
                 }
 
                 if let Some(parent_ref_time) = &phase.ref_time {
@@ -349,13 +353,13 @@ impl Phase {
             }
         }
     }
-    pub fn de_recursive(&self) -> Result<PhaseNoRecusive, String> {
+    pub fn de_recursive(&self) -> Result<PhaseNoRecusive, RiverError> {
         let mut base_time = self.base_time.clone();
         let mut ref_time = self.ref_time.clone();
         let mut base_time_name = self.base_time_name.clone();
         Phase::_de_recusive(&mut base_time, &mut ref_time, &mut base_time_name)
     }
-    pub fn phase2iso8601(&self) -> Result<String, String> {
+    pub fn phase2iso8601(&self) -> Result<String, RiverError> {
         let mut abs_time = self.de_recursive()?.absolute_time()?; // Fixed method name
         let mut humanized_time = [0; Phase::MAX_LENGTH];
         let mut p2 = [0; Phase::MAX_LENGTH];
@@ -517,7 +521,7 @@ pub fn sub_phase(
     p1: &Phase,
     p2: &Phase,
     date_mode: Option<&DateMode>,
-) -> Result<[i32; Phase::MAX_LENGTH], String> {
+) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
     let p1_de_recusive = p1.de_recursive()?;
     let p2_de_recusive = p2.de_recursive()?;
     let mut result = [0; Phase::MAX_LENGTH];
@@ -562,7 +566,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn test_sub_phase() -> Result<(), String> {
+    fn test_sub_phase() -> Result<(), RiverError> {
         let mut v1 = [2024, 0, -3, 0, 0, 0];
         let mut v2 = [0, 0, 0, 0, 0, 0];
         let mut result = [0; Phase::MAX_LENGTH];

@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod river {
     pub mod dao;
+    pub mod errors;
     pub mod kappa;
     pub mod material;
     pub mod phase;

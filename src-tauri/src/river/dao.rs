@@ -10,7 +10,10 @@ use std::{
 };
 use strum_macros::EnumString;
 
-use super::material::{get_constellation, get_material};
+use super::{
+    errors::RiverError,
+    material::{get_constellation, get_material},
+};
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Moai {
     #[serde(skip)]
@@ -42,13 +45,13 @@ impl Hash for Moai {
 }
 
 impl Moai {
-    pub fn init(&mut self, id: &String) -> Result<(), String> {
+    pub fn init(&mut self, id: &String) -> Result<(), RiverError> {
         self.id = id.clone();
         self.init_material()?;
         Ok(())
     }
 
-    fn init_material(&mut self) -> Result<(), String> {
+    fn init_material(&mut self) -> Result<(), RiverError> {
         if let Some(ref material) = &self.material {
             for m in material {
                 match m {
@@ -190,9 +193,11 @@ pub struct Dao {
 }
 
 impl Dao {
-    pub fn new(file_path: &PathBuf) -> Result<Self, String> {
+    pub fn new(file_path: &PathBuf) -> Result<Self, RiverError> {
         if !file_path.exists() {
-            return Err(format!("Cannot find file: {}", file_path.display())); // Changed to display for better formatting
+            return Err(RiverError::FileNotFound(
+                file_path.to_string_lossy().to_string(),
+            ));
         }
 
         let ext = file_path
@@ -202,27 +207,14 @@ impl Dao {
             .to_lowercase();
 
         if ext != "yaml" && ext != "yml" {
-            return Err(format!(
-                "Unsupported file type: {}, supported types are yaml and yml.",
-                ext
-            ));
+            return Err(RiverError::UnsupportedFileType(ext.to_string()));
         }
 
-        let file_content = fs::read_to_string(file_path).map_err(|e| {
-            format!(
-                "Failed to read file content: {}, got error: {}",
-                file_path.display(), // Changed to display for better formatting
-                e
-            )
-        })?;
+        let file_content =
+            fs::read_to_string(file_path).map_err(|e| RiverError::FailedToReadFileContent(e))?;
 
-        let mut dao: Dao = serde_yaml::from_str(&file_content).map_err(|e| {
-            format!(
-                "Failed to parse {} as YAML, got error: {}",
-                file_path.display(),
-                e
-            )
-        })?; // Changed to display for better formatting
+        let mut dao: Dao =
+            serde_yaml::from_str(&file_content).map_err(|e| RiverError::FailedToParseYaml(e))?;
 
         if let Some(ref mut moais) = dao.moai {
             for (id, moai) in moais.iter_mut() {
@@ -236,49 +228,31 @@ impl Dao {
         Ok(dao)
     }
 
-    pub fn get_moai_full_name(&self, id: &String) -> Result<String, String> {
-        if let Some(ref moais) = &self.moai {
-            let moai = moais
-                .get(id)
-                .ok_or_else(|| format!("Moai '{}' not found.", id))?;
-            Ok(moai.full_name().clone())
-        } else {
-            Err("Moais are not defined.".to_string())
-        }
+    pub fn get_moai_full_name(&self, id: &String) -> Result<String, RiverError> {
+        let moai = self.get_moai(id)?;
+        Ok(moai.full_name().clone())
     }
 
-    fn resolve_moai_links(&mut self) -> Result<(), String> {
-        if let Some(ref moais) = &self.moai {
-            if let Some(ref mut links) = &mut self.moai_link {
-                for link_vec in links.values_mut() {
-                    for link in link_vec {
-                        let (moai1_id, moai2_id) = link.moais();
-                        moais.get(moai1_id).ok_or_else(|| {
-                            format!("Moai '{}' referenced in moai_link not found", moai1_id)
-                        })?;
-                        moais.get(moai2_id).ok_or_else(|| {
-                            format!("Moai '{}' referenced in moai_link not found", moai2_id)
-                        })?;
-                    }
+    fn resolve_moai_links(&self) -> Result<(), RiverError> {
+        if let Some(ref links) = &self.moai_link {
+            for link_vec in links.values() {
+                for link in link_vec {
+                    let (moai1_id, moai2_id) = link.moais();
+                    self.get_moai(moai1_id)?;
+                    self.get_moai(moai2_id)?;
                 }
             }
-        } else if self.moai_link.is_some() {
-            return Err("Moai links exist but no moais are defined.".to_string());
         }
         Ok(())
     }
 
-    fn resolve_drifts(&mut self) -> Result<(), String> {
-        if let Some(ref moais) = &self.moai {
-            if let Some(ref mut drifts) = &mut self.drift {
-                for drift_vec in drifts.values_mut() {
-                    for drift in drift_vec {
-                        if let Some(moai_ids) = drift.moais() {
-                            for moai_id in moai_ids {
-                                moais.get(moai_id).ok_or_else(|| {
-                                    format!("Moai '{}' referenced in drift not found.", moai_id)
-                                })?;
-                            }
+    fn resolve_drifts(&self) -> Result<(), RiverError> {
+        if let Some(ref drifts) = &self.drift {
+            for drift_vec in drifts.values() {
+                for drift in drift_vec {
+                    if let Some(moai_ids) = drift.moais() {
+                        for moai_id in moai_ids {
+                            self.get_moai(moai_id)?;
                         }
                     }
                 }
@@ -287,25 +261,26 @@ impl Dao {
         Ok(())
     }
 
-    fn resolve_narratives(&self) -> Result<(), String> {
-        // Check if drift and moai exist and get their keys
+    fn resolve_narratives(&self) -> Result<(), RiverError> {
         let drift_keys = match &self.drift {
-            Some(drift) => drift.keys().collect::<HashSet<_>>(),
-            None => HashSet::new(),
+            Some(drift) => drift.keys().collect::<HashSet<&String>>(),
+            None => HashSet::<&String>::new(),
         };
 
         let moai_keys = match &self.moai {
-            Some(moai) => moai.keys().collect::<HashSet<_>>(),
-            None => HashSet::new(),
+            Some(moai) => moai.keys().collect::<HashSet<&String>>(),
+            None => HashSet::<&String>::new(),
         };
 
         // Find duplicates using HashSet intersection
-        let duplicates: Vec<_> = drift_keys.intersection(&moai_keys).collect();
+        let duplicates: Vec<&String> = drift_keys
+            .intersection(&moai_keys)
+            .map(|&key| key)
+            .collect();
 
         if !duplicates.is_empty() {
-            return Err(format!(
-                "Found duplicate keys in drift and moai: {:?}",
-                duplicates
+            return Err(RiverError::DuplicateKeysInDriftAndMoai(
+                duplicates.iter().map(|s| s.to_string()).collect(),
             ));
         }
 
@@ -316,20 +291,14 @@ impl Dao {
                 if let Some(subject) = narrative.subject() {
                     for id in subject {
                         if !all_id.contains(&id) {
-                            return Err(format!(
-                                "Drift '{}' referenced in narrative not found.",
-                                id
-                            ));
+                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                 }
                 if let Some(observer) = narrative.observer() {
                     for id in observer {
                         if !all_id.contains(&id) {
-                            return Err(format!(
-                                "Moai '{}' referenced in narrative not found.",
-                                id
-                            ));
+                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                 }
@@ -342,11 +311,18 @@ impl Dao {
         &self.story
     }
 
-    fn get_moai(&self, id: &String) -> Option<&Moai> {
-        self.moai.as_ref().and_then(|moais| moais.get(id))
+    fn get_moai(&self, id: &String) -> Result<&Moai, RiverError> {
+        if let Some(ref moais) = &self.moai {
+            let moai = moais
+                .get(id)
+                .ok_or_else(|| RiverError::MoaiNotDefined(id.clone()))?;
+            Ok(moai)
+        } else {
+            Err(RiverError::MoaisNotDefined)
+        }
     }
 
-    pub fn get_all_moais(&self) -> Result<Option<HashMap<String, JsonValue>>, String> {
+    pub fn get_all_moais(&self) -> Result<Option<HashMap<String, JsonValue>>, RiverError> {
         let result = self
             .moai
             .as_ref()
@@ -355,7 +331,7 @@ impl Dao {
                     .iter()
                     .map(|(id, moai)| {
                         let mut value = serde_json::to_value(moai)
-                            .map_err(|e| format!("Failed to serialize Moai {}: {}", id, e))?;
+                            .map_err(|e| RiverError::FailedToSerializeMoai(e))?;
                         if let JsonValue::Object(ref mut map) = &mut value {
                             if map.get("full_name").map_or(true, |v| {
                                 v.is_null() || v.as_str().is_some_and(|s| s.is_empty())
@@ -366,12 +342,14 @@ impl Dao {
                         Ok((id.clone(), value))
                     })
                     // 显式指定collect的类型参数
-                    .collect::<Result<HashMap<String, JsonValue>, String>>()
+                    .collect::<Result<HashMap<String, JsonValue>, RiverError>>()
             })
             .transpose()?;
         Ok(result)
     }
-    pub fn get_all_moai_links(&self) -> Result<Option<HashMap<String, serde_json::Value>>, String> {
+    pub fn get_all_moai_links(
+        &self,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, RiverError> {
         let result = self
             .moai_link
             .as_ref()
@@ -418,7 +396,7 @@ impl Dao {
 
                         Ok((key.clone(), moai_link_context))
                     })
-                    .collect::<Result<HashMap<String, serde_json::Value>, String>>()
+                    .collect::<Result<HashMap<String, serde_json::Value>, RiverError>>()
                 // Collect into Result
             })
             .transpose()?; // Handle the Option<Result<...>> -> Result<Option<...>>
@@ -431,7 +409,7 @@ impl Dao {
         moai: &Moai,
         start_time: &Phase,
         end_time: Option<&Phase>,
-    ) -> Result<serde_json::Value, String> {
+    ) -> Result<serde_json::Value, RiverError> {
         if let Some(base_time) = moai.base_time() {
             let mut moai_json = serde_json::json!({
                 "id": moai.id.clone(),
@@ -440,7 +418,7 @@ impl Dao {
             if let Some(end_time) = end_time {
                 let end_time_duration = sub_phase(&end_time, &base_time, self.date_mode())?;
                 moai_json["end_time_duration"] =
-                    serde_json::to_value(end_time_duration).map_err(|e| e.to_string())?;
+                    serde_json::to_value(end_time_duration).map_err(|e| RiverError::from(e))?;
             }
             Ok(moai_json)
         } else {
@@ -458,7 +436,7 @@ impl Dao {
         start_time: &Phase,
         end_time: Option<&Phase>,
         observed_moais: Option<&Vec<String>>,
-    ) -> Result<serde_json::Value, String> {
+    ) -> Result<serde_json::Value, RiverError> {
         let mut json_obj = serde_json::json!({
             "title": title.clone(),
             "start_time": start_time,
@@ -468,7 +446,8 @@ impl Dao {
             json_obj["description"] = serde_json::json!(description);
         }
         if let Some(end_time) = end_time {
-            json_obj["end_time"] = serde_json::to_value(end_time).map_err(|e| e.to_string())?;
+            json_obj["end_time"] =
+                serde_json::to_value(end_time).map_err(|e| RiverError::from(e))?;
             json_obj["end_time_dt"] = serde_json::Value::String(end_time.phase2iso8601()?);
         }
         let mut moais = Vec::new();
@@ -494,7 +473,7 @@ impl Dao {
         Ok(json_obj)
     }
 
-    pub fn drift_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
+    pub fn drift_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(cate_drifts) = self.drift.as_ref() {
             for (cate, drifts) in cate_drifts {
@@ -524,7 +503,7 @@ impl Dao {
         Ok(result_map)
     }
 
-    pub fn moai_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
+    pub fn moai_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         let all_drifts = self
             .drift
@@ -563,7 +542,7 @@ impl Dao {
         }
         Ok(result_map)
     }
-    pub fn narrative_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
+    pub fn narrative_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(narratives) = &self.narrative {
             for (id, narrative) in narratives.iter() {

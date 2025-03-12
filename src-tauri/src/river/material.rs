@@ -1,4 +1,5 @@
 use crate::river::dao::Moai;
+use crate::river::errors::RiverError;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumString;
 
@@ -30,7 +31,7 @@ pub enum Constellation {
     Sagittarius,
 }
 
-pub fn get_constellation(moai: &Moai) -> Result<Option<Constellation>, String> {
+pub fn get_constellation(moai: &Moai) -> Result<Option<Constellation>, RiverError> {
     let base_time = moai.base_time();
     match base_time {
         Some(base_time) => {
@@ -109,9 +110,9 @@ pub fn get_constellation(moai: &Moai) -> Result<Option<Constellation>, String> {
     }
 }
 
-pub fn get_material<F, M>(moai: &Moai, operation: F) -> Result<Option<M>, String>
+pub fn get_material<F, M>(moai: &Moai, operation: F) -> Result<Option<M>, RiverError>
 where
-    F: Fn(&Moai) -> Result<Option<M>, String>,
+    F: Fn(&Moai) -> Result<Option<M>, RiverError>,
 {
     operation(moai)
 }

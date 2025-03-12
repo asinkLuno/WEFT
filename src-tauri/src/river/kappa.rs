@@ -12,6 +12,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
+
+use super::errors::RiverError;
 #[derive(Default, Debug)]
 pub struct KappaFace {
     file_path: Option<PathBuf>,
@@ -27,11 +29,11 @@ impl KappaFace {
         self.receiver.take()
     }
 
-    fn init_debouncer(&mut self) -> Result<(), String> {
+    fn init_debouncer(&mut self) -> Result<(), RiverError> {
         if self.debouncer.is_none() || self.receiver.is_none() {
             let (tx, rx) = std::sync::mpsc::channel();
             let debouncer = new_debouncer(std::time::Duration::from_millis(250), None, tx)
-                .map_err(|e| format!("Failed to create watcher: {}", e))?;
+                .map_err(|e| RiverError::FailedInNotify(e))?;
 
             self.debouncer = Some(debouncer);
             self.receiver = Some(rx);
@@ -39,13 +41,13 @@ impl KappaFace {
         Ok(())
     }
 
-    pub fn watch_file(&mut self, file_path: &str) -> Result<(), String> {
+    pub fn watch_file(&mut self, file_path: &str) -> Result<(), RiverError> {
         self.init_debouncer()?;
         let file_path = PathBuf::from(file_path);
         log::info!("Setting file_path to {:?}", file_path);
 
         // Validate Dao creation to avoid unwrap
-        let dao = Dao::new(&file_path).map_err(|e| format!("Failed to create Dao: {}", e))?;
+        let dao = Dao::new(&file_path)?;
 
         self.file_path = Some(file_path.clone());
         self.dao = Some(dao);
@@ -53,9 +55,9 @@ impl KappaFace {
         if let Some(debouncer) = &mut self.debouncer {
             debouncer
                 .watch(&file_path, RecursiveMode::NonRecursive)
-                .map_err(|e| format!("Failed to watch file: {}", e))?;
+                .map_err(|e| RiverError::FailedInNotify(e))?;
         } else {
-            return Err("Debouncer is not initialized".to_string());
+            return Err(RiverError::DebouncerNotInitialized);
         }
 
         Ok(())
@@ -70,22 +72,17 @@ impl KappaFace {
         self.receiver = None;
     }
 
-    pub fn update_dao(&mut self) -> Result<(), String> {
+    pub fn update_dao(&mut self) -> Result<(), RiverError> {
         let file_path: &PathBuf = match &self.file_path {
             Some(p) => p,
             None => {
-                return Err("update_dao 失败：尚未设置 file_path".to_string());
+                return Err(RiverError::DaoNotInitialized);
             }
         };
 
-        match Dao::new(file_path) {
-            Ok(dao) => {
-                self.dao = Some(dao);
-
-                Ok(())
-            }
-            Err(e) => Err(format!("Failed to re-read Dao: {:?}", e)),
-        }
+        let dao = Dao::new(file_path)?;
+        self.dao = Some(dao);
+        Ok(())
     }
 }
 
@@ -95,7 +92,7 @@ pub fn watch_file(app_handle: tauri::AppHandle, file_path: String) -> Result<(),
     log::info!("start watching file");
     let mut kf = state.lock().map_err(|e| e.to_string())?;
 
-    kf.watch_file(&file_path)?;
+    kf.watch_file(&file_path).map_err(|e| e.to_string())?;
 
     let app_handle_clone = app_handle.clone();
     // Take the receiver from the state
@@ -116,7 +113,7 @@ pub fn watch_file(app_handle: tauri::AppHandle, file_path: String) -> Result<(),
                                 kf.update_dao()
                                     .map_err(|e| {
                                         app_handle_clone
-                                            .emit("dao-update-failed", e)
+                                            .emit("dao-update-failed", e.to_string())
                                             .unwrap_or_else(|emit_err| {
                                                 log::error!("Emit failed: {}", emit_err)
                                             })
@@ -197,7 +194,7 @@ pub async fn get_moai_full_name(
 ) -> Result<String, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.get_moai_full_name(&id)
+    dao.get_moai_full_name(&id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -206,7 +203,7 @@ pub async fn get_all_moais(
 ) -> Result<Option<HashMap<String, JsonValue>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.get_all_moais()
+    dao.get_all_moais().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -216,7 +213,7 @@ pub async fn get_all_moai_links(
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
 
-    dao.get_all_moai_links()
+    dao.get_all_moai_links().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -225,7 +222,7 @@ pub async fn drift_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.drift_flow()
+    dao.drift_flow().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -234,7 +231,7 @@ pub async fn moai_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.moai_flow()
+    dao.moai_flow().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -243,5 +240,5 @@ pub async fn narrative_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.narrative_flow()
+    dao.narrative_flow().map_err(|e| e.to_string())
 }
