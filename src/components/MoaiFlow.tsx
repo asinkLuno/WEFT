@@ -6,10 +6,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
-
 const MoaiFlow: React.FC = () => {
     const navigate = useNavigate();
-    const [moaiFlowList, setMoaiFlowList] = useState<CateFlowContextType | undefined>(undefined);
+    const [moaiFlowList, setMoaiFlowList] = useState<
+        CateFlowContextType | undefined
+    >(undefined);
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
@@ -23,9 +24,12 @@ const MoaiFlow: React.FC = () => {
 
         let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<CateFlowContextType>('file-changed', async () => {
-                await fetchMoaiFlowList();
-            });
+            unlisten = await listen<CateFlowContextType>(
+                'file-changed',
+                async () => {
+                    await fetchMoaiFlowList();
+                },
+            );
         };
         setupListener();
 
@@ -75,8 +79,8 @@ const MoaiFlow: React.FC = () => {
     };
     if (!moaiFlowList || Object.keys(moaiFlowList).length === 0) {
         return (
-            <div className="flex h-full items-center justify-center bg-background">
-                <p className="text-xl text-muted-foreground">
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
                     暂无可用MoaiFlow
                 </p>
             </div>

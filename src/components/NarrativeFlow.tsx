@@ -9,11 +9,12 @@ import { UnlistenFn } from '@tauri-apps/api/event';
 
 const NarrativeFlow: React.FC = () => {
     const navigate = useNavigate();
-    const [narrativeFlowList, setNarrativeFlowList] = useState<CateFlowContextType | undefined>(undefined);
+    const [narrativeFlowList, setNarrativeFlowList] = useState<
+        CateFlowContextType | undefined
+    >(undefined);
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
-
     useEffect(() => {
         const fetchNarrativeFlowList = async () => {
             const result = await invoke<CateFlowContextType>('narrative_flow');
@@ -23,9 +24,12 @@ const NarrativeFlow: React.FC = () => {
 
         let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<CateFlowContextType>('file-changed', async () => {
-                await fetchNarrativeFlowList();
-            });
+            unlisten = await listen<CateFlowContextType>(
+                'file-changed',
+                async () => {
+                    await fetchNarrativeFlowList();
+                },
+            );
         };
         setupListener();
 
@@ -55,7 +59,9 @@ const NarrativeFlow: React.FC = () => {
 
     useEffect(() => {
         if (!narrativeFlowList || !title) return;
-        const index = Object.keys(narrativeFlowList).findIndex((t) => t === title);
+        const index = Object.keys(narrativeFlowList).findIndex(
+            (t) => t === title,
+        );
         if (index !== -1) {
             setActiveTab(index);
         }
@@ -72,8 +78,8 @@ const NarrativeFlow: React.FC = () => {
 
     if (!narrativeFlowList || Object.keys(narrativeFlowList).length === 0) {
         return (
-            <div className="flex h-full items-center justify-center bg-background">
-                <p className="text-xl text-muted-foreground">
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
                     暂无可用narrativeFlow
                 </p>
             </div>

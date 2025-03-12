@@ -11,7 +11,6 @@ export interface StoryContextType {
 
 const StoryInfo: React.FC = () => {
     const [story, setStory] = useState<StoryContextType | null>(null);
-
     useEffect(() => {
         const fetchStory = async () => {
             try {
@@ -21,20 +20,22 @@ const StoryInfo: React.FC = () => {
                 logError(`Failed to fetch story: ${error}`);
             }
         };
-        
+
         fetchStory();
-        
+
         // 监听故事变化
         let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<StoryContextType>('file-changed', async () => {
-                await fetchStory();
-            });
+            unlisten = await listen<StoryContextType>(
+                'file-changed',
+                async () => {
+                    await fetchStory();
+                },
+            );
         };
-        
+
         setupListener();
-        
-        // 组件卸载时清理事件监听
+
         return () => {
             if (unlisten) {
                 unlisten();
@@ -45,16 +46,16 @@ const StoryInfo: React.FC = () => {
     if (!story) {
         return (
             <div className="flex h-full items-center justify-center">
-                <p className="text-xl text-muted-foreground">暂无可用Story</p>
+                <p className="text-muted-foreground text-xl">暂无可用Story</p>
             </div>
         );
     }
 
     return (
         <div className="flex flex-col overflow-auto p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4">
-                <Book className="h-6 w-6 text-primary" />
-                <h1 className="font-bold text-2xl text-primary">
+            <div className="mb-4 flex items-center gap-3">
+                <Book className="text-primary h-6 w-6" />
+                <h1 className="text-primary text-2xl font-bold">
                     {story.title || 'Untitled Story'}
                 </h1>
             </div>
@@ -62,10 +63,10 @@ const StoryInfo: React.FC = () => {
 
             {story.description && (
                 <div className="mt-2">
-                    <div className="flex gap-3 items-start">
-                        <FileText className="h-5 w-5 mt-1 text-secondary" />
+                    <div className="flex items-start gap-3">
+                        <FileText className="text-secondary mt-1 h-5 w-5" />
                         <div className="flex-1">
-                            <p className="text-base leading-relaxed text-foreground">
+                            <p className="text-foreground text-base leading-relaxed">
                                 {story.description}
                             </p>
                         </div>

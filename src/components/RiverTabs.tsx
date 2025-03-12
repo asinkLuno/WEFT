@@ -60,7 +60,6 @@ export default function RiverTabs() {
         return tabs.findIndex((tab) => path.includes(tab.path)) || 0;
     });
 
-
     useEffect(() => {
         const currentTab = tabs[activeTab];
         if (currentTab.fetchData) {
@@ -69,8 +68,7 @@ export default function RiverTabs() {
                 navigate('/');
             });
         }
-    }, [activeTab, navigate ]);
-
+    }, [activeTab, navigate]);
     useEffect(() => {
         const setupListeners = async () => {
             try {
@@ -97,10 +95,10 @@ export default function RiverTabs() {
         };
 
         setupListeners();
-    }, [activeTab, setFilePath,  navigate]);
+    }, [activeTab, setFilePath, navigate]);
 
     return (
-        <div className="flex flex-col overflow-auto h-full w-full">
+        <div className="flex h-full w-full flex-col overflow-auto">
             <Tabs
                 defaultValue={String(activeTab)}
                 onValueChange={(value) => setActiveTab(Number(value))}

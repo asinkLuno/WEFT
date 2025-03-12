@@ -32,12 +32,12 @@ const RiverVerticalTabs: React.FC<RiverVerticalTabsProps> = ({
     // Create a mapping from sorted indices to original indices
     const sortedToOriginalIndex = React.useMemo(() => {
         if (!sortTabs) return null;
-        return sortedTabs.map(sortedTab => 
-            tabs.findIndex(originalTab => 
-                (sortedTab.key && originalTab.key) 
-                    ? sortedTab.key === originalTab.key 
-                    : sortedTab.label === originalTab.label
-            )
+        return sortedTabs.map((sortedTab) =>
+            tabs.findIndex((originalTab) =>
+                sortedTab.key && originalTab.key
+                    ? sortedTab.key === originalTab.key
+                    : sortedTab.label === originalTab.label,
+            ),
         );
     }, [tabs, sortedTabs, sortTabs]);
 
@@ -53,10 +53,10 @@ const RiverVerticalTabs: React.FC<RiverVerticalTabsProps> = ({
     // Get the current sorted index from the original value
     const currentSortedValue = React.useMemo(() => {
         if (!sortTabs || !tabs[value]) return value;
-        return sortedTabs.findIndex(sortedTab => 
-            (tabs[value].key && sortedTab.key) 
-                ? tabs[value].key === sortedTab.key 
-                : tabs[value].label === sortedTab.label
+        return sortedTabs.findIndex((sortedTab) =>
+            tabs[value].key && sortedTab.key
+                ? tabs[value].key === sortedTab.key
+                : tabs[value].label === sortedTab.label,
         );
     }, [sortTabs, tabs, value, sortedTabs]);
 
@@ -64,18 +64,20 @@ const RiverVerticalTabs: React.FC<RiverVerticalTabsProps> = ({
     const currentTabValue = String(currentSortedValue);
 
     return (
-        <div className="flex flex-1 h-[calc(100vh-28px-48px)] overflow-hidden">
+        <div className="flex h-[calc(100vh-28px-48px)] flex-1 overflow-hidden">
             <Tabs
                 orientation="vertical"
                 value={currentTabValue}
-                onValueChange={(newValue) => handleChange({} as React.SyntheticEvent, parseInt(newValue))}
-                className="flex flex-row h-full"
+                onValueChange={(newValue) =>
+                    handleChange({} as React.SyntheticEvent, parseInt(newValue))
+                }
+                className="flex h-full flex-row"
             >
-                <TabsList 
-                    className="flex flex-col h-full w-[225px] bg-background rounded-none justify-start items-stretch border-r overflow-auto no-scrollbar" 
-                    style={{ 
-                        scrollbarWidth: 'none', /* Firefox */
-                        msOverflowStyle: 'none',  /* IE and Edge */
+                <TabsList
+                    className="bg-background no-scrollbar flex h-full w-[225px] flex-col items-stretch justify-start overflow-auto rounded-none border-r"
+                    style={{
+                        scrollbarWidth: 'none' /* Firefox */,
+                        msOverflowStyle: 'none' /* IE and Edge */,
                     }}
                     aria-label="River vertical tabs"
                 >
@@ -83,24 +85,26 @@ const RiverVerticalTabs: React.FC<RiverVerticalTabsProps> = ({
                         <TabsTrigger
                             key={tab.key || `tab-${index}`}
                             value={String(index)}
-                            className="justify-start text-left px-4 py-2 rounded-none data-[state=active]:bg-muted"
+                            className="data-[state=active]:bg-muted justify-start rounded-none px-4 py-2 text-left"
                         >
                             {tab.label}
                         </TabsTrigger>
                     ))}
                 </TabsList>
-                <div className="flex-1 h-full">
+                <div className="h-full flex-1">
                     {tabs.map((tab, index) => (
                         <TabsContent
                             key={tab.key || `panel-${index}`}
-                            value={String(index === value ? currentSortedValue : -1)} // Only show if this tab is active
+                            value={String(
+                                index === value ? currentSortedValue : -1,
+                            )} // Only show if this tab is active
                             className={cn(
-                                "p-3 h-full w-full", 
-                                index !== value && "hidden" // Hide inactive tabs
+                                'h-full w-full p-3',
+                                index !== value && 'hidden', // Hide inactive tabs
                             )}
                         >
-                            <div className="h-[calc(100vh-48px-48px)] w-[calc(100vw-225px-48px)] overflow-auto ">
-                            {tab.content}
+                            <div className="h-[calc(100vh-48px-48px)] w-[calc(100vw-225px-48px)] overflow-auto">
+                                {tab.content}
                             </div>
                         </TabsContent>
                     ))}

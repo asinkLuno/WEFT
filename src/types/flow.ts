@@ -72,4 +72,4 @@ export const processFlowData = (rawData: any): CateFlowContextType => {
     });
 
     return processedData;
-}; 
+};

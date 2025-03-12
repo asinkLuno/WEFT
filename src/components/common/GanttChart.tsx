@@ -195,7 +195,6 @@ const Timeline = React.memo(
         );
     },
 );
-
 // Add this component near the top of your file
 const MoaiName: React.FC<{ id: string }> = ({ id }) => {
     const [name, setName] = useState<string>(id);

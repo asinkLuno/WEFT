@@ -8,7 +8,6 @@ import { Terminal, FileUp } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logSuccess, logError, logInfo } from '@/utils/logger';
-
 // Letter variations moved outside the component
 const variations = {
     r: ['ℝ', 'ℜ', 'ℛ', '℟', 'ჩ', 'ᖇ', 'Ꮢ', 'ᚱ'],
@@ -19,10 +18,14 @@ const variations = {
 
 // Generate a random stylized River
 const generateStylizedRiver = () => {
-    const randomR = variations.r[Math.floor(Math.random() * variations.r.length)];
-    const randomI = variations.i[Math.floor(Math.random() * variations.i.length)];
-    const randomV = variations.v[Math.floor(Math.random() * variations.v.length)];
-    const randomE = variations.e[Math.floor(Math.random() * variations.e.length)];
+    const randomR =
+        variations.r[Math.floor(Math.random() * variations.r.length)];
+    const randomI =
+        variations.i[Math.floor(Math.random() * variations.i.length)];
+    const randomV =
+        variations.v[Math.floor(Math.random() * variations.v.length)];
+    const randomE =
+        variations.e[Math.floor(Math.random() * variations.e.length)];
     return `${randomR}${randomI}${randomV}${randomE}r`;
 };
 
@@ -115,22 +118,22 @@ const Home: React.FC = () => {
 
     // 组件渲染部分
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-            <div className="text-center space-y-2">
+        <div className="flex min-h-screen flex-col items-center justify-center">
+            <div className="space-y-2 text-center">
                 <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
                     Welcome to{' '}
                     <span className="text-blue-700">{displayText}</span>
                 </h1>
-                <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight text-muted-foreground">
+                <h3 className="text-muted-foreground scroll-m-20 text-2xl font-semibold tracking-tight">
                     请选择一个YAML/YML文件开始操作
                 </h3>
             </div>
 
-            <div className="flex flex-col items-center w-full max-w-md space-y-6">
+            <div className="flex w-full max-w-md flex-col items-center space-y-6">
                 <Button
                     size="lg"
                     onClick={handleFileSelect}
-                    className="w-full flex items-center justify-center gap-2"
+                    className="flex w-full items-center justify-center gap-2"
                 >
                     <FileUp className="h-5 w-5" />
                     选择YAML文件

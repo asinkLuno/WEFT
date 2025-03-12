@@ -22,23 +22,28 @@ export interface MoaiLinkContextType {
 
 type MoaiLinkListContextType = { [key: string]: MoaiLinkContextType };
 
-
 const MoaiLink: React.FC = () => {
     const navigate = useNavigate();
-    const [moaiLinkList, setMoaiLinkList] = useState<MoaiLinkListContextType | undefined>(undefined);
+    const [moaiLinkList, setMoaiLinkList] = useState<
+        MoaiLinkListContextType | undefined
+    >(undefined);
     const [activeTab, setActiveTab] = useState(0);
 
     useEffect(() => {
         const fetchMoaiLinkList = async () => {
-            const result = await invoke<MoaiLinkListContextType>('get_all_moai_links');
+            const result =
+                await invoke<MoaiLinkListContextType>('get_all_moai_links');
             setMoaiLinkList(result);
         };
         fetchMoaiLinkList();
         let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<MoaiLinkListContextType>('file-changed', async () => {
-                await fetchMoaiLinkList();
-            });
+            unlisten = await listen<MoaiLinkListContextType>(
+                'file-changed',
+                async () => {
+                    await fetchMoaiLinkList();
+                },
+            );
         };
         setupListener();
         return () => {
@@ -79,7 +84,7 @@ const MoaiLink: React.FC = () => {
                             moai_links={data.moai_links}
                         />
                     ) : (
-                        <div className="text-muted-foreground text-center p-2">
+                        <div className="text-muted-foreground p-2 text-center">
                             No graph data available for this Moai. Please check
                             that both nodes and links are defined.
                         </div>
@@ -92,8 +97,8 @@ const MoaiLink: React.FC = () => {
     // If there's no data at all, show a message
     if (!moaiLinkList || Object.keys(moaiLinkList).length === 0) {
         return (
-            <div className="flex h-full items-center justify-center bg-background">
-                <p className="text-xl text-muted-foreground">
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
                     暂无可用MoaiLink
                 </p>
             </div>

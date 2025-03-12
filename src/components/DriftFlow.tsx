@@ -6,10 +6,11 @@ import GanttChart from './common/GanttChart';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
-
 const DriftFlow: React.FC = () => {
     const navigate = useNavigate();
-    const [driftFlowList, setDriftFlowList] = useState<CateFlowContextType | undefined>(undefined);
+    const [driftFlowList, setDriftFlowList] = useState<
+        CateFlowContextType | undefined
+    >(undefined);
     const { title } = useParams<{ title?: string }>();
     const [activeTab, setActiveTab] = useState(0);
     const [tabs, setTabs] = useState<any[]>([]);
@@ -23,9 +24,12 @@ const DriftFlow: React.FC = () => {
 
         let unlisten: UnlistenFn;
         const setupListener = async () => {
-            unlisten = await listen<CateFlowContextType>('file-changed', async () => {
-                await fetchDriftFlowList();
-            });
+            unlisten = await listen<CateFlowContextType>(
+                'file-changed',
+                async () => {
+                    await fetchDriftFlowList();
+                },
+            );
         };
         setupListener();
 
@@ -72,8 +76,8 @@ const DriftFlow: React.FC = () => {
 
     if (!driftFlowList || Object.keys(driftFlowList).length === 0) {
         return (
-            <div className="flex h-full items-center justify-center bg-background">
-                <p className="text-xl text-muted-foreground">
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
                     暂无可用DriftFlow
                 </p>
             </div>

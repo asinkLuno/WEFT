@@ -15,7 +15,6 @@ interface SimulationNode extends d3.SimulationNodeDatum {
     x?: number;
     y?: number;
 }
-
 interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
     from: string;
     to: string;
@@ -24,7 +23,6 @@ interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
     source: string | SimulationNode;
     target: string | SimulationNode;
 }
-
 
 const calculateLinkPath = (d: SimulationLink): string => {
     const sourceNode = d.source as SimulationNode;

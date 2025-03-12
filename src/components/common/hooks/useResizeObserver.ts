@@ -1,39 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface DimensionObject {
-  width: number | undefined;
-  height: number | undefined;
+    width: number | undefined;
+    height: number | undefined;
 }
 
 export function useResizeObserver<T extends HTMLElement>(): [
-  React.RefObject<T>,
-  DimensionObject
+    React.RefObject<T>,
+    DimensionObject,
 ] {
-  const ref = useRef<T>(null);
-  const [dimensions, setDimensions] = useState<DimensionObject>({
-    width: undefined,
-    height: undefined,
-  });
-
-  useEffect(() => {
-    const observeTarget = ref.current;
-    if (!observeTarget) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      entries.forEach((entry) => {
-        setDimensions({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
-      });
+    const ref = useRef<T>(null);
+    const [dimensions, setDimensions] = useState<DimensionObject>({
+        width: undefined,
+        height: undefined,
     });
 
-    resizeObserver.observe(observeTarget);
+    useEffect(() => {
+        const observeTarget = ref.current;
+        if (!observeTarget) return;
 
-    return () => {
-      resizeObserver.unobserve(observeTarget);
-    };
-  }, []);
+        const resizeObserver = new ResizeObserver((entries) => {
+            entries.forEach((entry) => {
+                setDimensions({
+                    width: entry.contentRect.width,
+                    height: entry.contentRect.height,
+                });
+            });
+        });
 
-  return [ref, dimensions];
+        resizeObserver.observe(observeTarget);
+
+        return () => {
+            resizeObserver.unobserve(observeTarget);
+        };
+    }, []);
+
+    return [ref, dimensions];
 }
