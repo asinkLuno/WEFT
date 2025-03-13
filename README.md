@@ -1,127 +1,123 @@
+<div align="center">English | <a href="./README_zh.md">中文</a></div>
+
 # River
 
-> 子曰，逝者如斯夫，不舍昼夜。
+> 子在川上曰：逝者如斯夫，不舍昼夜。
 
-River 是一款专为创作者设计的以时间驱动的写作工具。
+River is a timeline-driven writing tool designed specifically for creators.
 
-我们观察到，现有工具的时间轴使用标准化时间，对于现实主义题材作品可以，但如果创作架空世界作品就十分不方便了。因此我们重新设计了时间算法，让用户方便地管理作品中的时间。
+We observed that existing tools use standardized timelines, which work for realistic themes but become inconvenient when creating works set in fictional universes. Therefore, we redesigned the time calculation algorithm to help users easily manage temporal elements in their works.
 
-另外对于参与事件的实体，我们不对字段做过多限制，方便用户自定义。
+For entities involved in events, we avoid imposing excessive field restrictions to allow user customization.
 
-最后由于开发成本限制，我们放弃了输入前端，而是采用读取 YAML 文件作为数据输入，只做数据展示前端的设计。
+Due to development constraints, we opted to use YAML files as data input instead of building a dedicated input interface, focusing solely on data visualization.
 
-## 使用
+## Usage
 
-当你打开 River 时，需要绑定一个 YAML 文件，然后可以自由编辑 YAML 文件。当 YAML 文件变更时，River 中的数据会一起刷新。
+When opening River, you need to bind a YAML file. You can freely edit the YAML file, and River will automatically refresh its data when changes are detected.
 
-我们使用 YAML 作为数据文件，需要你了解并掌握 YAML 语法。
+Using YAML as the data format requires understanding YAML syntax. A key advantage is its support for references, as demonstrated in the time definition section.
 
-使用 YAML 作为数据文件的一个好处是方便引用，你可以在后面时间定义的章节中看到。
+## Time Calculation
 
-## 时间计算
+We employ a custom time definition system rather than standard time libraries.
 
-我们采用自己的时间定义方法，不使用标准时间库。
-
-一个完整的时间的定义为：
+A complete time definition follows this format:
 
 ```yaml
-[[0, 1, 2, 3, 4, 5], '基础时间名', 1, 2, 3, 4, 5, 6]
+[[0, 1, 2, 3, 4, 5], 'BaseTimeName', 1, 2, 3, 4, 5, 6]
 ```
 
-其中`[0, 1, 2]`是基础时间，后面的数字为相对时间，绝对时间是由基础时间加上相对时间得到的，中间还可以定义基础时间名。如果数组中不定义基础时间名字符串，我们最终会显示绝对时间，即基础时间+相对时间；如果定义了基础时间名字符串，那么只会显示解嵌套之后的相对时间。
+Where `[0, 1, 2]` represents the base time, and subsequent numbers are relative offsets. Absolute time is calculated as base time plus relative offsets. If a base time name string is included, we display the resolved relative time (e.g., "Year 2 of Tianlin"); otherwise, absolute time is shown (e.g., "2020 AD").
 
-比如天临元年是 2019 年，如果你想表述 2020 年，即天临二年，`[[2018],"天临",2]`,这样就会被显示为”天临 2 年“；但如果你定义`[[2018],2]`，这样就会被显示为”2020 年“了。
-
-时间数组最长为 6 位，表示年月、月、日、时、分、秒。任意位数都支持零、正数、负数……可以嵌套累积，比如我可以给天临二年加一年减 3 秒：
+Time arrays support up to 6 dimensions (year, month, day, hour, minute, second). All positions accept zero, positive, and negative values. Nested calculations are permitted:
 
 ```yaml
 [[[2018], '天临', 2], 1, 0, 0, 0, 0, -3]
 ```
 
-当然你可能有疑问，谁会写这么复杂的定义呢？但是 YAML 是支持引用变量的。也许某件事情的时间与另外一件有关联，你就可以使用引用变量嵌套计算了。注意在嵌套中，只能有一个**基础时间**和一个**基础时间名**。
+YAML's variable reference capability enables complex temporal relationships between events. Note that nesting allows only one **base time** and one **base time name**.
 
-## 数据定义
+## Data Definition
 
-> 我们提供了一个样例文件：[story_1.yml](examples/story_1.yml)。
+> Sample file: [story_1.yml](examples/story_1.yml)
 
 ### Story
 
-定义故事的基本介绍，必须要有。该配置包含以下两个配置项：
+Required configuration for basic story information:
 
-|    字段     |                                            定义                                            | 是否必须 |
-| :---------: | :----------------------------------------------------------------------------------------: | :------: |
-|    title    |                                            标题                                            |    是    |
-| description |                                            简介                                            |    否    |
-|  date_mode  | 时间模式，可选格里高利历（`Gregorian`）或一个简化版本中国农历（`Chinese`），默认格里高利历 |    否    |
+| Field       | Definition                                                                    | Required |
+| ----------- | ----------------------------------------------------------------------------- | -------- |
+| title       | Story title                                                                   | Yes      |
+| description | Story summary                                                                 | No       |
+| date_mode   | Calendar system: `Gregorian` (default) or simplified `Chinese` lunar calendar | No       |
 
-一个样例如下：
+Example:
 
 ```yaml
 story:
     title: story_1
-    description: story_1，采用格里高利历纪年。
+    description: story_1 using Gregorian calendar.
     date_mode: 'Gregorian'
 ```
 
 ### Moai
 
-该关键字用于定义叙述实体。
+Entities in narratives. Reserved properties:
 
-预留属性为：
+| Field       | Definition                                | Required |
+| ----------- | ----------------------------------------- | -------- |
+| full_name   | Display name (shows ID if undefined)      | No       |
+| base_time   | Reference time for event calculations     | No       |
+| description | Entity description                        | No       |
+| juncture    | Timeline of experiences (narrative-ready) | No       |
+| material    | Attribute list (WIP)                      | No       |
 
-|     字段      |                  定义                  | 是否必须 |
-| :-----------: | :------------------------------------: | :------: |
-|  `full_name`  |     全名，如果不定义前端展示为`id`     |    否    |
-|  `base_time`  | 基准时间，后续在事件中用于计算时间间隔 |    否    |
-| `description` |                实体描述                |    否    |
-|  `juncture`   |         实体经历，可以作为叙述         |    否    |
-|  `material`   |           属性列表，开发中……           |    否    |
-
-其他的属性字段你可以自由添加，我们会将它们展示在 Moai 选项卡中。
+Additional custom fields are allowed and will be displayed in the Moai tab.
 
 ### MoaiLink
 
-|      字段       |         定义          | 是否必须 |
-| :-------------: | :-------------------: | :------: |
-|     `moais`     | 实体`id`，必须为 2 个 |    是    |
-|   `relations`   |         关系          |    是    |
-| `bidirectional` | 是否双向关系，默认否  |    否    |
+| Field         | Definition                             | Required |
+| ------------- | -------------------------------------- | -------- |
+| moais         | Two entity IDs                         | Yes      |
+| relations     | Relationship type                      | Yes      |
+| bidirectional | Whether bidirectional (default: false) | No       |
 
 ### Drift
 
-|     字段      |         定义          | 是否必须 |
-| :-----------: | :-------------------: | :------: |
-|    `title`    | 标题，不超过 100 个字 |    是    |
-| `description` |         描述          |    否    |
-| `start_time`  |       开始时间        |    是    |
-|  `end_time`   |       结束时间        |    否    |
-|    `moais`    |       参与实体        |    否    |
+| Field       | Definition              | Required |
+| ----------- | ----------------------- | -------- |
+| title       | Title (≤100 characters) | Yes      |
+| description | Event description       | No       |
+| start_time  | Start time              | Yes      |
+| end_time    | End time                | No       |
+| moais       | Involved entities       | No       |
 
-### narrative
+### Narrative
 
-你也许想把一系列的 Drift 聚合起来，或者把某人作为一系列事件的观察者，可以在这里定义你的叙述视角。
+Group Drift events or establish observer perspectives:
 
-|    字段    |    定义    | 是否必须 |
-| :--------: | :--------: | :------: |
-| `subject`  | 被观察对象 |    是    |
-| `observer` |   观察者   |    否    |
+| Field    | Definition      | Required |
+| -------- | --------------- | -------- |
+| subject  | Observed entity | Yes      |
+| observer | Observer entity | No       |
 
 ### 🚧 TODO
 
-- [ ] 国际化多语言支持
-    - [x] 前端界面
-        - [x] 中文
-        - [x] 英文
-        - [x] 日文
-        - [x] 文言文
-    - [ ] 后端错误码
-- [x] 最近打开文件历史
-- [ ] 自定义历法系统
-- [ ] Moai Juncture 按时间排序
-- [ ] 各种图表支持下载
+- [ ] Internationalization
+    - [x] UI localization
+        - [x] Chinese
+        - [x] English
+        - [x] Japanese
+    - [ ] Error code localization
+- [x] Recently opened files history
+- [ ] Custom calendar systems
+- [ ] Chronological sorting for Moai Junctures
+- [ ] Chart export functionality
 
-## ⚠️ 已知缺陷
+## ⚠️ Known Issues
 
-- Linux 系统需手动处理 GTK 依赖
+- Linux systems require manual GTK dependency handling
+- Time range limitation: ~271,821 BCE to 275,760 CE
 
-- 时间范围限制：约公元前 271,821 年 至 公元 275,760 年
+---
