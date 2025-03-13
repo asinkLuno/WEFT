@@ -84,7 +84,10 @@ Entities in narratives. Reserved properties:
 | juncture    | Timeline of experiences (narrative-ready) | No       |
 | material    | Attribute list (WIP)                      | No       |
 
-Additional custom fields are allowed and will be displayed in the Moai tab.
+Additional custom fields are allowed and will be displayed in the Moai tab：
+
+<img width="912" alt="截屏2025-03-13 22 34 57" src="https://github.com/user-attachments/assets/715b2d34-7c1a-4ccb-8f57-46d2fcf83033" />
+
 
 ### MoaiLink
 
@@ -93,6 +96,9 @@ Additional custom fields are allowed and will be displayed in the Moai tab.
 | moais         | Two entity IDs                         | Yes      |
 | relations     | Relationship type                      | Yes      |
 | bidirectional | Whether bidirectional (default: false) | No       |
+
+<img width="1292" alt="截屏2025-03-13 22 32 59" src="https://github.com/user-attachments/assets/56c7a1a1-8639-4e57-b9f6-3790830b666a" />
+
 
 ### Drift
 
@@ -103,6 +109,9 @@ Additional custom fields are allowed and will be displayed in the Moai tab.
 | start_time  | Start time              | Yes      |
 | end_time    | End time                | No       |
 | moais       | Involved entities       | No       |
+
+<img width="1292" alt="截屏2025-03-13 22 33 47" src="https://github.com/user-attachments/assets/bb6a071d-a4cf-455a-a4cf-35742e6b278f" />
+
 
 ### Narrative
 
