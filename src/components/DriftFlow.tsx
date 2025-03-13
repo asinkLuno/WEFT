@@ -6,6 +6,8 @@ import GanttChart from './common/GanttChart';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
+import { useTranslation } from 'react-i18next';
+
 const DriftFlow: React.FC = () => {
     const navigate = useNavigate();
     const [driftFlowList, setDriftFlowList] = useState<
@@ -17,6 +19,7 @@ const DriftFlow: React.FC = () => {
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchDriftFlowList = async () => {
@@ -87,7 +90,7 @@ const DriftFlow: React.FC = () => {
         return (
             <div className="bg-background flex h-full items-center justify-center">
                 <p className="text-muted-foreground text-xl">
-                    暂无可用DriftFlow
+                    {t('driftFlow.noData')}
                 </p>
             </div>
         );

@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { humanizeTime, PhaseContextType } from '../types/flow';
+import { humanizeTime, PhaseContextType, SupportedLocale } from '../types/flow';
 import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, useRef } from 'react';
 import { logError } from '@/utils/logger';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 export interface MoaiContextType {
     full_name?: string;
@@ -47,6 +49,8 @@ const MoaiList: React.FC = () => {
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
+    const { t } = useTranslation();
+    const locale = i18n.language;
 
     // 获取Moai列表数据
     useEffect(() => {
@@ -111,7 +115,10 @@ const MoaiList: React.FC = () => {
                                 {moai.base_time && (
                                     <p className="text-muted-foreground text-sm">
                                         Base Time:{' '}
-                                        {humanizeTime(moai.base_time)}
+                                        {humanizeTime(
+                                            moai.base_time,
+                                            locale as SupportedLocale,
+                                        )}
                                     </p>
                                 )}
 
@@ -165,7 +172,10 @@ const MoaiList: React.FC = () => {
                                                         className="text-sm"
                                                     >
                                                         {key}:{' '}
-                                                        {humanizeTime(value)}
+                                                        {humanizeTime(
+                                                            value,
+                                                            locale as SupportedLocale,
+                                                        )}
                                                     </p>
                                                 ),
                                             )}
@@ -195,7 +205,9 @@ const MoaiList: React.FC = () => {
     if (!moaiList || Object.keys(moaiList).length === 0) {
         return (
             <div className="bg-background flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-xl">暂无可用Moai</p>
+                <p className="text-muted-foreground text-xl">
+                    {t('moai.noData')}
+                </p>
             </div>
         );
     }

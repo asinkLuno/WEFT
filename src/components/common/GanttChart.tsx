@@ -7,10 +7,16 @@ import React, {
 } from 'react';
 import { scaleTime, scaleBand } from 'd3-scale';
 import { timeFormat } from 'd3-time-format';
-import { FlowContextType, humanizeTime } from '../../types/flow';
+import {
+    FlowContextType,
+    humanizeTime,
+    SupportedLocale,
+} from '../../types/flow';
 import { useResizeObserver } from './hooks/useResizeObserver';
 import './GanttChart.css';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from '@/i18n';
+import { useTranslation } from 'react-i18next';
 
 // Throttle function to limit the rate of function calls
 const throttle = <T extends (...args: any[]) => any>(
@@ -223,6 +229,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
     height: propHeight,
     barHeight = 30,
 }) => {
+    const { t } = useTranslation();
     const [containerRef, { width: containerWidth, height: containerHeight }] =
         useResizeObserver<HTMLDivElement>();
     const chartContentRef = useRef<HTMLDivElement>(null);
@@ -236,6 +243,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
     const [dragStart, setDragStart] = useState({ x: 0, translateX: 0 });
     const textRefs = useRef<Map<string, SVGTextElement>>(new Map());
     const svgRef = useRef<SVGSVGElement>(null);
+    const locale = i18n.language;
 
     // Convert incoming data to internal task format
     const tasks = useMemo(
@@ -243,20 +251,29 @@ const GanttChart: React.FC<GanttChartProps> = ({
             data.map((item, index) => ({
                 id: `task-${index}`,
                 title: item.title,
-                startTime: humanizeTime(item.start_time),
+                startTime: humanizeTime(
+                    item.start_time,
+                    locale as SupportedLocale,
+                ),
                 startTimeDT: item.start_time_dt,
                 endTime: item.end_time
-                    ? humanizeTime(item.end_time)
+                    ? humanizeTime(item.end_time, locale as SupportedLocale)
                     : undefined,
                 endTimeDT: item.end_time_dt,
                 description: item.description,
                 moais: item.moais?.map((moai) => ({
                     id: moai.id,
                     start_time_duration: moai.start_time_duration
-                        ? humanizeTime(moai.start_time_duration)
+                        ? humanizeTime(
+                              moai.start_time_duration,
+                              locale as SupportedLocale,
+                          )
                         : undefined,
                     end_time_duration: moai.end_time_duration
-                        ? humanizeTime(moai.end_time_duration)
+                        ? humanizeTime(
+                              moai.end_time_duration,
+                              locale as SupportedLocale,
+                          )
                         : undefined,
                 })),
             })),
@@ -664,7 +681,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                 style={{ width: '100%', height: '100%' }}
             >
                 <div className="gantt-chart__empty-state">
-                    No data available to display
+                    {t('gantt.noData')}
                 </div>
             </div>
         );
@@ -807,7 +824,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                                     <MoaiName id={moai.id} />:{' '}
                                     {!moai.start_time_duration &&
                                     !moai.end_time_duration ? (
-                                        '参与'
+                                        t('gantt.participating')
                                     ) : (
                                         <>
                                             {moai.start_time_duration}
@@ -838,7 +855,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                     pointerEvents: 'none',
                 }}
             >
-                ↕️ Scroll | Shift+↕️ Pan horizontally | ↑↓ Zoom
+                {t('gantt.controls')}
             </div>
         </div>
     );

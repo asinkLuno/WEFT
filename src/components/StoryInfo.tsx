@@ -4,6 +4,8 @@ import { Separator } from '@/components/ui/separator';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { logError } from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
+
 export interface StoryContextType {
     title: string;
     description?: string;
@@ -14,6 +16,7 @@ const StoryInfo: React.FC = () => {
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchStory = async () => {
@@ -56,7 +59,9 @@ const StoryInfo: React.FC = () => {
     if (!story) {
         return (
             <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-xl">暂无可用Story</p>
+                <p className="text-muted-foreground text-xl">
+                    {t('story.noData')}
+                </p>
             </div>
         );
     }

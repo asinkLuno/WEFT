@@ -10,6 +10,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logSuccess, logError, logInfo } from '@/utils/logger';
 import { load, Store } from '@tauri-apps/plugin-store';
 import { Separator } from '@/components/ui/separator';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useTranslation } from 'react-i18next';
 
 // Letter variations moved outside the component
 const variations = {
@@ -61,15 +69,14 @@ const animateRiverText = (setDisplayText: (text: string) => void) => {
 const Home: React.FC = () => {
     const navigate = useNavigate();
     const { setFilePath } = useFileContext();
+    const { t, i18n } = useTranslation();
 
-    // State for current displayed text
+    // Replace locale state with i18next
     const [displayText, setDisplayText] = useState<string>('River');
-    // State for store
     const [store, setStore] = useState<Store | null>(null);
-    // State for recent files
     const [recentFiles, setRecentFiles] = useState<string[]>([]);
 
-    // Load store and recent files
+    // Update store initialization
     useEffect(() => {
         const initStore = async () => {
             try {
@@ -78,19 +85,37 @@ const Home: React.FC = () => {
                 });
                 setStore(storeInstance);
 
-                // Get recent files from store
                 const storedRecentFiles =
                     await storeInstance.get<string[]>('recent_files');
                 if (storedRecentFiles) {
                     setRecentFiles(storedRecentFiles);
                 }
+
+                // Get locale from store and set i18next language
+                const storedLocale = await storeInstance.get<string>('locale');
+                if (storedLocale) {
+                    i18n.changeLanguage(storedLocale);
+                }
             } catch (err) {
-                logError(`Failed to load store: ${err}`);
+                logError(`${t('home.failedToLoadStore')}: ${err}`);
             }
         };
 
         initStore();
-    }, []);
+    }, [i18n, t]);
+
+    // Update locale change handler
+    const updateLocale = async (newLocale: string) => {
+        if (!store) return;
+
+        try {
+            await i18n.changeLanguage(newLocale);
+            await store.set('locale', newLocale);
+            logSuccess(`${t('home.languageChanged')}: ${newLocale}`);
+        } catch (err) {
+            logError(`${t('home.failedToUpdateLocale')}: ${err}`);
+        }
+    };
 
     // Animation effect
     useEffect(() => {
@@ -126,7 +151,7 @@ const Home: React.FC = () => {
             setRecentFiles(updatedRecentFiles);
             await store.set('recent_files', updatedRecentFiles);
         } catch (err) {
-            logError(`Failed to update recent files: ${err}`);
+            logError(`${t('home.failedToUpdateRecentFiles')}: ${err}`);
         }
     };
 
@@ -139,10 +164,10 @@ const Home: React.FC = () => {
             setFilePath(filePath);
             await invoke('watch_file', { filePath });
             await updateRecentFiles(filePath);
-            logSuccess(`文件已成功加载：${filePath}`);
+            logSuccess(`${t('home.fileLoadSuccess')}${filePath}`);
             navigate('/tabs');
         } catch (err) {
-            logError(`文件加载失败：${err}`);
+            logError(`${t('home.fileLoadError')}${err}`);
             setFilePath(undefined);
         }
     };
@@ -170,22 +195,22 @@ const Home: React.FC = () => {
                     setFilePath(file_path as string);
                     await invoke('watch_file', { filePath: file_path });
                     await updateRecentFiles(file_path as string);
-                    logSuccess(`文件已成功加载：${file_path}`);
+                    logSuccess(`${t('home.fileLoadSuccess')}${file_path}`);
                     // 导航到主界面
                     navigate('/tabs');
                 } catch (err) {
                     // 处理操作失败情况
-                    logError(`文件加载失败：${err}`);
+                    logError(`${t('home.fileLoadError')}${err}`);
                     setFilePath(undefined);
                 }
             } else {
                 // 处理未选择文件的情况
-                logInfo('未选择文件');
+                logInfo(t('home.noFileSelected'));
                 setFilePath(undefined);
             }
         } catch (err) {
             // 处理文件选择过程中的异常
-            logError(`文件选择错误：${err}`);
+            logError(`${t('home.fileSelectError')}${err}`);
             setFilePath(undefined);
         }
     };
@@ -193,13 +218,26 @@ const Home: React.FC = () => {
     // 组件渲染部分
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
+            <div className="absolute top-4 right-4">
+                <Select value={i18n.language} onValueChange={updateLocale}>
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder={t('selectLanguage')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="zh-CN">中文</SelectItem>
+                        <SelectItem value="en-US">English</SelectItem>
+                        <SelectItem value="ja-JP">日本語</SelectItem>
+                        <SelectItem value="zh-Classical">文言文</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="space-y-2 text-center">
                 <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-                    Welcome to{' '}
+                    {t('home.welcome')}{' '}
                     <span className="text-blue-700">{displayText}</span>
                 </h1>
                 <h3 className="text-muted-foreground scroll-m-20 text-2xl font-semibold tracking-tight">
-                    请选择一个YAML/YML文件开始操作
+                    {t('home.selectFile')}
                 </h3>
             </div>
 
@@ -210,7 +248,7 @@ const Home: React.FC = () => {
                     className="flex w-full items-center justify-center gap-2"
                 >
                     <FileUp className="h-5 w-5" />
-                    选择YAML文件
+                    {t('home.chooseFile')}
                 </Button>
 
                 {recentFiles && recentFiles.length > 0 && (
@@ -218,7 +256,9 @@ const Home: React.FC = () => {
                         <Separator className="my-2" />
                         <div className="mb-2 flex items-center gap-2">
                             <Clock className="h-4 w-4" />
-                            <h4 className="font-medium">最近打开的文件</h4>
+                            <h4 className="font-medium">
+                                {t('home.recentFiles')}
+                            </h4>
                         </div>
                         <div className="space-y-2">
                             {recentFiles.map((filePath, index) => (
@@ -240,10 +280,8 @@ const Home: React.FC = () => {
 
                 <Alert className="w-full">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>注意</AlertTitle>
-                    <AlertDescription>
-                        仅支持公元前 271821 年至公元后 275760 年，请谨慎操控时间
-                    </AlertDescription>
+                    <AlertTitle>{t('home.notice')}</AlertTitle>
+                    <AlertDescription>{t('home.timeWarning')}</AlertDescription>
                 </Alert>
             </div>
         </div>
