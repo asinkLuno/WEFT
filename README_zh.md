@@ -91,7 +91,9 @@ story:
 |  `juncture`   |         实体经历，可以作为叙述         |    否    |
 |  `material`   |           属性列表，开发中……           |    否    |
 
-其他的属性字段你可以自由添加，我们会将它们展示在 Moai 选项卡中。
+其他的属性字段你可以自由添加，我们会将它们展示在 Moai 选项卡中：
+
+<img width="912" alt="截屏2025-03-13 22 34 57" src="https://github.com/user-attachments/assets/715b2d34-7c1a-4ccb-8f57-46d2fcf83033" />
 
 ### MoaiLink
 
@@ -100,6 +102,10 @@ story:
 |     `moais`     | 实体`id`，必须为 2 个 |    是    |
 |   `relations`   |         关系          |    是    |
 | `bidirectional` | 是否双向关系，默认否  |    否    |
+
+展示效果：
+
+<img width="1292" alt="截屏2025-03-13 22 32 59" src="https://github.com/user-attachments/assets/56c7a1a1-8639-4e57-b9f6-3790830b666a" />
 
 ### Drift
 
@@ -110,6 +116,10 @@ story:
 | `start_time`  |       开始时间        |    是    |
 |  `end_time`   |       结束时间        |    否    |
 |    `moais`    |       参与实体        |    否    |
+
+使用甘特图展示：
+
+<img width="1292" alt="截屏2025-03-13 22 33 47" src="https://github.com/user-attachments/assets/bb6a071d-a4cf-455a-a4cf-35742e6b278f" />
 
 ### narrative
 
