@@ -1,6 +1,6 @@
 story:
-  title: story_1
-  description: story_1，采用格里高利历纪年。
+  title: 第一个故事
+  description: 这是第一个故事，采用格里高利历纪年。
   date_mode: "Gregorian"
 moai:
   escalopia:
@@ -31,6 +31,8 @@ moai:
     base_time: *fajra_birthday
     material:
       - Constellation
+
+ 
 
 moai_link:
   "艾斯卡罗比亚的公民们":

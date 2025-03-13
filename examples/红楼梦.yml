@@ -1,0 +1,136 @@
+story:
+  title: 百年孤独
+  description: 呵呵
+
+moai:
+  jia_dahua:
+    full_name: "贾代化"
+    description: "贾家先祖，荣国公贾演和宁国公贾源的父亲。"
+
+  jia_yan:
+    full_name: "贾演"
+    description: "荣国公，贾代化长子，曾受皇上重用，创建荣国府。"
+  jia_yuan:
+    full_name: "贾源"
+    description: "宁国公，贾代化次子，创建宁国府。"
+
+  jia_jing:
+    full_name: "贾敬"
+    description: "宁国府当家人，贾源之子，沉迷道教不理家事，终日烧丹炼药。"
+  jia_she:
+    full_name: "贾赦"
+    description: "荣国府长房，贾演之长子，贾政的哥哥，为人骄奢淫逸。"
+  jia_zheng:
+    full_name: "贾政"
+    description: "荣国府二房，贾演之次子，现任荣国府当家人，清廉正直，却对子女过于严厉。"
+
+
+  jia_zhen:
+    full_name: "贾珍"
+    description: "宁国府继承人，贾敬之子，好色贪财，实际掌管宁国府事务。"
+  jia_lian:
+    full_name: "贾琏"
+    description: "贾赦之子，王熙凤之夫，协助王熙凤管理荣国府事务，风流好色。"
+  jia_baoyu:
+    full_name: "贾宝玉"
+    description: "贾政与王夫人之子，红楼梦主角，口含玉石出生，多愁善感，重情轻义，最终出家。"
+  jia_huan:
+    full_name: "贾环"
+    description: "贾政与赵姨娘之子，宝玉的异母弟，嫉妒宝玉，常与母亲一起设计陷害宝玉。"
+  jia_rong:
+    full_name: "贾蓉"
+    description: "贾珍之子，秦可卿之夫，风流成性。"
+
+  wang_furen:
+    full_name: "王夫人"
+    description: "贾政之妻，宝玉生母，为人端庄但执拗，王熙凤的姑母。"
+
+  wang_xifeng:
+    full_name: "王熙凤"
+    description: "贾琏之妻，王夫人的侄女，精明能干，掌管荣国府家务。"
+  jia_yuanchun:
+    full_name: "贾元春"
+    description: "贾政与王夫人之女，宝玉同母姐，入宫为贵妃，后病逝。"
+  jia_yingchun:
+    full_name: "贾迎春"
+    description: "贾赦之女，宝玉异母姐，性格懦弱，嫁入孙家后备受欺凌。"
+  jia_tanchun:
+    full_name: "贾探春"
+    description: "贾政与赵姨娘之女，宝玉异母妹，精明强干，后远嫁他乡。"
+  jia_xichun:
+    full_name: "贾惜春"
+    description: "贾珍之妹，宝玉堂妹，性情孤僻，喜爱绘画，最终出家为尼。"
+
+moai_link:
+  "贾府":
+    - moais: [jia_yan, jia_yuan]
+      relations: 兄弟
+      bidirectional: true
+
+    - moais: [jia_she, jia_zheng]
+      relations: 兄弟
+      bidirectional: true
+
+    - moais: [jia_zheng, wang_furen]
+      relations: 夫妻
+      bidirectional: true
+
+    - moais: [jia_lian, wang_xifeng]
+      relations: 夫妻
+      bidirectional: true
+
+    - moais: [jia_dahua, jia_yan]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_dahua, jia_yuan]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_yan, jia_she]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_yan, jia_zheng]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_yuan, jia_jing]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_jing, jia_zhen]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_zhen, jia_rong]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_she, jia_lian]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_zheng, jia_baoyu]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_zheng, jia_huan]
+      relations: 父子
+      bidirectional: false
+
+    - moais: [jia_zheng, jia_yuanchun]
+      relations: 父女
+      bidirectional: false
+
+    - moais: [jia_zheng, jia_tanchun]
+      relations: 父女
+      bidirectional: false
+
+    - moais: [jia_she, jia_yingchun]
+      relations: 父女
+      bidirectional: false
+
+    - moais: [jia_jing, jia_xichun]
+      relations: 父女
+      bidirectional: false

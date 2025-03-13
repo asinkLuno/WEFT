@@ -1,16 +1,27 @@
-<div align="center">English | <a href="./README_zh.md">中文</a></div>
+<div align="center">
+  
+  # River
+  
+  <p align="center">
+    <strong>Craft any world, timeline, or reality - writing tools without boundaries</strong>
+  </p>
+  
+  <p align="center">
+    English | <a href="./README_zh.md">中文</a>
+  </p>
+  
+  <p align="center">
+    <img src="https://img.shields.io/badge/tauri-%2324C8DB.svg?style=for-the-badge&logo=tauri&logoColor=%23FFFFFF" alt="Tauri" />
+    <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+  </p>
+</div>
 
-# River
+> 子在川上曰，逝者如斯夫，不舍昼夜。
 
-> 子在川上曰：逝者如斯夫，不舍昼夜。
+We've observed that existing creative tools generally employ standardized timelines, which work well for realistic fiction but prove extremely limiting when building fictional worlds or fantasy universes with non-conventional temporal systems. Based on this pain point, we've implemented two core innovations:
 
-River is a timeline-driven writing tool designed specifically for creators.
-
-We observed that existing tools use standardized timelines, which work for realistic themes but become inconvenient when creating works set in fictional universes. Therefore, we redesigned the time calculation algorithm to help users easily manage temporal elements in their works.
-
-For entities involved in events, we avoid imposing excessive field restrictions to allow user customization.
-
-Due to development constraints, we opted to use YAML files as data input instead of building a dedicated input interface, focusing solely on data visualization.
+- Adaptive Time Algorithm: We've reconstructed the traditional time management model, creating a fully customizable time system that allows creators to easily design and manage proprietary calendars, epochs, and time flow rules specific to their works. This seamlessly supports diverse creative needs ranging from science fiction futures to fantasy worlds.
+- Entity Object Generic Architecture: We've adopted a highly flexible data structure design that enables core elements such as characters, locations, and props to support unlimited dimensional attribute expansion. Creators can freely define unique characteristics and parameters according to their work's requirements, breaking through the attribute limitations of traditional creative tools.
 
 ## Usage
 
@@ -118,6 +129,4 @@ Group Drift events or establish observer perspectives:
 ## ⚠️ Known Issues
 
 - Linux systems require manual GTK dependency handling
-- Time range limitation: ~271,821 BCE to 275,760 CE
-
----
+- Since the front-end Gantt chart component is built upon the TypeScript standard time library, our current time range support is temporarily limited to 271821 BC - 275760 AD. We're actively working to remove this constraint.
