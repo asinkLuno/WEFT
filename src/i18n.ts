@@ -21,6 +21,9 @@ const resources = {
                 languageChanged: 'Language changed to',
                 failedToUpdateLocale: 'Failed to update locale',
                 failedToUpdateRecentFiles: 'Failed to update recent files',
+                loadPlugin: 'Load Plugin',
+                pluginLoadAttempt: 'Attempting to load plugin',
+                pluginLoadError: 'Failed to load plugin: ',
             },
             footer: {
                 boundFile: 'Bound File',
@@ -72,6 +75,9 @@ const resources = {
                 languageChanged: '语言已更改为',
                 failedToUpdateLocale: '更新语言设置失败',
                 failedToUpdateRecentFiles: '更新最近文件列表失败',
+                loadPlugin: '加载插件',
+                pluginLoadAttempt: '正在尝试加载插件',
+                pluginLoadError: '插件加载失败: ',
             },
             footer: {
                 boundFile: '绑定文件',
@@ -123,6 +129,9 @@ const resources = {
                 languageChanged: '言語が次に変更されました：',
                 failedToUpdateLocale: 'ロケールの更新に失敗しました',
                 failedToUpdateRecentFiles: '最近のファイルの更新に失敗しました',
+                loadPlugin: 'プラグインを読み込む',
+                pluginLoadAttempt: 'プラグインを読み込もうとしています',
+                pluginLoadError: 'プラグインの読み込みに失敗しました: ',
             },
             footer: {
                 boundFile: '紐付けられたファイル',
@@ -174,6 +183,9 @@ const resources = {
                 languageChanged: '語已易爲',
                 failedToUpdateLocale: '更語未成',
                 failedToUpdateRecentFiles: '更近牒未成',
+                loadPlugin: '載插件',
+                pluginLoadAttempt: '欲載插件',
+                pluginLoadError: '載插件未成: ',
             },
             footer: {
                 boundFile: '所繫文牒',

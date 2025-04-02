@@ -1,15 +1,15 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod river {
+    pub mod aqueduct;
     pub mod dao;
     pub mod errors;
     pub mod kappa;
     pub mod material;
     pub mod phase;
+    pub mod utils;
 }
 use crate::river::kappa::KappaFace;
-use sys_locale::get_locale;
 
-use serde_json::json;
 use std::sync::Mutex;
 use tauri::Manager;
 use tauri_plugin_store::StoreExt;
@@ -22,11 +22,6 @@ pub fn run() {
         .setup(|app| {
             app.manage(Mutex::new(KappaFace::default()));
             let store = app.store("settings.json")?;
-
-            if store.get("locale").is_none() {
-                let locale = get_locale().unwrap_or_else(|| String::from("en-US"));
-                store.set("locale", json!({ "value": locale }));
-            }
 
             Ok(())
         })

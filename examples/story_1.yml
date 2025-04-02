@@ -1,7 +1,9 @@
 story:
   title: 第一个故事
   description: 这是第一个故事，采用格里高利历纪年。
-  date_mode: "Gregorian"
+  date_mode: "chinese"
+aqueduct:
+  - "/Users/guozr/CODE/River/examples/chinese.rhai"
 moai:
   escalopia:
     full_name: "艾斯卡罗比亚"

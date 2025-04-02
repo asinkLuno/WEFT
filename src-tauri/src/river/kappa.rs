@@ -1,3 +1,4 @@
+use super::errors::RiverError;
 use crate::river::dao::Dao;
 use crate::river::dao::Story;
 use notify::RecommendedWatcher;
@@ -12,8 +13,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
-
-use super::errors::RiverError;
 #[derive(Default, Debug)]
 pub struct KappaFace {
     file_path: Option<PathBuf>,
@@ -178,12 +177,16 @@ pub fn unwatch_file(app_handle: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn get_story(state: tauri::State<'_, Mutex<KappaFace>>) -> Result<Story, String> {
+pub async fn get_story(state: tauri::State<'_, Mutex<KappaFace>>) -> Result<Option<Story>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
 
     let story = dao.story();
-    Ok(story.clone())
+    if let Some(story) = story {
+        Ok(Some(story.clone()))
+    } else {
+        Ok(None)
+    }
 }
 
 #[tauri::command]

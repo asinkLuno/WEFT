@@ -2,8 +2,8 @@ use serde::de::{Deserializer, Error as DeError};
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
-use super::dao::DateMode;
 use super::errors::RiverError;
+use super::utils::get_unit_gregorian;
 const MAX_DEPTH: usize = 1000;
 
 fn operate_vectors<F>(
@@ -21,111 +21,19 @@ where
     result
 }
 
-fn get_unit_chinese(
-    time_vec: &mut [i32; Phase::MAX_LENGTH],
-    unit_index: usize,
-    extra_case: bool,
-) -> Result<Option<([i32; 2], bool)>, RiverError> {
-    // 中国农历。简化计算，采用19年7闰
-    match unit_index {
-        1 => {
-            // 月份
-            // 农历可能有闰月，一年可能有13个月
-            // 检查是否是闰年（简化判断，实际应该查表）
-            let year = time_vec[0];
-            if year % 19 == 0
-                || year % 19 == 3
-                || year % 19 == 6
-                || year % 19 == 9
-                || year % 19 == 11
-                || year % 19 == 14
-                || year % 19 == 17
-            {
-                Ok(Some(([1, 13], true))) // 闰年有13个月
-            } else {
-                Ok(Some(([1, 12], true))) // 平年有12个月
-            }
-        }
-        2 => {
-            // 日
-            let month = time_vec[1];
-
-            if month < 1 || month > 13 {
-                if !extra_case {
-                    return Ok(None); // 无法判断
-                }
-                return Ok(Some(([1, 30], false))); // 默认30天
-            }
-
-            // 判断大小月（简化版本）
-            // 实际农历中，大小月的判断需要查表或复杂计算
-            if month % 2 == 1 {
-                Ok(Some(([1, 30], true))) // 大月30天
-            } else {
-                Ok(Some(([1, 29], true))) // 小月29天
-            }
-        }
-        3 => Ok(Some(([0, 24], false))), // 时 (0-23)
-        4 => Ok(Some(([0, 60], false))), // 分 (0-59)
-        5 => Ok(Some(([0, 60], false))), // 秒 (0-59)
-        _ => Err(RiverError::PhaseUnitIndexOutOfRange),
-    }
-}
-
-fn get_unit_gregorian(
-    time_vec: &mut [i32; Phase::MAX_LENGTH],
-    unit_index: usize,
-    extra_case: bool,
-) -> Result<Option<([i32; 2], bool)>, RiverError> {
-    match unit_index {
-        1 => Ok(Some(([0, 12], false))), //月
-        2 => {
-            //日
-            let month = time_vec[1];
-            let year = time_vec[0];
-
-            if month < 1 || month > 12 {
-                if !extra_case {
-                    return Ok(None); //无法判断，需要根据年份判断
-                }
-                return Ok(Some(([0, 30], false))); //已经计算过前向的数据了，缺失返回30
-            }
-
-            match month {
-                2 => {
-                    if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
-                        Ok(Some(([0, 29], false)))
-                    } else {
-                        Ok(Some(([0, 28], false)))
-                    }
-                }
-                4 | 6 | 9 | 11 => Ok(Some(([0, 30], false))),
-                _ => Ok(Some(([0, 31], true))),
-            }
-        }
-        3 => Ok(Some(([0, 24], false))),
-        4 => Ok(Some(([0, 60], false))),
-        5 => Ok(Some(([0, 60], false))),
-        _ => Err(RiverError::PhaseUnitIndexOutOfRange),
-    }
-}
-
-fn add_time_vec<F>(
+fn add_time_vec(
     vec1: &mut [i32; Phase::MAX_LENGTH],
     vec2: &mut [i32; Phase::MAX_LENGTH],
     result: &mut [i32; Phase::MAX_LENGTH],
     unit_index: usize,
     extra_case: bool,
     depth: usize,
-    operation: &F,
-) -> Result<(), RiverError>
-where
-    F: Fn(
+    operation: &dyn Fn(
         &mut [i32; Phase::MAX_LENGTH],
         usize,
         bool,
     ) -> Result<Option<([i32; 2], bool)>, RiverError>,
-{
+) -> Result<(), RiverError> {
     // Check if we've exceeded the maximum recursion depth
     if depth > MAX_DEPTH {
         return Err(RiverError::MaximumRecursionDepthExceeded(MAX_DEPTH));
@@ -208,17 +116,6 @@ where
     Ok(())
 }
 
-// New function to get the appropriate date calculation function based on DateMode
-pub fn get_date_calculator(
-    date_mode: Option<&DateMode>,
-) -> impl Fn(&mut [i32; Phase::MAX_LENGTH], usize, bool) -> Result<Option<([i32; 2], bool)>, RiverError>
-{
-    match date_mode {
-        Some(DateMode::Chinese) => get_unit_chinese,
-        _ => get_unit_gregorian, // Default to Gregorian for None or explicitly Gregorian
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct PhaseNoRecusive {
     base_time: [i32; Phase::MAX_LENGTH],
@@ -236,11 +133,20 @@ impl PhaseNoRecusive {
 
     pub fn humanize(
         &self,
-        date_mode: Option<&DateMode>,
+        date_calculator: &Box<
+            dyn Fn(
+                &mut [i32; Phase::MAX_LENGTH],
+                usize,
+                bool,
+            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+        >,
     ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), RiverError> {
         let mut vec1 = [0; Phase::MAX_LENGTH];
         let mut vec2;
         let mut result = [0; Phase::MAX_LENGTH];
+
+        // Default calculator if none provided
+
         match (&self.base_time_name, &self.ref_time) {
             (Some(base_time_name), Some(ref_time)) => {
                 vec2 = ref_time.clone();
@@ -251,7 +157,7 @@ impl PhaseNoRecusive {
                     Phase::MAX_LENGTH - 1,
                     false,
                     0,
-                    &get_date_calculator(date_mode),
+                    date_calculator,
                 )?;
                 Ok((Some(base_time_name.clone()), result))
             }
@@ -265,7 +171,7 @@ impl PhaseNoRecusive {
                     Phase::MAX_LENGTH - 1,
                     false,
                     0,
-                    &get_date_calculator(date_mode),
+                    date_calculator,
                 )?;
                 Ok((None, result))
             }
@@ -363,6 +269,13 @@ impl Phase {
         let mut abs_time = self.de_recursive()?.absolute_time()?; // Fixed method name
         let mut humanized_time = [0; Phase::MAX_LENGTH];
         let mut p2 = [0; Phase::MAX_LENGTH];
+        let calc: Box<
+            dyn Fn(
+                &mut [i32; Phase::MAX_LENGTH],
+                usize,
+                bool,
+            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+        > = Box::new(get_unit_gregorian);
         add_time_vec(
             &mut abs_time,
             &mut p2,
@@ -370,7 +283,7 @@ impl Phase {
             Phase::MAX_LENGTH - 1,
             false,
             0,
-            &get_unit_gregorian,
+            &calc,
         )?;
 
         let year = if humanized_time[0] == 0 {
@@ -499,8 +412,15 @@ impl Serialize for Phase {
 
         // Get the flattened representation
         let phase_no_recusive = self.de_recursive().map_err(serde::ser::Error::custom)?;
+        let default_calc: Box<
+            dyn Fn(
+                &mut [i32; Phase::MAX_LENGTH],
+                usize,
+                bool,
+            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+        > = Box::new(get_unit_gregorian);
         let (base_time_name, absolute_time) = phase_no_recusive
-            .humanize(None)
+            .humanize(&default_calc)
             .map_err(serde::ser::Error::custom)?;
 
         // Create a struct with 1 or 2 fields depending on whether base_time_name exists
@@ -520,7 +440,11 @@ impl Serialize for Phase {
 pub fn sub_phase(
     p1: &Phase,
     p2: &Phase,
-    date_mode: Option<&DateMode>,
+    date_calculator: &dyn Fn(
+        &mut [i32; Phase::MAX_LENGTH],
+        usize,
+        bool,
+    ) -> Result<Option<([i32; 2], bool)>, RiverError>,
 ) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
     let p1_de_recusive = p1.de_recursive()?;
     let p2_de_recusive = p2.de_recursive()?;
@@ -548,6 +472,7 @@ pub fn sub_phase(
         vec2 = p2_absolute_time.clone();
         vec2[..Phase::MAX_LENGTH].iter_mut().for_each(|x| *x = -*x);
     }
+
     add_time_vec(
         &mut vec1,
         &mut vec2,
@@ -555,31 +480,7 @@ pub fn sub_phase(
         Phase::MAX_LENGTH - 1,
         false,
         0,
-        &get_date_calculator(date_mode),
+        date_calculator,
     )?;
     Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_sub_phase() -> Result<(), RiverError> {
-        let mut v1 = [2024, 0, -3, 0, 0, 0];
-        let mut v2 = [0, 0, 0, 0, 0, 0];
-        let mut result = [0; Phase::MAX_LENGTH];
-        add_time_vec(
-            &mut v1,
-            &mut v2,
-            &mut result,
-            Phase::MAX_LENGTH - 1,
-            false,
-            0,
-            &get_date_calculator(None),
-        )?;
-        println!("v3: {:?}", result);
-        Ok(())
-    }
 }

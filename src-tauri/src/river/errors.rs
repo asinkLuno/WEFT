@@ -11,6 +11,11 @@ pub enum RiverError {
     #[error(transparent)]
     FailedToParseYaml(#[from] serde_yaml::Error),
 
+    #[error("Aqueduct is not initialized.")]
+    AqueductNotInitialized,
+    #[error("Invalid date mode: `{0}`")]
+    InvalidDateMode(String),
+
     #[error("Moai is not defined in Dao.")]
     MoaisNotDefined,
     #[error("moai `{0}` is not defined in Dao.")]
@@ -37,4 +42,13 @@ pub enum RiverError {
     DebouncerNotInitialized,
     #[error("Dao is not initialized.")]
     DaoNotInitialized,
+
+    #[error(transparent)]
+    RhaiError(#[from] Box<rhai::EvalAltResult>),
+    #[error("Function not found: `{0}`")]
+    FunctionNotFound(String),
+    #[error("Failed to acquire mutex lock.")]
+    MutexLockFailed,
+    #[error("Signature mismatch.")]
+    SignatureMismatch(String),
 }

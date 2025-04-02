@@ -21,6 +21,7 @@
     },
     "log:default",
     "store:default",
-    "store:default"
+    "store:default",
+    "log:default"
   ]
 }

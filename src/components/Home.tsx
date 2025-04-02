@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useFileContext } from '../context/FileContext';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
-import { Terminal, FileUp, Clock, ExternalLink } from 'lucide-react';
+import { Terminal, FileUp, Clock, ExternalLink, Puzzle } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logSuccess, logError, logInfo } from '@/utils/logger';
@@ -93,9 +93,10 @@ const Home: React.FC = () => {
 
                 // Get locale from store and set i18next language
                 const storedLocale = await storeInstance.get<string>('locale');
-                if (storedLocale) {
-                    i18n.changeLanguage(storedLocale);
+                if (!storedLocale) {
+                    await storeInstance.set('locale', 'en-US');
                 }
+                i18n.changeLanguage(storedLocale);
             } catch (err) {
                 logError(`${t('home.failedToLoadStore')}: ${err}`);
             }
@@ -215,10 +216,33 @@ const Home: React.FC = () => {
         }
     };
 
+    /**
+     * Handle plugin loading
+     * @async
+     */
+    const handleLoadPlugin = async () => {
+        try {
+            // Empty function for now - will be implemented later
+            logInfo(t('home.pluginLoadAttempt'));
+        } catch (err) {
+            logError(`${t('home.pluginLoadError')}${err}`);
+        }
+    };
+
     // 组件渲染部分
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 flex gap-2 items-center">
+                <Button
+                    size="sm"
+                    onClick={handleLoadPlugin}
+                    variant="outline"
+                    className="flex items-center justify-center gap-1"
+                >
+                    <Puzzle className="h-4 w-4" />
+                    {t('home.loadPlugin') || 'Load Plugin'}
+                </Button>
+
                 <Select value={i18n.language} onValueChange={updateLocale}>
                     <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder={t('selectLanguage')} />
