@@ -1,4 +1,5 @@
 use super::errors::RiverError;
+use crate::river::aqueduct::Aqueduct;
 use crate::river::dao::Dao;
 use crate::river::dao::Story;
 use notify::RecommendedWatcher;
@@ -15,8 +16,8 @@ use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 #[derive(Default, Debug)]
 pub struct KappaFace {
-    file_path: Option<PathBuf>,
     dao: Option<Dao>,
+    aqueduct: Option<Aqueduct>,
     debouncer: Option<Debouncer<RecommendedWatcher, RecommendedCache>>,
     receiver: Option<std::sync::mpsc::Receiver<notify_debouncer_full::DebounceEventResult>>,
 }
@@ -40,16 +41,29 @@ impl KappaFace {
         Ok(())
     }
 
-    pub fn watch_file(&mut self, file_path: &str) -> Result<(), RiverError> {
-        self.init_debouncer()?;
-        let file_path = PathBuf::from(file_path);
-        log::info!("Setting file_path to {:?}", file_path);
+    pub fn set_dao_and_aqueduct(&mut self, file_path: &PathBuf) -> Result<(), RiverError> {
+        let mut dao = Dao::new(file_path)?;
+        let aqueduct = match dao.aqueduct() {
+            Some(paths) => {
+                let aqueduct = Aqueduct::new();
+                for path in paths {
+                    aqueduct.add_plugin(path)?;
+                }
+                dao.resolve(&aqueduct)?;
+                Some(aqueduct)
+            }
+            None => None,
+        };
 
-        // Validate Dao creation to avoid unwrap
-        let dao = Dao::new(&file_path)?;
-
-        self.file_path = Some(file_path.clone());
         self.dao = Some(dao);
+        self.aqueduct = aqueduct;
+        Ok(())
+    }
+
+    pub fn watch_file(&mut self, file_path: &PathBuf) -> Result<(), RiverError> {
+        self.init_debouncer()?;
+
+        self.set_dao_and_aqueduct(file_path)?;
 
         if let Some(debouncer) = &mut self.debouncer {
             debouncer
@@ -66,22 +80,9 @@ impl KappaFace {
         if let Some(debouncer) = self.debouncer.take() {
             debouncer.stop();
         }
-        self.file_path = None;
         self.dao = None;
         self.receiver = None;
-    }
-
-    pub fn update_dao(&mut self) -> Result<(), RiverError> {
-        let file_path: &PathBuf = match &self.file_path {
-            Some(p) => p,
-            None => {
-                return Err(RiverError::DaoNotInitialized);
-            }
-        };
-
-        let dao = Dao::new(file_path)?;
-        self.dao = Some(dao);
-        Ok(())
+        self.aqueduct = None; //TODO: 需要清理aqueduct吗？
     }
 }
 
@@ -90,6 +91,7 @@ pub fn watch_file(app_handle: tauri::AppHandle, file_path: String) -> Result<(),
     let state = app_handle.state::<Mutex<KappaFace>>();
     log::info!("start watching file");
     let mut kf = state.lock().map_err(|e| e.to_string())?;
+    let file_path = PathBuf::from(file_path);
 
     kf.watch_file(&file_path).map_err(|e| e.to_string())?;
 
@@ -109,7 +111,7 @@ pub fn watch_file(app_handle: tauri::AppHandle, file_path: String) -> Result<(),
                                 let state = app_handle_clone.state::<Mutex<KappaFace>>();
                                 let mut kf = state.lock().expect("Mutex poisoned");
 
-                                kf.update_dao()
+                                kf.set_dao_and_aqueduct(&file_path)
                                     .map_err(|e| {
                                         app_handle_clone
                                             .emit("dao-update-failed", e.to_string())
@@ -224,7 +226,8 @@ pub async fn drift_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.drift_flow().map_err(|e| e.to_string())
+    let aqueduct = kappa_face.aqueduct.as_ref();
+    dao.drift_flow(aqueduct).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -233,7 +236,8 @@ pub async fn moai_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.moai_flow().map_err(|e| e.to_string())
+    let aqueduct = kappa_face.aqueduct.as_ref();
+    dao.moai_flow(aqueduct).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -242,5 +246,6 @@ pub async fn narrative_flow(
 ) -> Result<HashMap<String, Vec<serde_json::Value>>, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.narrative_flow().map_err(|e| e.to_string())
+    let aqueduct = kappa_face.aqueduct.as_ref();
+    dao.narrative_flow(aqueduct).map_err(|e| e.to_string())
 }

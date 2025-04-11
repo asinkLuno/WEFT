@@ -1,7 +1,9 @@
+use rhai::{CustomType, TypeBuilder};
 use serde::de::{Deserializer, Error as DeError};
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
+use super::aqueduct::{Aqueduct, PhasePlugin};
 use super::errors::RiverError;
 use super::utils::get_unit_gregorian;
 const MAX_DEPTH: usize = 1000;
@@ -28,11 +30,8 @@ fn add_time_vec(
     unit_index: usize,
     extra_case: bool,
     depth: usize,
-    operation: &dyn Fn(
-        &mut [i32; Phase::MAX_LENGTH],
-        usize,
-        bool,
-    ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+    date_mode: &str,
+    aqueduct: Option<&Aqueduct>,
 ) -> Result<(), RiverError> {
     // Check if we've exceeded the maximum recursion depth
     if depth > MAX_DEPTH {
@@ -42,7 +41,19 @@ fn add_time_vec(
     vec1[unit_index] = 0;
     vec2[unit_index] = 0;
     if unit_index > 0 {
-        let unit_range_varlen = operation(result, unit_index, extra_case)?;
+        let unit_range_varlen: Option<([i32; 2], bool)>;
+        if date_mode == "Gregorian" {
+            unit_range_varlen = get_unit_gregorian(result, unit_index, extra_case)?;
+        } else {
+            if let Some(aqueduct) = aqueduct {
+                unit_range_varlen = aqueduct.call_with::<PhasePlugin>(
+                    date_mode,
+                    (result.clone(), unit_index, extra_case),
+                )?;
+            } else {
+                return Err(RiverError::AqueductNotInitialized);
+            }
+        }
         match unit_range_varlen {
             Some((unit_range, if_varlen)) => {
                 if result[unit_index] < unit_range[0] {
@@ -63,7 +74,8 @@ fn add_time_vec(
                         unit_index,
                         extra_case,
                         depth + 1,
-                        operation,
+                        date_mode,
+                        aqueduct,
                     )?;
                 } else if result[unit_index] > unit_range[1] {
                     if if_varlen {
@@ -82,7 +94,8 @@ fn add_time_vec(
                         unit_index,
                         extra_case,
                         depth + 1,
-                        operation,
+                        date_mode,
+                        aqueduct,
                     )?;
                 }
             }
@@ -95,9 +108,19 @@ fn add_time_vec(
                     unit_index - 1,
                     extra_case,
                     depth + 1,
-                    operation,
+                    date_mode,
+                    aqueduct,
                 )?;
-                add_time_vec(vec1, vec2, result, unit_index, true, depth + 1, operation)?;
+                add_time_vec(
+                    vec1,
+                    vec2,
+                    result,
+                    unit_index,
+                    true,
+                    depth + 1,
+                    date_mode,
+                    aqueduct,
+                )?;
                 // return Ok(());
             }
         }
@@ -109,14 +132,16 @@ fn add_time_vec(
                 unit_index - 1,
                 extra_case,
                 depth + 1,
-                operation,
+                date_mode,
+                aqueduct,
             )?;
         }
     }
     Ok(())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CustomType)]
+#[rhai_type(name = "PhaseNoRecusive")]
 pub struct PhaseNoRecusive {
     base_time: [i32; Phase::MAX_LENGTH],
     ref_time: Option<[i32; Phase::MAX_LENGTH]>,
@@ -133,13 +158,8 @@ impl PhaseNoRecusive {
 
     pub fn humanize(
         &self,
-        date_calculator: &Box<
-            dyn Fn(
-                &mut [i32; Phase::MAX_LENGTH],
-                usize,
-                bool,
-            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
-        >,
+        date_mode: &str,
+        aqueduct: Option<&Aqueduct>,
     ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), RiverError> {
         let mut vec1 = [0; Phase::MAX_LENGTH];
         let mut vec2;
@@ -157,7 +177,8 @@ impl PhaseNoRecusive {
                     Phase::MAX_LENGTH - 1,
                     false,
                     0,
-                    date_calculator,
+                    date_mode,
+                    aqueduct,
                 )?;
                 Ok((Some(base_time_name.clone()), result))
             }
@@ -171,7 +192,8 @@ impl PhaseNoRecusive {
                     Phase::MAX_LENGTH - 1,
                     false,
                     0,
-                    date_calculator,
+                    date_mode,
+                    aqueduct,
                 )?;
                 Ok((None, result))
             }
@@ -187,7 +209,8 @@ pub enum BaseTime {
     Phase(Box<Phase>),
 }
 /// 完整的相位结构，支持递归定义和时间计算
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CustomType)]
+#[rhai_type(name = "Phase")]
 pub struct Phase {
     base_time: BaseTime,
     ref_time: Option<[i32; Phase::MAX_LENGTH]>,
@@ -269,13 +292,6 @@ impl Phase {
         let mut abs_time = self.de_recursive()?.absolute_time()?; // Fixed method name
         let mut humanized_time = [0; Phase::MAX_LENGTH];
         let mut p2 = [0; Phase::MAX_LENGTH];
-        let calc: Box<
-            dyn Fn(
-                &mut [i32; Phase::MAX_LENGTH],
-                usize,
-                bool,
-            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
-        > = Box::new(get_unit_gregorian);
         add_time_vec(
             &mut abs_time,
             &mut p2,
@@ -283,7 +299,8 @@ impl Phase {
             Phase::MAX_LENGTH - 1,
             false,
             0,
-            &calc,
+            "Gregorian",
+            None,
         )?;
 
         let year = if humanized_time[0] == 0 {
@@ -412,15 +429,8 @@ impl Serialize for Phase {
 
         // Get the flattened representation
         let phase_no_recusive = self.de_recursive().map_err(serde::ser::Error::custom)?;
-        let default_calc: Box<
-            dyn Fn(
-                &mut [i32; Phase::MAX_LENGTH],
-                usize,
-                bool,
-            ) -> Result<Option<([i32; 2], bool)>, RiverError>,
-        > = Box::new(get_unit_gregorian);
         let (base_time_name, absolute_time) = phase_no_recusive
-            .humanize(&default_calc)
+            .humanize("Gregorian", None)
             .map_err(serde::ser::Error::custom)?;
 
         // Create a struct with 1 or 2 fields depending on whether base_time_name exists
@@ -440,11 +450,8 @@ impl Serialize for Phase {
 pub fn sub_phase(
     p1: &Phase,
     p2: &Phase,
-    date_calculator: &dyn Fn(
-        &mut [i32; Phase::MAX_LENGTH],
-        usize,
-        bool,
-    ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+    date_mode: &str,
+    aqueduct: Option<&Aqueduct>,
 ) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
     let p1_de_recusive = p1.de_recursive()?;
     let p2_de_recusive = p2.de_recursive()?;
@@ -480,7 +487,8 @@ pub fn sub_phase(
         Phase::MAX_LENGTH - 1,
         false,
         0,
-        date_calculator,
+        date_mode,
+        aqueduct,
     )?;
     Ok(result)
 }

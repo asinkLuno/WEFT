@@ -5,8 +5,13 @@ use std::{
 };
 
 use rhai::{Dynamic, Engine, Scope, AST};
+use serde_json::Value;
 
-use super::{errors::RiverError, phase::Phase};
+use super::{
+    dao::Moai,
+    errors::RiverError,
+    phase::{Phase, PhaseNoRecusive},
+};
 
 /// Core Aqueduct structure that manages plugins and execution engine
 #[derive(Default, Debug, Clone)]
@@ -67,29 +72,59 @@ impl PluginCaller for PhasePlugin {
     }
 }
 
-// Implementation for Material-related plugins
 pub struct MaterialPlugin;
 
 impl PluginCaller for MaterialPlugin {
-    type Input = (f32, String, Vec<u8>);
-    type Output = HashMap<String, f64>;
+    type Input = Arc<Moai>;
+    type Output = Option<Value>;
 
     fn prepare_args(input: Self::Input) -> Vec<Dynamic> {
-        let (density, name, data) = input;
-        vec![
-            Dynamic::from(density),
-            Dynamic::from(name),
-            Dynamic::from(data),
-        ]
+        vec![Dynamic::from(input)]
     }
 
     fn validate_output(output: Dynamic) -> Result<Self::Output, RiverError> {
-        if !output.is::<Self::Output>() {
-            return Err(RiverError::SignatureMismatch(
-                "Material plugin return type mismatch".to_string(),
-            ));
+        let output_type = output.type_name();
+
+        // Helper closure to create consistent error messages
+        let conversion_error =
+            || RiverError::SignatureMismatch(format!("Failed to convert {} to Value", output_type));
+
+        match output_type {
+            "string" => output
+                .into_string()
+                .map(|s| Some(Value::String(s)))
+                .map_err(|_| conversion_error()),
+            "i64" | "i32" | "int" => output
+                .as_int()
+                .map(|i| Some(Value::Number(i.into())))
+                .map_err(|_| conversion_error()),
+            "f64" | "f32" | "float" => output
+                .as_float()
+                .map(|f| {
+                    Some(
+                        serde_json::Number::from_f64(f)
+                            .map(Value::Number)
+                            .unwrap_or(Value::Null),
+                    )
+                })
+                .map_err(|_| conversion_error()),
+            "bool" => output
+                .as_bool()
+                .map(|b| Some(Value::Bool(b)))
+                .map_err(|_| conversion_error()),
+            "()" | "unit" | "void" | "null" => Ok(Some(Value::Null)),
+            "option" => {
+                if output.is_unit() {
+                    Ok(None)
+                } else {
+                    Err(conversion_error())
+                }
+            }
+            _ => Err(RiverError::SignatureMismatch(format!(
+                "Unsupported material plugin return type: {}",
+                output_type
+            ))),
         }
-        Ok(output.cast())
     }
 }
 
@@ -98,7 +133,40 @@ impl Aqueduct {
     pub fn new() -> Self {
         let mut engine = Engine::new();
         //https://rhai.rs/book/safety/max-stmt-depth.html
-        engine.set_max_expr_depths(50, 50);
+        engine.set_max_expr_depths(50, 50); //FIXME: 需要根据实际情况调整
+        engine
+            .register_type_with_name::<Moai>("Moai")
+            .register_fn("base_time", |moai: &mut Arc<Moai>| {
+                moai.base_time().cloned()
+            });
+
+        engine
+            .register_type_with_name::<Phase>("Phase")
+            .register_fn("de_recursive", |phase: Option<Phase>| {
+                phase.and_then(|p| p.de_recursive().ok())
+            });
+        engine
+            .register_type_with_name::<PhaseNoRecusive>("PhaseNoRecusive")
+            .register_fn("absolute_time", |phase: Option<PhaseNoRecusive>| {
+                phase.and_then(|p| p.absolute_time().ok())
+            });
+        engine
+            .register_type::<Option<[i32; Phase::MAX_LENGTH]>>()
+            .register_fn(
+                "convert_to_dynamic",
+                |v: Option<[i32; Phase::MAX_LENGTH]>| {
+                    if let Some(v) = v {
+                        v.into_iter()
+                            .map(|x| x as i64)
+                            .map(Dynamic::from)
+                            .collect::<Vec<Dynamic>>()
+                    } else {
+                        (0..Phase::MAX_LENGTH)
+                            .map(|_| Dynamic::from(0_i64))
+                            .collect::<Vec<Dynamic>>()
+                    }
+                },
+            );
 
         Self {
             engine: Arc::new(RwLock::new(engine)),
@@ -174,15 +242,6 @@ impl Aqueduct {
         C::call(self, plugin_name, input)
     }
 
-    /// Creates a partial function with fixed plugin_name and PluginCaller type
-    pub fn create_caller<C: PluginCaller + 'static>(
-        &self,
-        plugin_name: String,
-    ) -> impl Fn(C::Input) -> Result<C::Output, RiverError> + '_ {
-        move |input| self.call_with::<C>(&plugin_name, input)
-    }
-
-    /// Check if plugin exists
     pub fn has_plugin(&self, name: &str) -> Result<bool, RiverError> {
         let plugins = self
             .plugins
@@ -191,7 +250,6 @@ impl Aqueduct {
         Ok(plugins.contains_key(name))
     }
 
-    /// Clean up all plugins
     pub fn cleanup(&self) {
         if let Ok(mut plugins) = self.plugins.lock() {
             plugins.clear();

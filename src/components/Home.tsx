@@ -216,32 +216,12 @@ const Home: React.FC = () => {
         }
     };
 
-    /**
-     * Handle plugin loading
-     * @async
-     */
-    const handleLoadPlugin = async () => {
-        try {
-            // Empty function for now - will be implemented later
-            logInfo(t('home.pluginLoadAttempt'));
-        } catch (err) {
-            logError(`${t('home.pluginLoadError')}${err}`);
-        }
-    };
 
     // 组件渲染部分
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
             <div className="absolute top-4 right-4 flex gap-2 items-center">
-                <Button
-                    size="sm"
-                    onClick={handleLoadPlugin}
-                    variant="outline"
-                    className="flex items-center justify-center gap-1"
-                >
-                    <Puzzle className="h-4 w-4" />
-                    {t('home.loadPlugin') || 'Load Plugin'}
-                </Button>
+
 
                 <Select value={i18n.language} onValueChange={updateLocale}>
                     <SelectTrigger className="w-[120px]">
@@ -264,7 +244,6 @@ const Home: React.FC = () => {
                     {t('home.selectFile')}
                 </h3>
             </div>
-
             <div className="flex w-full max-w-md flex-col items-center space-y-6">
                 <Button
                     size="lg"

@@ -1,4 +1,5 @@
 use crate::river::phase::{sub_phase, Phase};
+use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::{
@@ -7,17 +8,17 @@ use std::{
     fs,
     hash::{Hash, Hasher},
     path::PathBuf,
+    sync::Arc,
 };
-use strum_macros::EnumString;
 
 use super::{
-    aqueduct::{Aqueduct, PhasePlugin},
+    aqueduct::{Aqueduct, MaterialPlugin, PhasePlugin},
     errors::RiverError,
-    material::{get_constellation, get_material},
-    utils::{get_unit_chinese, get_unit_gregorian},
+    utils::get_unit_gregorian,
 };
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, CustomType)]
+#[rhai_type(name = "Moai")]
 pub struct Moai {
     #[serde(skip)]
     id: String, //唯一的id
@@ -30,7 +31,7 @@ pub struct Moai {
     #[serde(default)]
     juncture: Option<HashMap<String, Phase>>, //时间表
     #[serde(default)]
-    material: Option<Vec<Material>>, //材料
+    material: Option<HashMap<String, String>>, //材料
     #[serde(flatten)]
     extra_props: Option<HashMap<String, serde_json::Value>>, // 额外的 key
 }
@@ -50,28 +51,11 @@ impl Hash for Moai {
 impl Moai {
     pub fn init(&mut self, id: &String) -> Result<(), RiverError> {
         self.id = id.clone();
-        self.init_material()?;
         Ok(())
     }
 
-    fn init_material(&mut self) -> Result<(), RiverError> {
-        if let Some(ref material) = &self.material {
-            for m in material {
-                match m {
-                    Material::Constellation => {
-                        let mat = get_material::<_, _>(self, get_constellation)?;
-                        if let Some(mat) = mat {
-                            let props = self.extra_props.get_or_insert_with(HashMap::new);
-                            props.insert(
-                                m.to_string(),
-                                serde_json::to_value(mat.to_string()).unwrap(),
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        Ok(())
+    pub fn material(&self) -> Option<&HashMap<String, String>> {
+        self.material.as_ref()
     }
 
     pub fn full_name(&self) -> &String {
@@ -80,19 +64,25 @@ impl Moai {
     pub fn id(&self) -> &String {
         &self.id
     }
-
     pub fn base_time(&self) -> Option<&Phase> {
         self.base_time.as_ref()
     }
+
     pub fn juncture(&self) -> Option<&HashMap<String, Phase>> {
         self.juncture.as_ref()
     }
-}
+    pub fn extra_props(&self) -> Option<&HashMap<String, JsonValue>> {
+        self.extra_props.as_ref()
+    }
 
-#[derive(Deserialize, Serialize, Debug, Clone, EnumString, strum_macros::Display)]
-pub enum Material {
-    #[strum(serialize = "星座")]
-    Constellation,
+    pub fn insert_extra_props(&mut self, key: String, value: JsonValue) {
+        if let Some(props) = &mut self.extra_props {
+            props.insert(key, value);
+        } else {
+            self.extra_props = Some(HashMap::new());
+            self.extra_props.as_mut().unwrap().insert(key, value);
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -189,8 +179,6 @@ pub struct Dao {
     drift: Option<HashMap<String, Vec<Drift>>>,
     narrative: Option<HashMap<String, Narrative>>,
     aqueduct: Option<Vec<PathBuf>>,
-    #[serde(skip)]
-    aqueduct_engine: Option<Aqueduct>,
 }
 
 impl Dao {
@@ -217,46 +205,69 @@ impl Dao {
         let mut dao: Dao =
             serde_yaml::from_str(&file_content).map_err(|e| RiverError::FailedToParseYaml(e))?;
 
-        if let Some(ref mut moais) = dao.moai {
+        Ok(dao)
+    }
+
+    pub fn resolve(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+        self.resolve_story(aqueduct)?;
+        self.resolve_moai(aqueduct)?;
+        self.resolve_moai_links()?;
+        self.resolve_drifts()?;
+        self.resolve_narratives()?;
+        Ok(())
+    }
+
+    pub fn aqueduct(&self) -> Option<&Vec<PathBuf>> {
+        self.aqueduct.as_ref()
+    }
+
+    fn resolve_story(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+        if let Some(ref story) = &self.story {
+            if let Some(date_mode) = story.date_mode() {
+                if date_mode != "Gregorian" {
+                    if !aqueduct.has_plugin(date_mode)? {
+                        return Err(RiverError::InvalidDateMode(date_mode.clone()));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn resolve_moai(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+        if let Some(ref mut moais) = &mut self.moai {
             for (id, moai) in moais.iter_mut() {
                 moai.init(id)?;
             }
         }
 
-        dao.resolve_aqueduct()?;
-        dao.resolve_story()?;
-        dao.resolve_moai_links()?;
-        dao.resolve_drifts()?;
-        dao.resolve_narratives()?;
-        Ok(dao)
-    }
+        // Material handling in a separate pass
+        if let Some(ref moais) = &self.moai {
+            // First, collect all material operations needed
+            let mut operations = Vec::new();
 
-    fn resolve_aqueduct(&mut self) -> Result<(), RiverError> {
-        if let Some(ref aqueduct) = &self.aqueduct {
-            let aqueduct_engine = Aqueduct::new();
-            for path in aqueduct {
-                aqueduct_engine.add_plugin(path)?; //FIXME:
+            for (id, moai) in moais.iter() {
+                if let Some(materials) = moai.material() {
+                    for (material_name, material_func) in materials {
+                        operations
+                            .push((id.clone(), (material_name.clone(), material_func.clone())));
+                    }
+                }
             }
-            self.aqueduct_engine = Some(aqueduct_engine);
-        }
-        Ok(())
-    }
 
-    fn resolve_story(&mut self) -> Result<(), RiverError> {
-        if let Some(ref story) = &self.story {
-            if let Some(date_mode) = story.date_mode() {
-                if date_mode != "Gregorian" && date_mode != "Chinese" {
-                    if let Some(aqueduct_engine) = &self.aqueduct_engine {
-                        if !aqueduct_engine.has_plugin(date_mode).unwrap_or(false) {
-                            //FIXME: 更细致的错误处理
-                            return Err(RiverError::InvalidDateMode(date_mode.clone()));
-                        }
-                    } else {
-                        return Err(RiverError::AqueductNotInitialized);
+            // Then process them
+            for (id, (material_name, material_func)) in operations {
+                let moai_ref = self.moai.as_ref().unwrap().get(&id).unwrap(); //FIXME: 这里需要检查moai是否存在
+                let res = aqueduct
+                    .call_with::<MaterialPlugin>(&material_func, Arc::new(moai_ref.clone()))?;
+                if let Some(res) = res {
+                    if let Some(moai) = self.moai.as_mut().unwrap().get_mut(&id) {
+                        moai.insert_extra_props(material_name, res);
                     }
                 }
             }
         }
+
         Ok(())
     }
 
@@ -270,6 +281,7 @@ impl Dao {
             for link_vec in links.values() {
                 for link in link_vec {
                     let (moai1_id, moai2_id) = link.moais();
+                    //检查moai_link中的moai是否存在
                     self.get_moai(moai1_id)?;
                     self.get_moai(moai2_id)?;
                 }
@@ -284,6 +296,7 @@ impl Dao {
                 for drift in drift_vec {
                     if let Some(moai_ids) = drift.moais() {
                         for moai_id in moai_ids {
+                            //检查drift中的moai是否存在
                             self.get_moai(moai_id)?;
                         }
                     }
@@ -337,42 +350,6 @@ impl Dao {
             }
         }
         Ok(())
-    }
-
-    pub fn get_date_calculator<'a>(
-        &'a self,
-    ) -> Box<
-        dyn Fn(
-                &mut [i32; Phase::MAX_LENGTH],
-                usize,
-                bool,
-            ) -> Result<Option<([i32; 2], bool)>, RiverError>
-            + 'a,
-    > {
-        let date_mode = self.date_mode().map(|s| s.clone());
-
-        match date_mode {
-            Some(date_mode) => {
-                if date_mode == "Chinese" {
-                    Box::new(get_unit_chinese)
-                } else if date_mode == "Gregorian" {
-                    Box::new(get_unit_gregorian)
-                } else {
-                    let caller = self
-                        .aqueduct_engine
-                        .as_ref()
-                        .unwrap()
-                        .create_caller::<PhasePlugin>(date_mode);
-                    Box::new(move |time_vec, unit_index, extra_case| {
-                        let time_array = *time_vec;
-                        let result = caller((time_array, unit_index, extra_case))?;
-                        *time_vec = time_array;
-                        Ok(result)
-                    })
-                }
-            }
-            _ => Box::new(get_unit_gregorian),
-        }
     }
 
     pub fn story(&self) -> Option<&Story> {
@@ -476,19 +453,16 @@ impl Dao {
         moai: &Moai,
         start_time: &Phase,
         end_time: Option<&Phase>,
-        date_calculator: &dyn Fn(
-            &mut [i32; Phase::MAX_LENGTH],
-            usize,
-            bool,
-        ) -> Result<Option<([i32; 2], bool)>, RiverError>,
+        aqueduct: Option<&Aqueduct>,
     ) -> Result<serde_json::Value, RiverError> {
         if let Some(base_time) = moai.base_time() {
+            let date_mode = self.date_mode().map_or("Gregorian", |s| s);
             let mut moai_json = serde_json::json!({
                 "id": moai.id.clone(),
-                "start_time_duration": sub_phase(&start_time, &base_time, date_calculator)?,
+                "start_time_duration": sub_phase(&start_time, &base_time, date_mode, aqueduct)?,
             });
             if let Some(end_time) = end_time {
-                let end_time_duration = sub_phase(&end_time, &base_time, date_calculator)?;
+                let end_time_duration = sub_phase(&end_time, &base_time, &date_mode, aqueduct)?;
                 moai_json["end_time_duration"] =
                     serde_json::to_value(end_time_duration).map_err(|e| RiverError::from(e))?;
             }
@@ -508,6 +482,7 @@ impl Dao {
         start_time: &Phase,
         end_time: Option<&Phase>,
         observed_moais: Option<&Vec<String>>,
+        aqueduct: Option<&Aqueduct>,
     ) -> Result<serde_json::Value, RiverError> {
         let mut json_obj = serde_json::json!({
             "title": title.clone(),
@@ -538,7 +513,7 @@ impl Dao {
                     self.get_moai(moai_id).unwrap(),
                     start_time,
                     end_time,
-                    &self.get_date_calculator(),
+                    aqueduct,
                 )
                 .ok()
             })
@@ -549,7 +524,10 @@ impl Dao {
         Ok(json_obj)
     }
 
-    pub fn drift_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    pub fn drift_flow(
+        &self,
+        aqueduct: Option<&Aqueduct>,
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(cate_drifts) = self.drift.as_ref() {
             for (cate, drifts) in cate_drifts {
@@ -563,6 +541,7 @@ impl Dao {
                         drift.start_time(),
                         drift.end_time(),
                         None,
+                        aqueduct,
                     )?;
                     flow_vec.push(json_obj);
                 }
@@ -579,7 +558,10 @@ impl Dao {
         Ok(result_map)
     }
 
-    pub fn moai_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    pub fn moai_flow(
+        &self,
+        aqueduct: Option<&Aqueduct>,
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         let all_drifts = self
             .drift
@@ -599,6 +581,7 @@ impl Dao {
                                 drift.start_time(),
                                 drift.end_time(),
                                 Some(&vec![id.clone()]),
+                                aqueduct,
                             )?;
                             flow_vec.push(json_obj);
                         }
@@ -618,7 +601,10 @@ impl Dao {
         }
         Ok(result_map)
     }
-    pub fn narrative_flow(&self) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    pub fn narrative_flow(
+        &self,
+        aqueduct: Option<&Aqueduct>,
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(narratives) = &self.narrative {
             for (id, narrative) in narratives.iter() {
@@ -635,6 +621,7 @@ impl Dao {
                                     drift.start_time(),
                                     drift.end_time(),
                                     narrative.observer(),
+                                    aqueduct,
                                 )?;
                                 flow_vec.push(json_obj);
                             }
@@ -649,6 +636,7 @@ impl Dao {
                                         start_time,
                                         None,
                                         narrative.observer(),
+                                        aqueduct,
                                     )?;
                                     flow_vec.push(json_obj);
                                 }
@@ -687,7 +675,7 @@ mod tests {
     fn test_dao() {
         let file_path = PathBuf::from("/Users/guozr/CODE/River/examples/story_1.yml");
         let dao = Dao::new(&file_path);
-        let a = dao.as_ref().unwrap().drift_flow();
-        println!("{:?}", a.err());
+        println!("{:?}", dao.err());
+        // println!("{:?}", a);
     }
 }

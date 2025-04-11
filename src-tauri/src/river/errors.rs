@@ -51,4 +51,6 @@ pub enum RiverError {
     MutexLockFailed,
     #[error("Signature mismatch.")]
     SignatureMismatch(String),
+    #[error("Extra prop not found: `{0}`")]
+    ExtraPropNotFound(String),
 }
