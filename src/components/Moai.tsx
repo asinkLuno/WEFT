@@ -130,8 +130,6 @@ const MoaiList: React.FC = () => {
                                                     'full_name',
                                                     'description',
                                                     'base_time',
-                                                    'juncture',
-                                                    'material',
                                                 ].includes(key)
                                             )
                                                 return null;

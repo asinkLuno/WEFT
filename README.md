@@ -1,16 +1,16 @@
 <div align="center">
-  
-  # River
-  
-  <p align="center">
+
+# River
+
+<p align="center">
     <strong>Craft any world, timeline, or reality - writing tools without boundaries</strong>
   </p>
-  
-  <p align="center">
+
+<p align="center">
     English | <a href="./README_zh.md">中文</a>
   </p>
-  
-  <p align="center">
+
+<p align="center">
     <img src="https://img.shields.io/badge/tauri-%2324C8DB.svg?style=for-the-badge&logo=tauri&logoColor=%23FFFFFF" alt="Tauri" />
     <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
   </p>
@@ -57,11 +57,11 @@ YAML's variable reference capability enables complex temporal relationships betw
 
 Required configuration for basic story information:
 
-| Field       | Definition                                                                    | Required |
+| Field | Definition | Required |
 | ----------- | ----------------------------------------------------------------------------- | -------- |
-| title       | Story title                                                                   | Yes      |
-| description | Story summary                                                                 | No       |
-| date_mode   | Calendar system: `Gregorian` (default) or simplified `Chinese` lunar calendar | No       |
+| title | Story title | Yes |
+| description | Story summary | No |
+| date_mode | Calendar system: `Gregorian` (default) or simplified `Chinese` lunar calendar | No |
 
 Example:
 
@@ -76,64 +76,62 @@ story:
 
 Entities in narratives. Reserved properties:
 
-| Field       | Definition                                | Required |
+| Field | Definition | Required |
 | ----------- | ----------------------------------------- | -------- |
-| full_name   | Display name (shows ID if undefined)      | No       |
-| base_time   | Reference time for event calculations     | No       |
-| description | Entity description                        | No       |
-| juncture    | Timeline of experiences (narrative-ready) | No       |
-| material    | Attribute list (WIP)                      | No       |
+| full_name | Display name (shows ID if undefined) | No |
+| base_time | Reference time for event calculations | No |
+| description | Entity description | No |
+| juncture | Timeline of experiences (narrative-ready) | No |
+| material | Attribute list (WIP) | No |
 
 Additional custom fields are allowed and will be displayed in the Moai tab：
 
 <img width="912" alt="截屏2025-03-13 22 34 57" src="https://github.com/user-attachments/assets/715b2d34-7c1a-4ccb-8f57-46d2fcf83033" />
 
-
 ### MoaiLink
 
-| Field         | Definition                             | Required |
+| Field | Definition | Required |
 | ------------- | -------------------------------------- | -------- |
-| moais         | Two entity IDs                         | Yes      |
-| relations     | Relationship type                      | Yes      |
-| bidirectional | Whether bidirectional (default: false) | No       |
+| moais | Two entity IDs | Yes |
+| relations | Relationship type | Yes |
+| bidirectional | Whether bidirectional (default: false) | No |
 
 <img width="1292" alt="截屏2025-03-13 22 32 59" src="https://github.com/user-attachments/assets/56c7a1a1-8639-4e57-b9f6-3790830b666a" />
 
-
 ### Drift
 
-| Field       | Definition              | Required |
+| Field | Definition | Required |
 | ----------- | ----------------------- | -------- |
-| title       | Title (≤100 characters) | Yes      |
-| description | Event description       | No       |
-| start_time  | Start time              | Yes      |
-| end_time    | End time                | No       |
-| moais       | Involved entities       | No       |
+| title | Title (≤100 characters) | Yes |
+| description | Event description | No |
+| start_time | Start time | Yes |
+| end_time | End time | No |
+| moais | Involved entities | No |
 
 <img width="1292" alt="截屏2025-03-13 22 33 47" src="https://github.com/user-attachments/assets/bb6a071d-a4cf-455a-a4cf-35742e6b278f" />
-
 
 ### Narrative
 
 Group Drift events or establish observer perspectives:
 
-| Field    | Definition      | Required |
+| Field | Definition | Required |
 | -------- | --------------- | -------- |
-| subject  | Observed entity | Yes      |
-| observer | Observer entity | No       |
+| subject | Observed entity | Yes |
+| observer | Observer entity | No |
 
 ### 🚧 TODO
 
 - [ ] Internationalization
-    - [x] UI localization
-        - [x] Chinese
-        - [x] English
-        - [x] Japanese
-    - [ ] Error code localization
+  - [x] UI localization
+    - [x] Chinese
+    - [x] English
+    - [x] Japanese
+  - [ ] Error code localization
 - [x] Recently opened files history
 - [ ] Custom calendar systems
 - [ ] Chronological sorting for Moai Junctures
 - [ ] Chart export functionality
+- [ ] props clustering
 
 ## ⚠️ Known Issues
 

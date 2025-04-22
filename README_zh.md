@@ -1,17 +1,17 @@
 <div align="center">
-  
-  # River
-  
-  <p align="center">
+
+# River
+
+<p align="center">
     <strong>一个用于打造任何世界、时间线或现实的写作工具</strong>
   </p>
-  
-  <p align="center">
+
+<p align="center">
     <a href="./README.md">English</a> •
     <a href="./README.zh-CN.md">中文</a>
   </p>
-  
-  <p align="center">
+
+<p align="center">
     <img src="https://img.shields.io/badge/tauri-%2324C8DB.svg?style=for-the-badge&logo=tauri&logoColor=%23FFFFFF" alt="Tauri" />
     <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
   </p>
@@ -62,11 +62,11 @@
 
 定义故事的基本介绍，必须要有。该配置包含以下两个配置项：
 
-|    字段     |                                            定义                                            | 是否必须 |
+| 字段 | 定义 | 是否必须 |
 | :---------: | :----------------------------------------------------------------------------------------: | :------: |
-|    title    |                                            标题                                            |    是    |
-| description |                                            简介                                            |    否    |
-|  date_mode  | 时间模式，可选格里高利历（`Gregorian`）或一个简化版本中国农历（`Chinese`），默认格里高利历 |    否    |
+| title | 标题 | 是 |
+| description | 简介 | 否 |
+| date_mode | 时间模式，可选格里高利历（`Gregorian`）或一个简化版本中国农历（`Chinese`），默认格里高利历 | 否 |
 
 一个样例如下：
 
@@ -83,13 +83,13 @@ story:
 
 预留属性为：
 
-|     字段      |                  定义                  | 是否必须 |
+| 字段 | 定义 | 是否必须 |
 | :-----------: | :------------------------------------: | :------: |
-|  `full_name`  |     全名，如果不定义前端展示为`id`     |    否    |
-|  `base_time`  | 基准时间，后续在事件中用于计算时间间隔 |    否    |
-| `description` |                实体描述                |    否    |
-|  `juncture`   |         实体经历，可以作为叙述         |    否    |
-|  `material`   |           属性列表，开发中……           |    否    |
+| `full_name` | 全名，如果不定义前端展示为`id` | 否 |
+| `base_time` | 基准时间，后续在事件中用于计算时间间隔 | 否 |
+| `description` | 实体描述 | 否 |
+| `juncture` | 实体经历，可以作为叙述 | 否 |
+| `material` | 属性列表，开发中…… | 否 |
 
 其他的属性字段你可以自由添加，我们会将它们展示在 Moai 选项卡中：
 
@@ -97,11 +97,11 @@ story:
 
 ### MoaiLink
 
-|      字段       |         定义          | 是否必须 |
+| 字段 | 定义 | 是否必须 |
 | :-------------: | :-------------------: | :------: |
-|     `moais`     | 实体`id`，必须为 2 个 |    是    |
-|   `relations`   |         关系          |    是    |
-| `bidirectional` | 是否双向关系，默认否  |    否    |
+| `moais` | 实体`id`，必须为 2 个 | 是 |
+| `relations` | 关系 | 是 |
+| `bidirectional` | 是否双向关系，默认否 | 否 |
 
 展示效果：
 
@@ -109,13 +109,13 @@ story:
 
 ### Drift
 
-|     字段      |         定义          | 是否必须 |
+| 字段 | 定义 | 是否必须 |
 | :-----------: | :-------------------: | :------: |
-|    `title`    | 标题，不超过 100 个字 |    是    |
-| `description` |         描述          |    否    |
-| `start_time`  |       开始时间        |    是    |
-|  `end_time`   |       结束时间        |    否    |
-|    `moais`    |       参与实体        |    否    |
+| `title` | 标题，不超过 100 个字 | 是 |
+| `description` | 描述 | 否 |
+| `start_time` | 开始时间 | 是 |
+| `end_time` | 结束时间 | 否 |
+| `moais` | 参与实体 | 否 |
 
 使用甘特图展示：
 
@@ -125,23 +125,24 @@ story:
 
 你也许想把一系列的 Drift 聚合起来，或者把某人作为一系列事件的观察者，可以在这里定义你的叙述视角。
 
-|    字段    |    定义    | 是否必须 |
+| 字段 | 定义 | 是否必须 |
 | :--------: | :--------: | :------: |
-| `subject`  | 被观察对象 |    是    |
-| `observer` |   观察者   |    否    |
+| `subject` | 被观察对象 | 是 |
+| `observer` | 观察者 | 否 |
 
 ### 🚧 TODO
 
 - [ ] 国际化多语言支持
-    - [x] 前端界面
-        - [x] 中文
-        - [x] 英文
-        - [x] 日文
-    - [ ] 后端错误码
+  - [x] 前端界面
+    - [x] 中文
+    - [x] 英文
+    - [x] 日文
+  - [ ] 后端错误码
 - [x] 最近打开文件历史
 - [ ] 自定义历法系统
 - [ ] Moai Juncture 按时间排序
 - [ ] 各种图表支持下载
+- [ ] props 聚类
 
 ## ⚠️ 已知缺陷
 

@@ -12,9 +12,8 @@ use std::{
 };
 
 use super::{
-    aqueduct::{Aqueduct, MaterialPlugin, PhasePlugin},
+    aqueduct::{Aqueduct, MaterialPlugin},
     errors::RiverError,
-    utils::get_unit_gregorian,
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default, CustomType)]
@@ -28,9 +27,9 @@ pub struct Moai {
     base_time: Option<Phase>, //基准时间
     #[serde(default)]
     description: Option<String>, //描述
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     juncture: Option<HashMap<String, Phase>>, //时间表
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     material: Option<HashMap<String, String>>, //材料
     #[serde(flatten)]
     extra_props: Option<HashMap<String, serde_json::Value>>, // 额外的 key
@@ -392,6 +391,7 @@ impl Dao {
             .transpose()?;
         Ok(result)
     }
+
     pub fn get_all_moai_links(
         &self,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, RiverError> {
@@ -448,6 +448,7 @@ impl Dao {
 
         Ok(result)
     }
+
     fn moai2json(
         &self,
         moai: &Moai,
@@ -673,9 +674,10 @@ mod tests {
 
     #[test]
     fn test_dao() {
-        let file_path = PathBuf::from("/Users/guozr/CODE/River/examples/story_1.yml");
+        let file_path = PathBuf::from("/home/guozr/CODE/River/examples/story_1.yml");
         let dao = Dao::new(&file_path);
-        println!("{:?}", dao.err());
-        // println!("{:?}", a);
+        println!("{:?}", dao.as_ref().err());
+        let a = dao.unwrap().get_all_moais();
+        println!("{:?}", a);
     }
 }
