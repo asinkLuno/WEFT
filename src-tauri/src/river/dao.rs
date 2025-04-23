@@ -21,6 +21,10 @@ use super::{
 pub struct Moai {
     #[serde(skip)]
     id: String, //唯一的id
+
+    #[serde(default)]
+    tags: Option<Vec<String>>, //标签
+
     #[serde(default)]
     full_name: Option<String>, //全名
     #[serde(default)]
@@ -31,6 +35,8 @@ pub struct Moai {
     juncture: Option<HashMap<String, Phase>>, //时间表
     #[serde(default, skip_serializing)]
     material: Option<HashMap<String, String>>, //材料
+    #[serde(default)]
+    is: Option<Vec<String>>, //是什么
     #[serde(flatten)]
     extra_props: Option<HashMap<String, serde_json::Value>>, // 额外的 key
 }
@@ -51,6 +57,14 @@ impl Moai {
     pub fn init(&mut self, id: &String) -> Result<(), RiverError> {
         self.id = id.clone();
         Ok(())
+    }
+
+    pub fn tags(&self) -> Option<&Vec<String>> {
+        self.tags.as_ref()
+    }
+
+    pub fn is(&self) -> Option<&Vec<String>> {
+        self.is.as_ref()
     }
 
     pub fn material(&self) -> Option<&HashMap<String, String>> {
@@ -111,8 +125,10 @@ impl MoaiLink {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Story {
     title: String,
-    description: Option<String>,
-    date_mode: Option<String>, // 日期模式：格里高利历、中国农历
+    summary: Option<String>,         //简短的一句话介绍
+    description: Option<String>,     //完整文案
+    main_moais: Option<Vec<String>>, // 主moai
+    date_mode: Option<String>,       // 日期模式：格里高利历、中国农历
 }
 impl PartialEq for Story {
     fn eq(&self, other: &Self) -> bool {
@@ -172,12 +188,17 @@ impl Narrative {
 
 #[derive(Deserialize, Debug)]
 pub struct Dao {
+    //从yaml文件中读取
     story: Option<Story>,
     moai: Option<HashMap<String, Moai>>,
     moai_link: Option<HashMap<String, Vec<MoaiLink>>>,
     drift: Option<HashMap<String, Vec<Drift>>>,
     narrative: Option<HashMap<String, Narrative>>,
     aqueduct: Option<Vec<PathBuf>>,
+
+    //计算得到
+    tagged_moais: Option<HashMap<String, HashSet<String>>>,
+    was_moais: Option<HashMap<String, HashSet<String>>>,
 }
 
 impl Dao {
@@ -204,6 +225,8 @@ impl Dao {
         let mut dao: Dao =
             serde_yaml::from_str(&file_content).map_err(|e| RiverError::FailedToParseYaml(e))?;
 
+        dao.tagged_moais = Some(HashMap::new());
+        dao.was_moais = Some(HashMap::new());
         Ok(dao)
     }
 
@@ -234,13 +257,13 @@ impl Dao {
     }
 
     fn resolve_moai(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+        // 注册 id
         if let Some(ref mut moais) = &mut self.moai {
             for (id, moai) in moais.iter_mut() {
                 moai.init(id)?;
             }
         }
 
-        // Material handling in a separate pass
         if let Some(ref moais) = &self.moai {
             // First, collect all material operations needed
             let mut operations = Vec::new();
@@ -250,6 +273,34 @@ impl Dao {
                     for (material_name, material_func) in materials {
                         operations
                             .push((id.clone(), (material_name.clone(), material_func.clone())));
+                    }
+                }
+                if let Some(is) = moai.is() {
+                    for is_id in is {
+                        if !self.moai.as_ref().unwrap().contains_key(is_id) {
+                            return Err(RiverError::MoaiNotDefined(is_id.clone()));
+                        }
+                        if let Some(is_set) = self.was_moais.as_mut().unwrap().get_mut(is_id) {
+                            is_set.insert(id.clone());
+                        } else {
+                            self.was_moais
+                                .as_mut()
+                                .unwrap()
+                                .insert(is_id.clone(), HashSet::new());
+                        }
+                    }
+                }
+
+                if let Some(tags) = moai.tags() {
+                    for tag in tags {
+                        if let Some(tag_set) = self.tagged_moais.as_mut().unwrap().get_mut(tag) {
+                            tag_set.insert(id.clone());
+                        } else {
+                            self.tagged_moais
+                                .as_mut()
+                                .unwrap()
+                                .insert(tag.clone(), HashSet::new());
+                        }
                     }
                 }
             }
