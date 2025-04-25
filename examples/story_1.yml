@@ -12,9 +12,7 @@ moai:
   big_boom:
     full_name: "大爆炸"
     description: "这是大爆炸，发生在世界存在后10年。"
-    juncture:
-      birthday: &big_boom [10]
-    base_time: *big_boom
+    base_time: &big_boom [10]
     material:
       星座: zodiac
     纪年法: &jnf [*big_boom, "大爆炸"]
@@ -22,16 +20,12 @@ moai:
   amika:
     full_name: "阿麦卡"
     description: "这是阿麦卡，她出生在大爆炸后10年的春天的四月。"
-    juncture:
-      birthday: &amika_birthday [*jnf, 10, 4, 2]
-    base_time: *amika_birthday
+    base_time: &amika_birthday [*jnf, 10, 4, 2]
 
   fajra:
     full_name: "法嘉"
     description: "这是法嘉，她的生日是阿麦卡生日后一个月零三天。"
-    juncture:
-      birthday: &fajra_birthday [*amika_birthday, 0, 1, 3]
-    base_time: *fajra_birthday
+    base_time: &fajra_birthday [*amika_birthday, 0, 1, 3]
 
 moai_link:
   "艾斯卡罗比亚的公民们":

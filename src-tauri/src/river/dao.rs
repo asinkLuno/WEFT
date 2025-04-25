@@ -19,46 +19,23 @@ use super::{
 #[derive(Deserialize, Serialize, Debug, Clone, Default, CustomType)]
 #[rhai_type(name = "Moai")]
 pub struct Moai {
-    #[serde(skip)]
-    id: String, //唯一的id
-
     #[serde(default)]
-    tags: Option<Vec<String>>, //标签
-
-    #[serde(default)]
-    full_name: Option<String>, //全名
+    full_name: String, //全名
     #[serde(default)]
     base_time: Option<Phase>, //基准时间
     #[serde(default)]
     description: Option<String>, //描述
     #[serde(default, skip_serializing)]
-    juncture: Option<HashMap<String, Phase>>, //时间表
-    #[serde(default, skip_serializing)]
     material: Option<HashMap<String, String>>, //材料
     #[serde(default)]
     is: Option<Vec<String>>, //是什么
+    #[serde(default)]
+    tags: Option<Vec<String>>, //标签
     #[serde(flatten)]
     extra_props: Option<HashMap<String, serde_json::Value>>, // 额外的 key
 }
 
-impl PartialEq for Moai {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-impl Eq for Moai {}
-impl Hash for Moai {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-    }
-}
-
 impl Moai {
-    pub fn init(&mut self, id: &String) -> Result<(), RiverError> {
-        self.id = id.clone();
-        Ok(())
-    }
-
     pub fn tags(&self) -> Option<&Vec<String>> {
         self.tags.as_ref()
     }
@@ -72,29 +49,25 @@ impl Moai {
     }
 
     pub fn full_name(&self) -> &String {
-        self.full_name.as_ref().unwrap_or(&self.id)
+        &self.full_name
     }
-    pub fn id(&self) -> &String {
-        &self.id
-    }
+
     pub fn base_time(&self) -> Option<&Phase> {
         self.base_time.as_ref()
     }
 
-    pub fn juncture(&self) -> Option<&HashMap<String, Phase>> {
-        self.juncture.as_ref()
-    }
-    pub fn extra_props(&self) -> Option<&HashMap<String, JsonValue>> {
-        self.extra_props.as_ref()
-    }
-
-    pub fn insert_extra_props(&mut self, key: String, value: JsonValue) {
+    pub fn insert_extra_props(&mut self, key: String, value: JsonValue) -> Result<(), RiverError> {
         if let Some(props) = &mut self.extra_props {
-            props.insert(key, value);
+            if props.contains_key(&key) {
+                return Err(RiverError::DuplicateKeyInExtraProps(key.clone()));
+            } else {
+                props.insert(key, value);
+            }
         } else {
             self.extra_props = Some(HashMap::new());
             self.extra_props.as_mut().unwrap().insert(key, value);
         }
+        Ok(())
     }
 }
 
@@ -257,27 +230,16 @@ impl Dao {
     }
 
     fn resolve_moai(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
-        // 注册 id
         if let Some(ref mut moais) = &mut self.moai {
-            for (id, moai) in moais.iter_mut() {
-                moai.init(id)?;
-            }
-        }
+            // Collect all moai IDs and validate them first
+            let moai_ids: Vec<String> = moais.keys().cloned().collect();
 
-        if let Some(ref moais) = &self.moai {
-            // First, collect all material operations needed
-            let mut operations = Vec::new();
+            for id in moai_ids {
+                let moai = moais.get(&id).unwrap();
 
-            for (id, moai) in moais.iter() {
-                if let Some(materials) = moai.material() {
-                    for (material_name, material_func) in materials {
-                        operations
-                            .push((id.clone(), (material_name.clone(), material_func.clone())));
-                    }
-                }
                 if let Some(is) = moai.is() {
                     for is_id in is {
-                        if !self.moai.as_ref().unwrap().contains_key(is_id) {
+                        if !moais.contains_key(is_id) {
                             return Err(RiverError::MoaiNotDefined(is_id.clone()));
                         }
                         if let Some(is_set) = self.was_moais.as_mut().unwrap().get_mut(is_id) {
@@ -303,27 +265,24 @@ impl Dao {
                         }
                     }
                 }
-            }
 
-            // Then process them
-            for (id, (material_name, material_func)) in operations {
-                let moai_ref = self.moai.as_ref().unwrap().get(&id).unwrap(); //FIXME: 这里需要检查moai是否存在
-                let res = aqueduct
-                    .call_with::<MaterialPlugin>(&material_func, Arc::new(moai_ref.clone()))?;
-                if let Some(res) = res {
-                    if let Some(moai) = self.moai.as_mut().unwrap().get_mut(&id) {
-                        moai.insert_extra_props(material_name, res);
+                if let Some(materials) = moai.material() {
+                    for (material_name, material_func) in materials.clone() {
+                        let moai_clone = moais.get(&id).unwrap().clone();
+                        let res = aqueduct
+                            .call_with::<MaterialPlugin>(&material_func, Arc::new(moai_clone))?;
+                        if let Some(res) = res {
+                            // Get a mutable reference to modify it
+                            if let Some(moai_mut) = moais.get_mut(&id) {
+                                moai_mut.insert_extra_props(material_name.clone(), res)?;
+                            }
+                        }
                     }
                 }
             }
         }
 
         Ok(())
-    }
-
-    pub fn get_moai_full_name(&self, id: &String) -> Result<String, RiverError> {
-        let moai = self.get_moai(id)?;
-        Ok(moai.full_name().clone())
     }
 
     fn resolve_moai_links(&self) -> Result<(), RiverError> {
@@ -406,7 +365,7 @@ impl Dao {
         self.story.as_ref()
     }
 
-    fn get_moai(&self, id: &String) -> Result<&Moai, RiverError> {
+    pub fn get_moai(&self, id: &String) -> Result<&Moai, RiverError> {
         if let Some(ref moais) = &self.moai {
             let moai = moais
                 .get(id)
@@ -425,15 +384,8 @@ impl Dao {
                 moais
                     .iter()
                     .map(|(id, moai)| {
-                        let mut value = serde_json::to_value(moai)
+                        let value = serde_json::to_value(moai)
                             .map_err(|e| RiverError::FailedToSerializeMoai(e))?;
-                        if let JsonValue::Object(ref mut map) = &mut value {
-                            if map.get("full_name").map_or(true, |v| {
-                                v.is_null() || v.as_str().is_some_and(|s| s.is_empty())
-                            }) {
-                                map.insert("full_name".to_owned(), JsonValue::String(id.clone()));
-                            }
-                        }
                         Ok((id.clone(), value))
                     })
                     // 显式指定collect的类型参数
@@ -473,11 +425,11 @@ impl Dao {
                         let mut moai_nodes: Vec<serde_json::Value> = Vec::new();
                         for id in &unique_moais {
                             // Handle the Result explicitly instead of using ?
-                            match self.get_moai_full_name(&id) {
-                                Ok(full_name) => {
+                            match self.get_moai(&id) {
+                                Ok(moai) => {
                                     moai_nodes.push(serde_json::json!({
                                         "id": id,
-                                        "text": full_name
+                                        "text": moai.full_name()
                                     }));
                                 }
                                 Err(err) => return Err(err), // Return the error from the closure
@@ -503,6 +455,7 @@ impl Dao {
     fn moai2json(
         &self,
         moai: &Moai,
+        id: &String,
         start_time: &Phase,
         end_time: Option<&Phase>,
         aqueduct: Option<&Aqueduct>,
@@ -510,7 +463,7 @@ impl Dao {
         if let Some(base_time) = moai.base_time() {
             let date_mode = self.date_mode().map_or("Gregorian", |s| s);
             let mut moai_json = serde_json::json!({
-                "id": moai.id.clone(),
+                "id": id.clone(),
                 "start_time_duration": sub_phase(&start_time, &base_time, date_mode, aqueduct)?,
             });
             if let Some(end_time) = end_time {
@@ -521,7 +474,7 @@ impl Dao {
             Ok(moai_json)
         } else {
             Ok(serde_json::json!({
-                "id": moai.id.clone(),
+                "id": id.clone(),
             }))
         }
     }
@@ -563,6 +516,7 @@ impl Dao {
             .filter_map(|moai_id| {
                 self.moai2json(
                     self.get_moai(moai_id).unwrap(),
+                    moai_id,
                     start_time,
                     end_time,
                     aqueduct,
@@ -677,22 +631,8 @@ impl Dao {
                                 )?;
                                 flow_vec.push(json_obj);
                             }
-                        } else if self.moai.as_ref().unwrap().contains_key(id) {
-                            let moai = self.moai.as_ref().unwrap().get(id).unwrap();
-                            if let Some(juncture) = moai.juncture() {
-                                for (title, start_time) in juncture {
-                                    let json_obj = self.drift2json(
-                                        title,
-                                        None,
-                                        Some(&vec![moai.id().clone()]),
-                                        start_time,
-                                        None,
-                                        narrative.observer(),
-                                        aqueduct,
-                                    )?;
-                                    flow_vec.push(json_obj);
-                                }
-                            }
+                        } else {
+                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                     flow_vec.sort_by(|a, b| {

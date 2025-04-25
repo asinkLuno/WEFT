@@ -12,7 +12,6 @@ export interface MoaiContextType {
     full_name?: string;
     base_time?: PhaseContextType;
     description?: string;
-    juncture: Record<string, PhaseContextType> | null;
     [key: string]: any; // 用于 extra_props 的动态属性
 }
 
@@ -156,29 +155,7 @@ const MoaiList: React.FC = () => {
                                     )}
                                 </div>
 
-                                {moai.juncture &&
-                                    Object.entries(moai.juncture).length >
-                                        0 && (
-                                        <div className="mt-4">
-                                            <h3 className="mb-2 text-lg font-medium">
-                                                Junctures:
-                                            </h3>
-                                            {Object.entries(moai.juncture).map(
-                                                ([key, value]) => (
-                                                    <p
-                                                        key={key}
-                                                        className="text-sm"
-                                                    >
-                                                        {key}:{' '}
-                                                        {humanizeTime(
-                                                            value,
-                                                            locale as SupportedLocale,
-                                                        )}
-                                                    </p>
-                                                ),
-                                            )}
-                                        </div>
-                                    )}
+                               
                             </>
                         ),
                     }),

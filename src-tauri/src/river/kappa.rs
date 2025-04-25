@@ -198,7 +198,8 @@ pub async fn get_moai_full_name(
 ) -> Result<String, String> {
     let kappa_face = state.lock().map_err(|e| e.to_string())?;
     let dao = kappa_face.dao.as_ref().ok_or("Dao not initialized")?;
-    dao.get_moai_full_name(&id).map_err(|e| e.to_string())
+    let moai = dao.get_moai(&id).map_err(|e| e.to_string())?;
+    Ok(moai.full_name().clone())
 }
 
 #[tauri::command]

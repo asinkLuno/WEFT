@@ -25,7 +25,6 @@ pub fn run() {
             if store.get("locale").is_none() {
                 store.set("locale", json!({ "value": "en-US" }));
             }
-
             Ok(())
         })
         .plugin(tauri_plugin_fs::init())

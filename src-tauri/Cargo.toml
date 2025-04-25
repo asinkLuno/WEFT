@@ -1,6 +1,6 @@
 [package]
-name = "River"
-version = "0.0.1"
+name = "RustRiver"
+version = "0.0.6"
 description = "Build your river."
 authors = ["asinkLuno"]
 edition = "2021"
@@ -41,6 +41,6 @@ notify-debouncer-full = "0.5.0"
 notify = "8.0.0"
 
 [profile.dev]
-incremental = true  # 确保增量编译开启
-codegen-units = 4   # 并行代码生成
+incremental = true # 确保增量编译开启
+codegen-units = 4  # 并行代码生成
 # 编译选项：https://v2.tauri.app/concept/size/

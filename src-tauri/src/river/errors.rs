@@ -11,6 +11,9 @@ pub enum RiverError {
     #[error(transparent)]
     FailedToParseYaml(#[from] serde_yaml::Error),
 
+    #[error("Duplicate key in extra props: `{0}`")]
+    DuplicateKeyInExtraProps(String),
+
     #[error("Aqueduct is not initialized.")]
     AqueductNotInitialized,
     #[error("Invalid date mode: `{0}`")]
