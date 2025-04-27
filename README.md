@@ -1,6 +1,6 @@
 <div align="center">
 
-# River
+# InkRiver
 
 <p align="center">
     <strong>Craft any world, timeline, or reality - writing tools without boundaries</strong>

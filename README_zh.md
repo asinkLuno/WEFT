@@ -1,6 +1,6 @@
 <div align="center">
 
-# River
+# InkRiver
 
 <p align="center">
     <strong>一个用于打造任何世界、时间线或现实的写作工具</strong>
