@@ -29,7 +29,9 @@ const variations = {
 
 // Generate a random stylized River
 const generateStylizedRiver = () => {
-    const randomR =
+    const randomR1 =
+        variations.r[Math.floor(Math.random() * variations.r.length)];
+    const randomR2 =
         variations.r[Math.floor(Math.random() * variations.r.length)];
     const randomI =
         variations.i[Math.floor(Math.random() * variations.i.length)];
@@ -37,7 +39,7 @@ const generateStylizedRiver = () => {
         variations.v[Math.floor(Math.random() * variations.v.length)];
     const randomE =
         variations.e[Math.floor(Math.random() * variations.e.length)];
-    return `${randomR}${randomI}${randomV}${randomE}r`;
+    return `Ink ${randomR1}${randomI}${randomV}${randomE}${randomR2}`;
 };
 
 // Animation function
@@ -91,12 +93,15 @@ const Home: React.FC = () => {
                     setRecentFiles(storedRecentFiles);
                 }
 
-                // Get locale from store and set i18next language
                 const storedLocale = await storeInstance.get<string>('locale');
                 if (!storedLocale) {
                     await storeInstance.set('locale', 'en-US');
                 }
                 i18n.changeLanguage(storedLocale);
+
+                const aqueductList = await storeInstance.get<string>('aqueduct');
+                // TODO: 如果aqueductList为空，则从本地文件读取
+
             } catch (err) {
                 logError(`${t('home.failedToLoadStore')}: ${err}`);
             }

@@ -6,7 +6,6 @@ use std::{
     cmp::Eq,
     collections::{HashMap, HashSet},
     fs,
-    hash::{Hash, Hasher},
     path::PathBuf,
     sync::Arc,
 };

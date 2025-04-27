@@ -1,6 +1,7 @@
 story:
-  title: 百年孤独
-  description: 呵呵
+  title: 红楼梦
+  summary: 满纸荒唐言，一把辛酸泪。都云作者痴，谁解其中味。
+  description: 红楼梦是中国古典文学的巅峰之作，以贾府为背景，讲述了贾宝玉、林黛玉、薛宝钗等人的爱情故事，以及贾府的兴衰历程。
 
 moai:
   jia_dahua:
@@ -23,7 +24,6 @@ moai:
   jia_zheng:
     full_name: "贾政"
     description: "荣国府二房，贾演之次子，现任荣国府当家人，清廉正直，却对子女过于严厉。"
-
 
   jia_zhen:
     full_name: "贾珍"
@@ -81,56 +81,42 @@ moai_link:
 
     - moais: [jia_dahua, jia_yan]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_dahua, jia_yuan]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_yan, jia_she]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_yan, jia_zheng]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_yuan, jia_jing]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_jing, jia_zhen]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_zhen, jia_rong]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_she, jia_lian]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_zheng, jia_baoyu]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_zheng, jia_huan]
       relations: 父子
-      bidirectional: false
 
     - moais: [jia_zheng, jia_yuanchun]
       relations: 父女
-      bidirectional: false
 
     - moais: [jia_zheng, jia_tanchun]
       relations: 父女
-      bidirectional: false
 
     - moais: [jia_she, jia_yingchun]
       relations: 父女
-      bidirectional: false
 
     - moais: [jia_jing, jia_xichun]
       relations: 父女
-      bidirectional: false

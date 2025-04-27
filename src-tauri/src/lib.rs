@@ -9,10 +9,9 @@ mod river {
 }
 use crate::river::kappa::KappaFace;
 
-use serde_json::json;
+// use serde_json::json;
 use std::sync::Mutex;
 use tauri::Manager;
-use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -21,10 +20,6 @@ pub fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .setup(|app| {
             app.manage(Mutex::new(KappaFace::default()));
-            let store = app.store("settings.json")?;
-            if store.get("locale").is_none() {
-                store.set("locale", json!({ "value": "en-US" }));
-            }
             Ok(())
         })
         .plugin(tauri_plugin_fs::init())

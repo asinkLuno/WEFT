@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Book, FileText } from 'lucide-react';
+import { Book, FileText, Quote } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 export interface StoryContextType {
     title: string;
+    summary?: string;
     description?: string;
 }
 
@@ -75,6 +76,19 @@ const StoryInfo: React.FC = () => {
                 </h1>
             </div>
             <Separator className="mb-4" />
+
+            {story.summary && (
+                <div className="mb-4">
+                    <div className="flex items-start gap-3">
+                        <Quote className="text-primary mt-1 h-5 w-5" />
+                        <div className="flex-1">
+                            <blockquote className="border-l-2 border-primary pl-4 italic text-muted-foreground">
+                                {story.summary}
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {story.description && (
                 <div className="mt-2">
