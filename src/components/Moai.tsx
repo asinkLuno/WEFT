@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { humanizeTime, PhaseContextType, SupportedLocale } from '../types/flow';
-import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, useRef } from 'react';
 import { logError } from '@/utils/logger';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import MasonryCards from './common/MasonryCards';
 
 export interface MoaiContextType {
     full_name?: string;
@@ -35,7 +35,11 @@ const loadAllMoaiFullNames = async (moaiList: MoaiListContextType) => {
     }
 };
 
-const MoaiList: React.FC = () => {
+interface MoaiListProps {
+    searchQuery?: string;
+}
+
+const MoaiList: React.FC<MoaiListProps> = ({ searchQuery = '' }) => {
     const navigate = useNavigate();
     const [moaiList, setMoaiList] = useState<MoaiListContextType | undefined>(
         undefined,
@@ -43,8 +47,6 @@ const MoaiList: React.FC = () => {
     const [moaiFullNames, setMoaiFullNames] = useState<Record<string, string>>(
         {},
     );
-    const [value, setValue] = useState(0);
-    const [tabs, setTabs] = useState<any[]>([]);
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
@@ -92,89 +94,8 @@ const MoaiList: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!moaiList) return;
-
-        const loadTabData = async () => {
-            try {
-                const loadedTabs = Object.entries(moaiList).map(
-                    ([id, moai]) => ({
-                        label: moaiFullNames[id] || id,
-                        key: id,
-                        content: (
-                            <>
-                                <h2 className="text-xl font-semibold">
-                                    {moai.full_name || id}
-                                </h2>
-                                {moai.description && (
-                                    <p className="text-muted-foreground">
-                                        {moai.description}
-                                    </p>
-                                )}
-                                {moai.base_time && (
-                                    <p className="text-muted-foreground text-sm">
-                                        Base Time:{' '}
-                                        {humanizeTime(
-                                            moai.base_time,
-                                            locale as SupportedLocale,
-                                        )}
-                                    </p>
-                                )}
-
-                                <div className="mt-4 grid grid-cols-2 gap-4">
-                                    {Object.entries(moai).map(
-                                        ([key, value]) => {
-                                            if (
-                                                [
-                                                    'full_name',
-                                                    'description',
-                                                    'base_time',
-                                                ].includes(key)
-                                            )
-                                                return null;
-
-                                            return (
-                                                <div
-                                                    key={key}
-                                                    className="bg-muted rounded-md p-2"
-                                                >
-                                                    <p className="text-muted-foreground text-xs font-medium uppercase">
-                                                        {key.replace(/_/g, ' ')}
-                                                    </p>
-                                                    <p className="text-sm">
-                                                        {typeof value ===
-                                                        'object'
-                                                            ? JSON.stringify(
-                                                                  value,
-                                                              )
-                                                            : value}
-                                                    </p>
-                                                </div>
-                                            );
-                                        },
-                                    )}
-                                </div>
-
-                               
-                            </>
-                        ),
-                    }),
-                );
-                setTabs(loadedTabs);
-            } catch (error) {
-                logError(`Failed to load tab data: ${error}`);
-            }
-        };
-
-        loadTabData();
-    }, [moaiList, moaiFullNames]);
-
-    const handleChange = (_: React.SyntheticEvent, newValue: number) => {
-        const moaiEntries = Object.entries(moaiList || {});
-        if (moaiEntries[newValue]) {
-            navigate(`/moai/${moaiEntries[newValue][0]}`);
-            setValue(newValue);
-        }
+    const handleCardClick = (id: string) => {
+        navigate(`/moai/${id}`);
     };
 
     if (!moaiList || Object.keys(moaiList).length === 0) {
@@ -187,14 +108,63 @@ const MoaiList: React.FC = () => {
         );
     }
 
+    // 将moaiList转换为MasonryItem数组
+    const cardItems = Object.entries(moaiList).map(([id, moai]) => ({
+        id,
+        title: moaiFullNames[id] || id,
+        description: moai.description,
+        content: (
+            <div>
+                {moai.base_time && (
+                    <p className="text-muted-foreground mb-4 text-sm">
+                        Base Time:{' '}
+                        {humanizeTime(
+                            moai.base_time,
+                            locale as SupportedLocale,
+                        )}
+                    </p>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(moai).map(([key, value]) => {
+                        if (
+                            ['full_name', 'description', 'base_time'].includes(
+                                key,
+                            )
+                        )
+                            return null;
+
+                        return (
+                            <div key={key} className="bg-muted rounded-md p-2">
+                                <p className="text-muted-foreground text-xs font-medium uppercase">
+                                    {key.replace(/_/g, ' ')}
+                                </p>
+                                <p className="text-sm">
+                                    {typeof value === 'object'
+                                        ? JSON.stringify(value)
+                                        : value}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        ),
+    }));
+
+    // 按标题排序
+    const sortedItems = [...cardItems].sort((a, b) =>
+        a.title.localeCompare(b.title),
+    );
+
     return (
-        <RiverVerticalTabs
-            tabs={tabs}
-            value={value}
-            onChange={handleChange}
-            sortTabs={true}
-            sortKey={(tab) => tab.label}
-        />
+        <div className="h-full w-full overflow-hidden">
+            <MasonryCards
+                items={sortedItems}
+                onItemClick={handleCardClick}
+                columnCount={3}
+                searchQuery={searchQuery}
+            />
+        </div>
     );
 };
 

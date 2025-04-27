@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { CateFlowContextType, processFlowData } from '../types/flow';
-import RiverVerticalTabs from './common/RiverVerticalTabs';
 import GanttChart from './common/GanttChart';
 import { useNavigate, useParams } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
+import MasonryCards from './common/MasonryCards';
 
 const MoaiFlow: React.FC = () => {
     const navigate = useNavigate();
@@ -14,8 +14,7 @@ const MoaiFlow: React.FC = () => {
         CateFlowContextType | undefined
     >(undefined);
     const { title } = useParams<{ title?: string }>();
-    const [activeTab, setActiveTab] = useState(0);
-    const [tabs, setTabs] = useState<any[]>([]);
+    const [moaiNames, setMoaiNames] = useState<Record<string, string>>({});
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
@@ -52,43 +51,31 @@ const MoaiFlow: React.FC = () => {
         };
     }, []);
 
+    // 获取Moai名称
     useEffect(() => {
         if (!moaiFlowList) return;
 
-        const loadTabData = async () => {
-            const loadedTabs = await Promise.all(
-                Object.entries(moaiFlowList).map(
-                    async ([category, moai_flow]) => ({
-                        label: await invoke<string>('get_moai_full_name', {
-                            id: category,
-                        }),
-                        key: category,
-                        content: <GanttChart data={moai_flow} />,
+        const fetchMoaiNames = async () => {
+            const names = await Promise.all(
+                Object.keys(moaiFlowList).map(async (category) => ({
+                    id: category,
+                    name: await invoke<string>('get_moai_full_name', {
+                        id: category,
                     }),
-                ),
+                })),
             );
-            setTabs(loadedTabs);
+            setMoaiNames(
+                Object.fromEntries(names.map((item) => [item.id, item.name])),
+            );
         };
 
-        loadTabData();
+        fetchMoaiNames();
     }, [moaiFlowList]);
 
-    useEffect(() => {
-        if (!moaiFlowList || !title) return;
-        const index = Object.keys(moaiFlowList).findIndex((t) => t === title);
-        if (index !== -1) {
-            setActiveTab(index);
-        }
-    }, [title, moaiFlowList]);
-
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        const tabTitles = Object.keys(moaiFlowList || {});
-        const selectedTitle = tabTitles[newValue];
-        if (selectedTitle) {
-            navigate(`/moaiflow/${encodeURIComponent(selectedTitle)}`);
-        }
-        setActiveTab(newValue);
+    const handleCardClick = (id: string) => {
+        navigate(`/moaiflow/${encodeURIComponent(id)}`);
     };
+
     if (!moaiFlowList || Object.keys(moaiFlowList).length === 0) {
         return (
             <div className="bg-background flex h-full items-center justify-center">
@@ -99,14 +86,32 @@ const MoaiFlow: React.FC = () => {
         );
     }
 
+    // 准备卡片数据
+    const cardItems = Object.entries(moaiFlowList).map(
+        ([category, moai_flow]) => ({
+            id: category,
+            title: moaiNames[category] || category,
+            content: (
+                <div className="h-64 overflow-hidden">
+                    <GanttChart data={moai_flow} />
+                </div>
+            ),
+        }),
+    );
+
+    // 按标题排序
+    const sortedItems = [...cardItems].sort((a, b) =>
+        a.title.localeCompare(b.title),
+    );
+
     return (
-        <RiverVerticalTabs
-            tabs={tabs}
-            value={activeTab}
-            onChange={handleChange}
-            sortTabs={true}
-            sortKey={(tab) => tab.label}
-        />
+        <div className="h-full w-full overflow-hidden">
+            <MasonryCards
+                items={sortedItems}
+                onItemClick={handleCardClick}
+                columnCount={3}
+            />
+        </div>
     );
 };
 

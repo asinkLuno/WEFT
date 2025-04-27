@@ -1,21 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { CateFlowContextType, processFlowData } from '../types/flow';
-import RiverVerticalTabs from './common/RiverVerticalTabs';
 import { useNavigate, useParams } from 'react-router-dom';
 import GanttChart from './common/GanttChart';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
+import MasonryCards from './common/MasonryCards';
 
 const DriftFlow: React.FC = () => {
     const navigate = useNavigate();
     const [driftFlowList, setDriftFlowList] = useState<
         CateFlowContextType | undefined
     >(undefined);
-    const { title } = useParams<{ title?: string }>();
-    const [activeTab, setActiveTab] = useState(0);
-    const [tabs, setTabs] = useState<any[]>([]);
+    const { graphKey } = useParams<{ graphKey?: string }>();
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
@@ -52,38 +50,8 @@ const DriftFlow: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!driftFlowList) return;
-
-        const loadTabData = async () => {
-            const tabs = Object.entries(driftFlowList || {}).map(
-                ([category, narrative_flow]) => ({
-                    label: category,
-                    key: category,
-                    content: <GanttChart data={narrative_flow} />,
-                }),
-            );
-            setTabs(tabs);
-        };
-
-        loadTabData();
-    }, [driftFlowList]);
-
-    useEffect(() => {
-        if (!driftFlowList || !title) return;
-        const index = Object.keys(driftFlowList).findIndex((t) => t === title);
-        if (index !== -1) {
-            setActiveTab(index);
-        }
-    }, [title, driftFlowList]);
-
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        const tabTitles = Object.keys(driftFlowList || {});
-        const selectedTitle = tabTitles[newValue];
-        if (selectedTitle) {
-            navigate(`/driftflow/${encodeURIComponent(selectedTitle)}`);
-        }
-        setActiveTab(newValue);
+    const handleCardClick = (id: string) => {
+        navigate(`/driftflow/${encodeURIComponent(id)}`);
     };
 
     if (!driftFlowList || Object.keys(driftFlowList).length === 0) {
@@ -96,14 +64,30 @@ const DriftFlow: React.FC = () => {
         );
     }
 
+    // 准备卡片数据
+    const cardItems = Object.entries(driftFlowList).map(
+        ([category, flow_data]) => ({
+            id: category,
+            title: category,
+            content: (
+                <div className="h-64 overflow-hidden">
+                    <GanttChart data={flow_data} />
+                </div>
+            ),
+        }),
+    );
+
+    // 按标题排序
+    const sortedItems = [...cardItems].sort((a, b) =>
+        a.title.localeCompare(b.title),
+    );
+
     return (
-        <div className="flex-1">
-            <RiverVerticalTabs
-                tabs={tabs}
-                value={activeTab}
-                onChange={handleChange}
-                sortTabs={true}
-                sortKey={(tab) => tab.label}
+        <div className="h-full w-full overflow-hidden">
+            <MasonryCards
+                items={sortedItems}
+                onItemClick={handleCardClick}
+                columnCount={3}
             />
         </div>
     );

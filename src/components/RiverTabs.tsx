@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useFileContext } from '../context/FileContext';
 import { listen } from '@tauri-apps/api/event';
 import StoryInfo from './StoryInfo';
@@ -9,8 +9,14 @@ import DriftFlow from './DriftFlow';
 import MoaiFlow from './MoaiFlow';
 import NarrativeFlow from './NarrativeFlow';
 import { logError } from '@/utils/logger';
+import { Input } from '@/components/ui/input';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    NavigationMenu,
+    NavigationMenuList,
+    NavigationMenuItem,
+    NavigationMenuLink,
+} from '@/components/ui/navigation-menu';
 
 interface TabConfig {
     label: string;
@@ -21,7 +27,10 @@ interface TabConfig {
 
 export default function RiverTabs() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { setFilePath } = useFileContext();
+    const [searchQuery, setSearchQuery] = useState('');
+
     const tabs: TabConfig[] = [
         {
             label: 'Story',
@@ -31,12 +40,12 @@ export default function RiverTabs() {
         {
             label: 'Moai',
             path: '/moai',
-            component: <MoaiList />,
+            component: <MoaiList searchQuery={searchQuery} />,
         },
         {
             label: 'MoaiLink',
             path: '/moai_link',
-            component: <MoaiLink />,
+            component: <MoaiLink searchQuery={searchQuery} />,
         },
         {
             label: 'NarrativeFlow',
@@ -140,25 +149,47 @@ export default function RiverTabs() {
         };
     }, []); // 空依赖数组，确保监听器只设置一次
 
+    const handleNavigate = (path: string, index: number) => {
+        navigate(path);
+        setActiveTab(index);
+    };
+
     return (
-        <div className="flex h-full w-full flex-col overflow-auto">
-            <Tabs
-                defaultValue={String(activeTab)}
-                onValueChange={(value) => setActiveTab(Number(value))}
-            >
-                <TabsList className="grid w-full grid-cols-6">
-                    {tabs.map((tab, index) => (
-                        <TabsTrigger value={String(index)}>
-                            {tab.label}
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
-                {tabs.map((tab, index) => (
-                    <TabsContent value={String(index)}>
-                        {tab.component}
-                    </TabsContent>
-                ))}
-            </Tabs>
+        <div className="flex h-full w-full flex-col">
+            <div className="bg-background sticky top-0 z-10 w-full border-b p-2">
+                <div className="flex items-center justify-between">
+                    <NavigationMenu className="max-w-none">
+                        <NavigationMenuList className="flex space-x-2">
+                            {tabs.map((tab, index) => (
+                                <NavigationMenuItem key={index}>
+                                    <NavigationMenuLink
+                                        className="hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full rounded-md px-4 py-2 text-center transition-colors"
+                                        data-active={location.pathname.includes(
+                                            tab.path,
+                                        )}
+                                        onClick={() =>
+                                            handleNavigate(tab.path, index)
+                                        }
+                                    >
+                                        {tab.label}
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                            ))}
+                        </NavigationMenuList>
+                    </NavigationMenu>
+
+                    <Input
+                        type="text"
+                        placeholder="搜索..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="ml-4 max-w-xs"
+                    />
+                </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4 pb-8">
+                {tabs[activeTab].component}
+            </div>
         </div>
     );
 }

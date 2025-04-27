@@ -1,21 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { CateFlowContextType, processFlowData } from '../types/flow';
-import RiverVerticalTabs from './common/RiverVerticalTabs';
 import GanttChart from './common/GanttChart';
 import { useNavigate, useParams } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
+import MasonryCards from './common/MasonryCards';
 
 const NarrativeFlow: React.FC = () => {
     const navigate = useNavigate();
     const [narrativeFlowList, setNarrativeFlowList] = useState<
         CateFlowContextType | undefined
     >(undefined);
-    const { title } = useParams<{ title?: string }>();
-    const [activeTab, setActiveTab] = useState(0);
-    const [tabs, setTabs] = useState<any[]>([]);
+    const { graphKey } = useParams<{ graphKey?: string }>();
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
@@ -52,40 +50,8 @@ const NarrativeFlow: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => {
-        if (!narrativeFlowList) return;
-
-        const loadTabData = async () => {
-            const tabs = Object.entries(narrativeFlowList || {}).map(
-                ([category, narrative_flow]) => ({
-                    label: category,
-                    key: category,
-                    content: <GanttChart data={narrative_flow} />,
-                }),
-            );
-            setTabs(tabs);
-        };
-
-        loadTabData();
-    }, [narrativeFlowList]);
-
-    useEffect(() => {
-        if (!narrativeFlowList || !title) return;
-        const index = Object.keys(narrativeFlowList).findIndex(
-            (t) => t === title,
-        );
-        if (index !== -1) {
-            setActiveTab(index);
-        }
-    }, [title, narrativeFlowList]);
-
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        const tabTitles = Object.keys(narrativeFlowList || {});
-        const selectedTitle = tabTitles[newValue];
-        if (selectedTitle) {
-            navigate(`/narrativeflow/${encodeURIComponent(selectedTitle)}`);
-        }
-        setActiveTab(newValue);
+    const handleCardClick = (id: string) => {
+        navigate(`/narrativeflow/${encodeURIComponent(id)}`);
     };
 
     if (!narrativeFlowList || Object.keys(narrativeFlowList).length === 0) {
@@ -98,14 +64,32 @@ const NarrativeFlow: React.FC = () => {
         );
     }
 
+    // 准备卡片数据
+    const cardItems = Object.entries(narrativeFlowList).map(
+        ([category, narrative_flow]) => ({
+            id: category,
+            title: category,
+            content: (
+                <div className="h-64 overflow-hidden">
+                    <GanttChart data={narrative_flow} />
+                </div>
+            ),
+        }),
+    );
+
+    // 按标题排序
+    const sortedItems = [...cardItems].sort((a, b) =>
+        a.title.localeCompare(b.title),
+    );
+
     return (
-        <RiverVerticalTabs
-            tabs={tabs}
-            value={activeTab}
-            onChange={handleChange}
-            sortTabs={true}
-            sortKey={(tab) => tab.label}
-        />
+        <div className="h-full w-full overflow-hidden">
+            <MasonryCards
+                items={sortedItems}
+                onItemClick={handleCardClick}
+                columnCount={3}
+            />
+        </div>
     );
 };
 

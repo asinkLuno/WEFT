@@ -1,15 +1,10 @@
-import React, {
-    useEffect,
-    useMemo,
-    useState,
-    useCallback,
-    useRef,
-} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import RiverVerticalTabs from './common/RiverVerticalTabs';
 import RelationGraph from './common/RelationGraph';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import MasonryCards from './common/MasonryCards';
+
 interface MoaiLinkNode {
     id: string;
     text: string;
@@ -28,12 +23,15 @@ export interface MoaiLinkContextType {
 
 type MoaiLinkListContextType = { [key: string]: MoaiLinkContextType };
 
-const MoaiLink: React.FC = () => {
+interface MoaiLinkProps {
+    searchQuery?: string;
+}
+
+const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
     const navigate = useNavigate();
     const [moaiLinkList, setMoaiLinkList] = useState<
         MoaiLinkListContextType | undefined
     >(undefined);
-    const [activeTab, setActiveTab] = useState(0);
     const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
         unlisten: null,
     });
@@ -71,46 +69,9 @@ const MoaiLink: React.FC = () => {
         };
     }, []);
 
-    const handleChange = useCallback(
-        (event: React.SyntheticEvent, newValue: number) => {
-            if (!moaiLinkList) return;
-            const tabTitles = Object.keys(moaiLinkList);
-            const selectedTitle = tabTitles[newValue];
-            if (selectedTitle) {
-                navigate(`/moai/${encodeURIComponent(selectedTitle)}`);
-            }
-            setActiveTab(newValue);
-        },
-        [moaiLinkList, navigate],
-    );
-
-    const tabs = useMemo(() => {
-        if (!moaiLinkList) return [];
-
-        return Object.entries(moaiLinkList).map(([title, data]) => ({
-            label: title,
-            key: title,
-            content: (
-                <>
-                    {data &&
-                    data.moai_nodes &&
-                    data.moai_nodes.length > 0 &&
-                    data.moai_links &&
-                    data.moai_links.length > 0 ? (
-                        <RelationGraph
-                            moai_nodes={data.moai_nodes}
-                            moai_links={data.moai_links}
-                        />
-                    ) : (
-                        <div className="text-muted-foreground p-2 text-center">
-                            No graph data available for this Moai. Please check
-                            that both nodes and links are defined.
-                        </div>
-                    )}
-                </>
-            ),
-        }));
-    }, [moaiLinkList]);
+    const handleCardClick = (id: string) => {
+        navigate(`/moai_link/${encodeURIComponent(id)}`);
+    };
 
     // If there's no data at all, show a message
     if (!moaiLinkList || Object.keys(moaiLinkList).length === 0) {
@@ -123,14 +84,45 @@ const MoaiLink: React.FC = () => {
         );
     }
 
+    // 准备卡片数据
+    const cardItems = Object.entries(moaiLinkList).map(([title, data]) => ({
+        id: title,
+        title: title,
+        content: (
+            <div className="h-64 overflow-hidden">
+                {data &&
+                data.moai_nodes &&
+                data.moai_nodes.length > 0 &&
+                data.moai_links &&
+                data.moai_links.length > 0 ? (
+                    <RelationGraph
+                        moai_nodes={data.moai_nodes}
+                        moai_links={data.moai_links}
+                    />
+                ) : (
+                    <div className="text-muted-foreground p-2 text-center">
+                        No graph data available for this Moai. Please check that
+                        both nodes and links are defined.
+                    </div>
+                )}
+            </div>
+        ),
+    }));
+
+    // 按标题排序
+    const sortedItems = [...cardItems].sort((a, b) =>
+        a.title.localeCompare(b.title),
+    );
+
     return (
-        <RiverVerticalTabs
-            tabs={tabs}
-            value={activeTab}
-            onChange={handleChange}
-            sortTabs={true}
-            sortKey={(tab) => tab.label}
-        />
+        <div className="h-full w-full overflow-hidden">
+            <MasonryCards
+                items={sortedItems}
+                onItemClick={handleCardClick}
+                columnCount={3}
+                searchQuery={searchQuery}
+            />
+        </div>
     );
 };
 
