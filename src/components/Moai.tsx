@@ -1,102 +1,67 @@
-import { useNavigate } from 'react-router-dom';
-import { humanizeTime, PhaseContextType, SupportedLocale } from '../types/flow';
-import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState, useRef } from 'react';
-import { logError } from '@/utils/logger';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { humanizeTime, SupportedLocale } from '../types/flow';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import MasonryCards from './common/MasonryCards';
-
-export interface MoaiContextType {
-    full_name?: string;
-    base_time?: PhaseContextType;
-    description?: string;
-    [key: string]: any; // 用于 extra_props 的动态属性
-}
-
-export type MoaiListContextType = { [key: string]: MoaiContextType };
-
-const loadAllMoaiFullNames = async (moaiList: MoaiListContextType) => {
-    try {
-        const moaiEntries = Object.entries(moaiList);
-        const fullNames = await Promise.all(
-            moaiEntries.map(async ([id]) => ({
-                id,
-                fullName: await invoke<string>('get_moai_full_name', { id }),
-            })),
-        );
-        return Object.fromEntries(
-            fullNames.map(({ id, fullName }) => [id, fullName]),
-        );
-    } catch (error) {
-        logError(`Failed to load all Moai full names: ${error}`);
-        return Object.fromEntries(Object.keys(moaiList).map((id) => [id, id]));
-    }
-};
+import { useMoaiStore } from '@/store/moaiStore';
 
 interface MoaiListProps {
     searchQuery?: string;
 }
 
 const MoaiList: React.FC<MoaiListProps> = ({ searchQuery = '' }) => {
-    const navigate = useNavigate();
-    const [moaiList, setMoaiList] = useState<MoaiListContextType | undefined>(
-        undefined,
-    );
-    const [moaiFullNames, setMoaiFullNames] = useState<Record<string, string>>(
-        {},
-    );
-    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
-        unlisten: null,
-    });
+    const {
+        moaiList,
+        moaiFullNames,
+        isLoading,
+        error,
+        fetchMoaiList,
+        setupListener
+    } = useMoaiStore();
+
     const { t } = useTranslation();
     const locale = i18n.language;
 
-    // 获取Moai列表数据
+    // 获取Moai列表数据和设置文件变化监听器
     useEffect(() => {
-        const fetchMoaiList = async () => {
-            try {
-                const moaiListData =
-                    await invoke<MoaiListContextType>('get_all_moais');
-                setMoaiList(moaiListData);
-                setMoaiFullNames(await loadAllMoaiFullNames(moaiListData));
-            } catch (error) {
-                logError(`Failed to fetch moai list: ${error}`);
-            }
-        };
-
-        // 设置文件变化监听器
-        const setupListener = async () => {
-            // 确保没有重复设置监听器
-            if (listenerRef.current.unlisten) {
-                await listenerRef.current.unlisten();
-            }
-
-            listenerRef.current.unlisten = await listen<MoaiListContextType>(
-                'file-changed',
-                async () => {
-                    await fetchMoaiList();
-                },
-            );
-        };
-
-        // 初始化时获取数据并设置监听器
         fetchMoaiList();
-        setupListener();
+
+        // 设置监听器并返回清理函数
+        let cleanupListener: (() => void) | undefined;
+
+        const setup = async () => {
+            cleanupListener = await setupListener();
+        };
+
+        setup();
 
         // 清理函数
         return () => {
-            if (listenerRef.current.unlisten) {
-                listenerRef.current.unlisten();
-                listenerRef.current.unlisten = null;
+            if (cleanupListener) {
+                cleanupListener();
             }
         };
-    }, []);
+    }, [fetchMoaiList, setupListener]);
 
-    const handleCardClick = (id: string) => {
-        navigate(`/moai/${id}`);
-    };
+    if (isLoading) {
+        return (
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
+                    {t('common.loading')}
+                </p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-destructive text-xl">
+                    {t('common.error')}: {error}
+                </p>
+            </div>
+        );
+    }
 
     if (!moaiList || Object.keys(moaiList).length === 0) {
         return (
@@ -160,7 +125,6 @@ const MoaiList: React.FC<MoaiListProps> = ({ searchQuery = '' }) => {
         <div className="h-full w-full overflow-hidden">
             <MasonryCards
                 items={sortedItems}
-                onItemClick={handleCardClick}
                 columnCount={3}
                 searchQuery={searchQuery}
             />

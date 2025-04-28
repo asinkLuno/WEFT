@@ -9,7 +9,6 @@ import RiverTabs from './components/RiverTabs';
 import Footer from './components/Footer';
 import React from 'react';
 import { Toaster } from '@/components/ui/sonner';
-import MoaiLinkDetail from './components/MoaiLinkDetail';
 
 const AppContent: React.FC = () => {
     return (
@@ -25,10 +24,6 @@ const AppContent: React.FC = () => {
                     <Route path="/intro" element={<RiverTabs />} />
                     <Route path="/moai" element={<RiverTabs />} />
                     <Route path="/moai/:id" element={<RiverTabs />} />
-                    <Route
-                        path="/moai_link/:graphKey"
-                        element={<MoaiLinkDetail />}
-                    />
                     <Route path="/moai_link" element={<RiverTabs />} />
                     <Route path="/narrativeflow" element={<RiverTabs />} />
                     <Route

@@ -1,14 +1,16 @@
 import React from 'react';
-import { useFileContext } from '../context/FileContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react'; // Using Lucide icons which is used by Shadcn
 import { logError } from '@/utils/logger';
 import { useTranslation } from 'react-i18next'; // Import translation hook
+import { useFileStore } from '@/store/fileStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const Footer: React.FC = () => {
     const { t } = useTranslation(); // Initialize translation function
-    const { filePath, setFilePath } = useFileContext();
+    const { filePath, setFilePath } = useFileStore();
+    const { clearRecentFiles } = useSettingsStore();
     const navigate = useNavigate();
 
     const handleUnwatch = () => {
@@ -16,8 +18,8 @@ const Footer: React.FC = () => {
         setFilePath(undefined);
         // Clear all stored data
         try {
-            // Clear localStorage data related to the application
-            localStorage.clear();
+            // Clear recent files
+            clearRecentFiles();
 
             // Navigate back to home page
             navigate('/');

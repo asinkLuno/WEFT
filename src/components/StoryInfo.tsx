@@ -1,61 +1,59 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Book, FileText, Quote } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
-import { logError } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-
-export interface StoryContextType {
-    title: string;
-    summary?: string;
-    description?: string;
-}
+import { useStoryStore } from '@/store/storyStore';
 
 const StoryInfo: React.FC = () => {
-    const [story, setStory] = useState<StoryContextType | null>(null);
-    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
-        unlisten: null,
-    });
+    const {
+        story,
+        isLoading,
+        error,
+        fetchStory,
+        setupListener
+    } = useStoryStore();
+
     const { t } = useTranslation();
 
     useEffect(() => {
-        const fetchStory = async () => {
-            try {
-                const storyData = await invoke<StoryContextType>('get_story');
-                setStory(storyData);
-            } catch (error) {
-                logError(`Failed to fetch story: ${error}`);
-            }
-        };
-
         fetchStory();
 
-        // 监听故事变化
-        const setupListener = async () => {
-            // 确保没有重复设置监听器
-            if (listenerRef.current.unlisten) {
-                await listenerRef.current.unlisten();
-            }
+        // 设置监听器并返回清理函数
+        let cleanupListener: (() => void) | undefined;
 
-            listenerRef.current.unlisten = await listen<StoryContextType>(
-                'file-changed',
-                async () => {
-                    await fetchStory();
-                },
-            );
+        const setup = async () => {
+            cleanupListener = await setupListener();
         };
 
-        setupListener();
+        setup();
 
+        // 清理函数
         return () => {
-            // 组件卸载时清理监听器
-            if (listenerRef.current.unlisten) {
-                listenerRef.current.unlisten();
-                listenerRef.current.unlisten = null;
+            if (cleanupListener) {
+                cleanupListener();
             }
         };
-    }, []);
+    }, [fetchStory, setupListener]);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
+                    {t('common.loading')}
+                </p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <p className="text-destructive text-xl">
+                    {t('common.error')}: {error}
+                </p>
+            </div>
+        );
+    }
 
     if (!story) {
         return (

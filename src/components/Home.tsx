@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useFileContext } from '../context/FileContext';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Terminal, FileUp, Clock, ExternalLink, Puzzle } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logSuccess, logError, logInfo } from '@/utils/logger';
-import { load, Store } from '@tauri-apps/plugin-store';
 import { Separator } from '@/components/ui/separator';
 import {
     Select,
@@ -18,6 +16,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { useFileStore } from '@/store/fileStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // Letter variations moved outside the component
 const variations = {
@@ -70,58 +70,19 @@ const animateRiverText = (setDisplayText: (text: string) => void) => {
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
-    const { setFilePath } = useFileContext();
     const { t, i18n } = useTranslation();
-
-    // Replace locale state with i18next
     const [displayText, setDisplayText] = useState<string>('River');
-    const [store, setStore] = useState<Store | null>(null);
-    const [recentFiles, setRecentFiles] = useState<string[]>([]);
 
-    // Update store initialization
+    // Use Zustand stores instead of context and local state
+    const { filePath, setFilePath } = useFileStore();
+    const { locale, recentFiles, setLocale, addRecentFile } = useSettingsStore();
+
+    // Set the language from the store
     useEffect(() => {
-        const initStore = async () => {
-            try {
-                const storeInstance = await load('settings.json', {
-                    autoSave: true,
-                });
-                setStore(storeInstance);
-
-                const storedRecentFiles =
-                    await storeInstance.get<string[]>('recent_files');
-                if (storedRecentFiles) {
-                    setRecentFiles(storedRecentFiles);
-                }
-
-                const storedLocale = await storeInstance.get<string>('locale');
-                if (!storedLocale) {
-                    await storeInstance.set('locale', 'en-US');
-                }
-                i18n.changeLanguage(storedLocale);
-
-                const aqueductList = await storeInstance.get<string>('aqueduct');
-                // TODO: 如果aqueductList为空，则从本地文件读取
-
-            } catch (err) {
-                logError(`${t('home.failedToLoadStore')}: ${err}`);
-            }
-        };
-
-        initStore();
-    }, [i18n, t]);
-
-    // Update locale change handler
-    const updateLocale = async (newLocale: string) => {
-        if (!store) return;
-
-        try {
-            await i18n.changeLanguage(newLocale);
-            await store.set('locale', newLocale);
-            logSuccess(`${t('home.languageChanged')}: ${newLocale}`);
-        } catch (err) {
-            logError(`${t('home.failedToUpdateLocale')}: ${err}`);
+        if (locale) {
+            i18n.changeLanguage(locale);
         }
-    };
+    }, [locale, i18n]);
 
     // Animation effect
     useEffect(() => {
@@ -135,33 +96,6 @@ const Home: React.FC = () => {
     }, []); // Run once on mount
 
     /**
-     * Update recent files list
-     * @param filePath The file path to add to recent files
-     */
-    const updateRecentFiles = async (filePath: string) => {
-        if (!store) return;
-
-        try {
-            // Create a new array with the current file at the beginning
-            let updatedRecentFiles = [filePath];
-
-            // Add previous recent files, excluding the current one to avoid duplicates
-            if (recentFiles && recentFiles.length > 0) {
-                updatedRecentFiles = [
-                    filePath,
-                    ...recentFiles.filter((path) => path !== filePath),
-                ].slice(0, 3); // Keep only the 3 most recent files
-            }
-
-            // Update state and store
-            setRecentFiles(updatedRecentFiles);
-            await store.set('recent_files', updatedRecentFiles);
-        } catch (err) {
-            logError(`${t('home.failedToUpdateRecentFiles')}: ${err}`);
-        }
-    };
-
-    /**
      * Handle opening a file from recent files
      * @param filePath The file path to open
      */
@@ -169,7 +103,7 @@ const Home: React.FC = () => {
         try {
             setFilePath(filePath);
             await invoke('watch_file', { filePath });
-            await updateRecentFiles(filePath);
+            addRecentFile(filePath);
             logSuccess(`${t('home.fileLoadSuccess')}${filePath}`);
             navigate('/tabs');
         } catch (err) {
@@ -200,7 +134,7 @@ const Home: React.FC = () => {
                 try {
                     setFilePath(file_path as string);
                     await invoke('watch_file', { filePath: file_path });
-                    await updateRecentFiles(file_path as string);
+                    addRecentFile(file_path as string);
                     logSuccess(`${t('home.fileLoadSuccess')}${file_path}`);
                     // 导航到主界面
                     navigate('/tabs');
@@ -226,9 +160,7 @@ const Home: React.FC = () => {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
             <div className="absolute top-4 right-4 flex gap-2 items-center">
-
-
-                <Select value={i18n.language} onValueChange={updateLocale}>
+                <Select value={locale} onValueChange={setLocale}>
                     <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder={t('selectLanguage')} />
                     </SelectTrigger>

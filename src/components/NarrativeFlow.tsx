@@ -1,60 +1,66 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { CateFlowContextType, processFlowData } from '../types/flow';
+import React, { useEffect } from 'react';
 import GanttChart from './common/GanttChart';
-import { useNavigate, useParams } from 'react-router-dom';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { UnlistenFn } from '@tauri-apps/api/event';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MasonryCards from './common/MasonryCards';
+import { useNarrativeFlowStore } from '@/store/narrativeFlowStore';
 
 const NarrativeFlow: React.FC = () => {
     const navigate = useNavigate();
-    const [narrativeFlowList, setNarrativeFlowList] = useState<
-        CateFlowContextType | undefined
-    >(undefined);
-    const { graphKey } = useParams<{ graphKey?: string }>();
-    const listenerRef = useRef<{ unlisten: UnlistenFn | null }>({
-        unlisten: null,
-    });
+    const {
+        flowList,
+        isLoading,
+        error,
+        fetchFlowList,
+        setupListener
+    } = useNarrativeFlowStore();
     const { t } = useTranslation();
 
     useEffect(() => {
-        const fetchNarrativeFlowList = async () => {
-            const result = await invoke<CateFlowContextType>('narrative_flow');
-            setNarrativeFlowList(processFlowData(result));
+        fetchFlowList();
+
+        // 设置监听器并返回清理函数
+        let cleanupListener: (() => void) | undefined;
+
+        const setup = async () => {
+            cleanupListener = await setupListener();
         };
-        fetchNarrativeFlowList();
 
-        const setupListener = async () => {
-            // 确保没有重复设置监听器
-            if (listenerRef.current.unlisten) {
-                await listenerRef.current.unlisten();
-            }
+        setup();
 
-            listenerRef.current.unlisten = await listen<CateFlowContextType>(
-                'file-changed',
-                async () => {
-                    await fetchNarrativeFlowList();
-                },
-            );
-        };
-        setupListener();
-
+        // 清理函数
         return () => {
-            // 组件卸载时清理监听器
-            if (listenerRef.current.unlisten) {
-                listenerRef.current.unlisten();
-                listenerRef.current.unlisten = null;
+            if (cleanupListener) {
+                cleanupListener();
             }
         };
-    }, []);
+    }, [fetchFlowList, setupListener]);
 
     const handleCardClick = (id: string) => {
         navigate(`/narrativeflow/${encodeURIComponent(id)}`);
     };
 
-    if (!narrativeFlowList || Object.keys(narrativeFlowList).length === 0) {
+    if (isLoading) {
+        return (
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-muted-foreground text-xl">
+                    {t('common.loading')}
+                </p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-background flex h-full items-center justify-center">
+                <p className="text-destructive text-xl">
+                    {t('common.error')}: {error}
+                </p>
+            </div>
+        );
+    }
+
+    if (!flowList || Object.keys(flowList).length === 0) {
         return (
             <div className="bg-background flex h-full items-center justify-center">
                 <p className="text-muted-foreground text-xl">
@@ -65,7 +71,7 @@ const NarrativeFlow: React.FC = () => {
     }
 
     // 准备卡片数据
-    const cardItems = Object.entries(narrativeFlowList).map(
+    const cardItems = Object.entries(flowList).map(
         ([category, narrative_flow]) => ({
             id: category,
             title: category,

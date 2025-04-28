@@ -1,7 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useFileContext } from '../context/FileContext';
-import { listen } from '@tauri-apps/api/event';
 import StoryInfo from './StoryInfo';
 import MoaiList from './Moai';
 import MoaiLink from './MoaiLink';
@@ -10,6 +8,7 @@ import MoaiFlow from './MoaiFlow';
 import NarrativeFlow from './NarrativeFlow';
 import { logError } from '@/utils/logger';
 import { Input } from '@/components/ui/input';
+import { useFileStore, useTabsStore } from '@/store/index';
 
 import {
     NavigationMenu,
@@ -28,8 +27,14 @@ interface TabConfig {
 export default function RiverTabs() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { setFilePath } = useFileContext();
-    const [searchQuery, setSearchQuery] = useState('');
+    const { setFilePath } = useFileStore();
+    const {
+        activeTab,
+        searchQuery,
+        setActiveTab,
+        setSearchQuery,
+        setupListeners
+    } = useTabsStore();
 
     const tabs: TabConfig[] = [
         {
@@ -64,14 +69,12 @@ export default function RiverTabs() {
         },
     ];
 
-    const [activeTab, setActiveTab] = React.useState(() => {
+    // 初始化activeTab
+    useEffect(() => {
         const path = window.location.pathname;
-        return tabs.findIndex((tab) => path.includes(tab.path)) || 0;
-    });
-
-    // 添加 refs 跟踪监听器
-    const unlistenStopRef = useRef<(() => void) | null>(null);
-    const unlistenDaoFailedRef = useRef<(() => void) | null>(null);
+        const tabIndex = tabs.findIndex((tab) => path.includes(tab.path)) || 0;
+        setActiveTab(tabIndex);
+    }, []);
 
     useEffect(() => {
         const currentTab = tabs[activeTab];
@@ -83,71 +86,32 @@ export default function RiverTabs() {
         }
     }, [activeTab, navigate]);
 
-    // 事件监听器应该只设置一次
+    // 设置全局事件监听器
     useEffect(() => {
-        let mounted = true;
+        let cleanupListener: (() => void) | undefined;
 
-        const setupListeners = async () => {
-            try {
-                // 确保先清理之前的监听器（如果存在）
-                if (unlistenStopRef.current) {
-                    unlistenStopRef.current();
-                    unlistenStopRef.current = null;
-                }
-
-                if (unlistenDaoFailedRef.current) {
-                    unlistenDaoFailedRef.current();
-                    unlistenDaoFailedRef.current = null;
-                }
-
-                // 设置新的监听器
-                const unlistenStop = await listen('stop-watching', () => {
-                    setFilePath(undefined);
-                    navigate('/');
-                });
-
-                const unlistenDaoFailed = await listen(
-                    'dao-update-failed',
-                    (event) => {
-                        logError(`文件更新失败: ${event.payload}`);
-                    },
-                );
-
-                // 只有组件仍然挂载时才保存引用
-                if (mounted) {
-                    unlistenStopRef.current = unlistenStop;
-                    unlistenDaoFailedRef.current = unlistenDaoFailed;
-                } else {
-                    // 如果组件已卸载，立即清理
-                    unlistenStop();
-                    unlistenDaoFailed();
-                }
-            } catch (err) {
-                logError(`Failed to setup listeners: ${err}`);
-                if (mounted) {
-                    navigate('/');
-                }
-            }
+        const setup = async () => {
+            cleanupListener = await setupListeners();
         };
 
-        setupListeners();
+        setup();
 
-        // 返回清理函数
+        // 监听stop-watching事件，返回首页
+        const handleStopWatching = () => {
+            setFilePath(undefined);
+            navigate('/');
+        };
+
+        window.addEventListener('stop-watching', handleStopWatching);
+
+        // 清理函数
         return () => {
-            mounted = false;
-
-            // 清理监听器
-            if (unlistenStopRef.current) {
-                unlistenStopRef.current();
-                unlistenStopRef.current = null;
+            if (cleanupListener) {
+                cleanupListener();
             }
-
-            if (unlistenDaoFailedRef.current) {
-                unlistenDaoFailedRef.current();
-                unlistenDaoFailedRef.current = null;
-            }
+            window.removeEventListener('stop-watching', handleStopWatching);
         };
-    }, []); // 空依赖数组，确保监听器只设置一次
+    }, [navigate, setFilePath, setupListeners]);
 
     const handleNavigate = (path: string, index: number) => {
         navigate(path);
