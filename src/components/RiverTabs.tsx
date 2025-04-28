@@ -74,6 +74,11 @@ export default function RiverTabs() {
         const path = window.location.pathname;
         const tabIndex = tabs.findIndex((tab) => path.includes(tab.path)) || 0;
         setActiveTab(tabIndex);
+
+        // Clear search query if on Story tab
+        if (tabIndex === 0 && searchQuery) {
+            setSearchQuery('');
+        }
     }, []);
 
     useEffect(() => {
@@ -113,9 +118,21 @@ export default function RiverTabs() {
         };
     }, [navigate, setFilePath, setupListeners]);
 
+    // Clear search query when switching to Story tab
+    useEffect(() => {
+        if (activeTab === 0 && searchQuery) {
+            setSearchQuery('');
+        }
+    }, [activeTab, searchQuery]);
+
     const handleNavigate = (path: string, index: number) => {
         navigate(path);
         setActiveTab(index);
+
+        // Clear search query when switching to Story tab
+        if (index === 0 && searchQuery) {
+            setSearchQuery('');
+        }
     };
 
     return (
@@ -144,10 +161,11 @@ export default function RiverTabs() {
 
                     <Input
                         type="text"
-                        placeholder="搜索..."
+                        placeholder={activeTab === 0 ? "Story视图不支持搜索" : "搜索..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="ml-4 max-w-xs"
+                        className={`ml-4 max-w-xs ${activeTab === 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        disabled={activeTab === 0}
                     />
                 </div>
             </div>
