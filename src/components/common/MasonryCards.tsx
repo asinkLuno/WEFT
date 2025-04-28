@@ -60,11 +60,15 @@ const MasonryCards: React.FC<MasonryCardsProps> = ({
                         {column.map((item) => (
                             <Card
                                 key={item.id}
-                                className="cursor-pointer transition-shadow duration-200 hover:shadow-md"
-                                onClick={() => onItemClick?.(item.id)}
+                                className="transition-shadow duration-200 hover:shadow-md"
                             >
                                 <CardHeader>
-                                    <CardTitle>{item.title}</CardTitle>
+                                    <CardTitle
+                                        className="hover:text-primary cursor-pointer hover:underline"
+                                        onClick={() => onItemClick?.(item.id)}
+                                    >
+                                        {item.title}
+                                    </CardTitle>
                                     {item.description && (
                                         <CardDescription>
                                             {item.description}

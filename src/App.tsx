@@ -25,6 +25,7 @@ const AppContent: React.FC = () => {
                     <Route path="/moai" element={<RiverTabs />} />
                     <Route path="/moai/:id" element={<RiverTabs />} />
                     <Route path="/moai_link" element={<RiverTabs />} />
+                    <Route path="/moai_link/:id" element={<RiverTabs />} />
                     <Route path="/narrativeflow" element={<RiverTabs />} />
                     <Route
                         path="/narrativeflow/:graphKey"
