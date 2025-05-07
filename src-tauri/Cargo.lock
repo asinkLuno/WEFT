@@ -3,33 +3,6 @@
 version = 4
 
 [[package]]
-name = "RustRiver"
-version = "0.0.6"
-dependencies = [
- "either",
- "log",
- "notify",
- "notify-debouncer-full",
- "parking_lot",
- "regex",
- "rhai",
- "serde",
- "serde_json",
- "serde_yaml",
- "strum",
- "strum_macros",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-shell",
- "tauri-plugin-store",
- "thiserror 2.0.12",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5266,6 +5239,33 @@ dependencies = [
  "thiserror 2.0.12",
  "windows",
  "windows-core",
+]
+
+[[package]]
+name = "weft"
+version = "0.0.7"
+dependencies = [
+ "either",
+ "log",
+ "notify",
+ "notify-debouncer-full",
+ "parking_lot",
+ "regex",
+ "rhai",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "strum",
+ "strum_macros",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-shell",
+ "tauri-plugin-store",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

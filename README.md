@@ -1,6 +1,6 @@
 <div align="center">
 
-# InkRiver
+# WEFT
 
 <p align="center">
     <strong>Craft any world, timeline, or reality - writing tools without boundaries</strong>
@@ -25,7 +25,7 @@ We've observed that existing creative tools generally employ standardized timeli
 
 ## Usage
 
-When opening River, you need to bind a YAML file. You can freely edit the YAML file, and River will automatically refresh its data when changes are detected.
+When opening WEFT, you need to bind a YAML file. You can freely edit the YAML file, and WEFT will automatically refresh its data when changes are detected.
 
 Using YAML as the data format requires understanding YAML syntax. A key advantage is its support for references, as demonstrated in the time definition section.
 

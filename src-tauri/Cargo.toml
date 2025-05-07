@@ -1,6 +1,6 @@
 [package]
-name = "RustRiver"
-version = "0.0.6"
+name = "weft"
+version = "0.0.7"
 description = "Build your river."
 authors = ["asinkLuno"]
 edition = "2021"
