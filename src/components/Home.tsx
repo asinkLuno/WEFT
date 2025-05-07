@@ -21,25 +21,23 @@ import { useSettingsStore } from '@/store/settingsStore';
 
 // Letter variations moved outside the component
 const variations = {
-    r: ['ℝ', 'ℜ', 'ℛ', '℟', 'ჩ', 'ᖇ', 'Ꮢ', 'ᚱ'],
-    i: ['Ꭵ', 'ί', 'Ï'],
-    v: ['Ꮙ', '∨', '℣'],
-    e: ['℮', '€', 'є', 'ε'],
+    w: ['ധ', '₩', 'ẅ'],
+    e: ['℮', '€', 'є'],
+    f: ['ƒ', 'ℱ', '₣'],
+    t: ['Ṫ', '₮', 'ṯ'],
 };
 
 // Generate a random stylized River
 const generateStylizedRiver = () => {
-    const randomR1 =
-        variations.r[Math.floor(Math.random() * variations.r.length)];
-    const randomR2 =
-        variations.r[Math.floor(Math.random() * variations.r.length)];
-    const randomI =
-        variations.i[Math.floor(Math.random() * variations.i.length)];
-    const randomV =
-        variations.v[Math.floor(Math.random() * variations.v.length)];
+    const randomW =
+        variations.w[Math.floor(Math.random() * variations.w.length)];
     const randomE =
         variations.e[Math.floor(Math.random() * variations.e.length)];
-    return `Ink ${randomR1}${randomI}${randomV}${randomE}${randomR2}`;
+    const randomF =
+        variations.f[Math.floor(Math.random() * variations.f.length)];
+    const randomT =
+        variations.t[Math.floor(Math.random() * variations.t.length)];
+    return `${randomW}${randomE}${randomF}${randomT}`;
 };
 
 // Animation function
@@ -75,7 +73,8 @@ const Home: React.FC = () => {
 
     // Use Zustand stores instead of context and local state
     const { filePath, setFilePath } = useFileStore();
-    const { locale, recentFiles, setLocale, addRecentFile } = useSettingsStore();
+    const { locale, recentFiles, setLocale, addRecentFile } =
+        useSettingsStore();
 
     // Set the language from the store
     useEffect(() => {
@@ -155,11 +154,10 @@ const Home: React.FC = () => {
         }
     };
 
-
     // 组件渲染部分
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
-            <div className="absolute top-4 right-4 flex gap-2 items-center">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
                 <Select value={locale} onValueChange={setLocale}>
                     <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder={t('selectLanguage')} />
