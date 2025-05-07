@@ -1,22 +1,18 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import RelationGraph from './common/RelationGraph';
+import GanttChart from './common/GanttChart';
 import { useTranslation } from 'react-i18next';
 import MasonryCards from './common/MasonryCards';
-import { useMoaiLinkStore } from '@/store/moaiLinkStore';
+import { useDriftFlowStore } from '@/store/driftFlowStore';
 
-interface MoaiLinkProps {
-    searchQuery?: string;
-}
-
-const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
+const DriftFlow: React.FC = () => {
     const navigate = useNavigate();
-    const { linkList, isLoading, error, fetchLinkList, setupListener } =
-        useMoaiLinkStore();
+    const { flowList, isLoading, error, fetchFlowList, setupListener } =
+        useDriftFlowStore();
     const { t } = useTranslation();
 
     useEffect(() => {
-        fetchLinkList();
+        fetchFlowList();
 
         // 设置监听器并返回清理函数
         let cleanupListener: (() => void) | undefined;
@@ -33,10 +29,10 @@ const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
                 cleanupListener();
             }
         };
-    }, [fetchLinkList, setupListener]);
+    }, [fetchFlowList, setupListener]);
 
     const handleCardClick = (id: string) => {
-        navigate(`/moai_link/${encodeURIComponent(id)}`);
+        navigate(`/driftflow/${encodeURIComponent(id)}`);
     };
 
     if (isLoading) {
@@ -59,40 +55,23 @@ const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
         );
     }
 
-    // If there's no data at all, show a message
-    if (!linkList || Object.keys(linkList).length === 0) {
+    if (!flowList || Object.keys(flowList).length === 0) {
         return (
             <div className="bg-background flex h-full items-center justify-center">
                 <p className="text-muted-foreground text-xl">
-                    {t('moaiLink.noData', '暂无可用MoaiLink')}
+                    {t('driftFlow.noData')}
                 </p>
             </div>
         );
     }
 
     // 准备卡片数据
-    const cardItems = Object.entries(linkList).map(([title, data]) => ({
-        id: title,
-        title: title,
+    const cardItems = Object.entries(flowList).map(([category, flow_data]) => ({
+        id: category,
+        title: category,
         content: (
             <div className="h-64 overflow-hidden">
-                {data &&
-                data.moai_nodes &&
-                data.moai_nodes.length > 0 &&
-                data.moai_links &&
-                data.moai_links.length > 0 ? (
-                    <RelationGraph
-                        moai_nodes={data.moai_nodes}
-                        moai_links={data.moai_links}
-                    />
-                ) : (
-                    <div className="text-muted-foreground p-2 text-center">
-                        {t(
-                            'moaiLink.noGraphData',
-                            'No graph data available for this Moai. Please check that both nodes and links are defined.',
-                        )}
-                    </div>
-                )}
+                <GanttChart data={flow_data} />
             </div>
         ),
     }));
@@ -108,10 +87,9 @@ const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
                 items={sortedItems}
                 onItemClick={handleCardClick}
                 columnCount={3}
-                searchQuery={searchQuery}
             />
         </div>
     );
 };
 
-export default MoaiLink;
+export default DriftFlow;

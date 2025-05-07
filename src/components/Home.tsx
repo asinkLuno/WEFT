@@ -156,7 +156,7 @@ const Home: React.FC = () => {
 
     // 组件渲染部分
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="flex min-h-[calc(100vh-28px)] flex-col items-center justify-center">
             <div className="absolute top-4 right-4 flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <Puzzle className="h-4 w-4" />

@@ -1,101 +1,41 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import GanttChart from './common/GanttChart';
-import { useTranslation } from 'react-i18next';
-import MasonryCards from './common/MasonryCards';
+import React from 'react';
 import { useDriftFlowStore } from '@/store/driftFlowStore';
+import { useTranslation } from 'react-i18next';
+import useFlowListener from '@/hooks/useFlowListener';
+import BaseFlow from './common/BaseFlow';
+import GanttChart from './common/GanttChart';
+import { useNavigate } from 'react-router-dom';
 
 const DriftFlow: React.FC = () => {
-    const navigate = useNavigate();
-    const {
-        flowList,
-        isLoading,
-        error,
-        fetchFlowList,
-        setupListener
-    } = useDriftFlowStore();
+    const { flowList, isLoading, error, fetchFlowList, setupListener } =
+        useDriftFlowStore();
+
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        fetchFlowList();
-
-        // 设置监听器并返回清理函数
-        let cleanupListener: (() => void) | undefined;
-
-        const setup = async () => {
-            cleanupListener = await setupListener();
-        };
-
-        setup();
-
-        // 清理函数
-        return () => {
-            if (cleanupListener) {
-                cleanupListener();
-            }
-        };
-    }, [fetchFlowList, setupListener]);
+    useFlowListener({
+        fetchFlowList,
+        setupListener,
+    });
 
     const handleCardClick = (id: string) => {
         navigate(`/driftflow/${encodeURIComponent(id)}`);
     };
 
-    if (isLoading) {
-        return (
-            <div className="bg-background flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-xl">
-                    {t('common.loading')}
-                </p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="bg-background flex h-full items-center justify-center">
-                <p className="text-destructive text-xl">
-                    {t('common.error')}: {error}
-                </p>
-            </div>
-        );
-    }
-
-    if (!flowList || Object.keys(flowList).length === 0) {
-        return (
-            <div className="bg-background flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-xl">
-                    {t('driftFlow.noData')}
-                </p>
-            </div>
-        );
-    }
-
-    // 准备卡片数据
-    const cardItems = Object.entries(flowList).map(
-        ([category, flow_data]) => ({
-            id: category,
-            title: category,
-            content: (
-                <div className="h-64 overflow-hidden">
-                    <GanttChart data={flow_data} />
-                </div>
-            ),
-        }),
-    );
-
-    // 按标题排序
-    const sortedItems = [...cardItems].sort((a, b) =>
-        a.title.localeCompare(b.title),
-    );
-
     return (
-        <div className="h-full w-full overflow-hidden">
-            <MasonryCards
-                items={sortedItems}
-                onItemClick={handleCardClick}
-                columnCount={3}
-            />
-        </div>
+        <BaseFlow
+            flowList={flowList}
+            isLoading={isLoading}
+            error={error}
+            noDataKey="driftFlow.noData"
+            onItemClick={handleCardClick}
+        >
+            {(flowData) => (
+                <div className="h-64 overflow-hidden">
+                    <GanttChart data={flowData} />
+                </div>
+            )}
+        </BaseFlow>
     );
 };
 
