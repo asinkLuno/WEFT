@@ -158,6 +158,9 @@ const Home: React.FC = () => {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
             <div className="absolute top-4 right-4 flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Puzzle className="h-4 w-4" />
+                </Button>
                 <Select value={locale} onValueChange={setLocale}>
                     <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder={t('selectLanguage')} />
