@@ -6,7 +6,7 @@ import React, {
     useCallback,
 } from 'react';
 import * as d3 from 'd3';
-import { MoaiLinkContextType } from '../MoaiLink';
+import { MoaiLinkContextType } from '@/store';
 
 interface SimulationNode extends d3.SimulationNodeDatum {
     id: string;
@@ -73,11 +73,11 @@ const RelationGraph: React.FC<MoaiLinkContextType> = ({
     const { nodes, links } = useMemo(() => {
         if (!moai_nodes || !moai_links) return { nodes: [], links: [] };
 
-        const nodes = moai_nodes.map((node) => ({
+        const nodes = moai_nodes.map((node:any) => ({
             ...node,
         })) as SimulationNode[];
 
-        const links = moai_links.map((link) => ({
+        const links = moai_links.map((link:any) => ({
             ...link,
             source: link.from,
             target: link.to,
