@@ -23,6 +23,74 @@ where
     result
 }
 
+fn _handle_calendar_arithmetic(
+    result: &mut [i32; Phase::MAX_LENGTH],
+    unit_index: usize,
+    extra_case: bool,
+    depth: usize,
+    date_mode: &str,
+    aqueduct: Option<&Aqueduct>,
+    vec1_ref: &mut [i32; Phase::MAX_LENGTH], // Pass original vec1 and vec2 for recursive calls
+    vec2_ref: &mut [i32; Phase::MAX_LENGTH],
+) -> Result<(), WeftError> {
+    if depth > MAX_DEPTH {
+        return Err(WeftError::MaximumRecursionDepthExceeded(MAX_DEPTH));
+    }
+
+    let unit_range_varlen: Option<([i32; 2], bool)>;
+    if date_mode == "Gregorian" {
+        unit_range_varlen = get_unit_gregorian(result, unit_index, extra_case)?;
+    } else {
+        if let Some(aq) = aqueduct {
+            unit_range_varlen =
+                aq.call_with::<PhasePlugin>(date_mode, (result.clone(), unit_index, extra_case))?;
+        } else {
+            return Err(WeftError::AqueductNotInitialized);
+        }
+    }
+
+    match unit_range_varlen {
+        Some((unit_range, if_varlen)) => {
+            if result[unit_index] < unit_range[0] {
+                if if_varlen {
+                    //变长
+                    result[unit_index] += unit_range[1];
+                    result[unit_index - 1] -= 1;
+                } else {
+                    let deficit = unit_range[0] - result[unit_index];
+                    let units_to_borrow = (deficit + unit_range[1] - 1) / unit_range[1];
+                    result[unit_index] += units_to_borrow * unit_range[1];
+                    result[unit_index - 1] -= units_to_borrow;
+                }
+                // Recursive call to handle further adjustments for the current unit
+                _handle_calendar_arithmetic(result, unit_index, extra_case, depth + 1, date_mode, aqueduct, vec1_ref, vec2_ref)?;
+            } else if result[unit_index] > unit_range[1] {
+                if if_varlen {
+                    result[unit_index] -= unit_range[1];
+                    result[unit_index - 1] += 1;
+                } else {
+                    let excess = result[unit_index] - unit_range[1];
+                    let units_to_carry = (excess + unit_range[1] - 1) / unit_range[1];
+                    result[unit_index] -= units_to_carry * unit_range[1];
+                    result[unit_index - 1] += units_to_carry;
+                }
+                 // Recursive call to handle further adjustments for the current unit
+                _handle_calendar_arithmetic(result, unit_index, extra_case, depth + 1, date_mode, aqueduct, vec1_ref, vec2_ref)?;
+            }
+        }
+        None => {
+            //暂时不能提供的，先计算前面的
+            // Process the previous unit first
+            if unit_index > 0 {
+                 add_time_vec(vec1_ref, vec2_ref, result, unit_index - 1, extra_case, depth + 1, date_mode, aqueduct)?;
+            }
+            // Then, retry the current unit with extra_case = true
+            _handle_calendar_arithmetic(result, unit_index, true, depth + 1, date_mode, aqueduct, vec1_ref, vec2_ref)?;
+        }
+    }
+    Ok(())
+}
+
 fn add_time_vec(
     vec1: &mut [i32; Phase::MAX_LENGTH],
     vec2: &mut [i32; Phase::MAX_LENGTH],
@@ -33,108 +101,20 @@ fn add_time_vec(
     date_mode: &str,
     aqueduct: Option<&Aqueduct>,
 ) -> Result<(), WeftError> {
-    // Check if we've exceeded the maximum recursion depth
     if depth > MAX_DEPTH {
         return Err(WeftError::MaximumRecursionDepthExceeded(MAX_DEPTH));
     }
+
     result[unit_index] = vec1[unit_index] + vec2[unit_index] + result[unit_index];
-    vec1[unit_index] = 0;
-    vec2[unit_index] = 0;
+    vec1[unit_index] = 0; // Clear after adding
+    vec2[unit_index] = 0; // Clear after adding
+
     if unit_index > 0 {
-        let unit_range_varlen: Option<([i32; 2], bool)>;
-        if date_mode == "Gregorian" {
-            unit_range_varlen = get_unit_gregorian(result, unit_index, extra_case)?;
-        } else {
-            if let Some(aqueduct) = aqueduct {
-                unit_range_varlen = aqueduct.call_with::<PhasePlugin>(
-                    date_mode,
-                    (result.clone(), unit_index, extra_case),
-                )?;
-            } else {
-                return Err(WeftError::AqueductNotInitialized);
-            }
-        }
-        match unit_range_varlen {
-            Some((unit_range, if_varlen)) => {
-                if result[unit_index] < unit_range[0] {
-                    if if_varlen {
-                        //变长
-                        result[unit_index] += unit_range[1];
-                        result[unit_index - 1] -= 1;
-                    } else {
-                        let deficit = unit_range[0] - result[unit_index];
-                        let units_to_borrow = (deficit + unit_range[1] - 1) / unit_range[1];
-                        result[unit_index] += units_to_borrow * unit_range[1];
-                        result[unit_index - 1] -= units_to_borrow;
-                    }
-                    add_time_vec(
-                        vec1,
-                        vec2,
-                        result,
-                        unit_index,
-                        extra_case,
-                        depth + 1,
-                        date_mode,
-                        aqueduct,
-                    )?;
-                } else if result[unit_index] > unit_range[1] {
-                    if if_varlen {
-                        result[unit_index] -= unit_range[1];
-                        result[unit_index - 1] += 1;
-                    } else {
-                        let excess = result[unit_index] - unit_range[1];
-                        let units_to_carry = (excess + unit_range[1] - 1) / unit_range[1];
-                        result[unit_index] -= units_to_carry * unit_range[1];
-                        result[unit_index - 1] += units_to_carry;
-                    }
-                    add_time_vec(
-                        vec1,
-                        vec2,
-                        result,
-                        unit_index,
-                        extra_case,
-                        depth + 1,
-                        date_mode,
-                        aqueduct,
-                    )?;
-                }
-            }
-            None => {
-                //暂时不能提供的，先计算前面的
-                add_time_vec(
-                    vec1,
-                    vec2,
-                    result,
-                    unit_index - 1,
-                    extra_case,
-                    depth + 1,
-                    date_mode,
-                    aqueduct,
-                )?;
-                add_time_vec(
-                    vec1,
-                    vec2,
-                    result,
-                    unit_index,
-                    true,
-                    depth + 1,
-                    date_mode,
-                    aqueduct,
-                )?;
-                // return Ok(());
-            }
-        }
+        _handle_calendar_arithmetic(result, unit_index, extra_case, depth, date_mode, aqueduct, vec1, vec2)?; // Pass original vec1 and vec2
+
+        // After handling the current unit, proceed to the previous unit if not an extra_case call
         if !extra_case {
-            add_time_vec(
-                vec1,
-                vec2,
-                result,
-                unit_index - 1,
-                extra_case,
-                depth + 1,
-                date_mode,
-                aqueduct,
-            )?;
+            add_time_vec(vec1, vec2, result, unit_index - 1, false, depth + 1, date_mode, aqueduct)?;
         }
     }
     Ok(())
@@ -270,7 +250,6 @@ impl Phase {
                     } else {
                         parent_ref_time.clone()
                     };
-
                     Phase::_de_recusive(
                         &mut phase.base_time,
                         &mut Some(added_ref_time),
@@ -374,11 +353,7 @@ impl<'de> Deserialize<'de> for Phase {
                         .and_then(|v| v.try_into().ok())
                         .ok_or_else(|| DeError::custom("Invalid number"))?;
 
-                    if ref_time.is_none() {
-                        ref_time = Some([0; Phase::MAX_LENGTH]); // Initialize the array
-                    }
-
-                    let ref_time_array = ref_time.as_mut().unwrap();
+                    let ref_time_array = ref_time.get_or_insert_with(Default::default);
                     if ref_time_index >= Phase::MAX_LENGTH {
                         return Err(DeError::custom(
                             "Reference time index exceeds maximum length",
@@ -461,17 +436,11 @@ pub fn sub_phase(
 
     //base_time一致
     if p1_de_recusive.base_time == p2_de_recusive.base_time {
-        if let Some(ref_time) = p1_de_recusive.ref_time {
-            vec1 = ref_time.clone();
-        } else {
-            vec1 = [0; Phase::MAX_LENGTH];
-        }
-        if let Some(ref_time) = p2_de_recusive.ref_time {
-            vec2 = ref_time.clone();
-            vec2[..Phase::MAX_LENGTH].iter_mut().for_each(|x| *x = -*x);
-        } else {
-            vec2 = [0; Phase::MAX_LENGTH];
-        }
+        vec1 = p1_de_recusive.ref_time.unwrap_or_default();
+        vec2 = p2_de_recusive.ref_time.map_or_else(Default::default, |mut rt| {
+            rt.iter_mut().for_each(|x| *x = -*x);
+            rt
+        });
     } else {
         let p1_absolute_time = p1_de_recusive.absolute_time()?;
         let p2_absolute_time = p2_de_recusive.absolute_time()?;
