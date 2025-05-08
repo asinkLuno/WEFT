@@ -7,10 +7,11 @@ This file tracks the project's current status, including recent changes, current
 
 ## Current Focus
 
-* Finalizing `WeftError` enum refactoring in [`src-tauri/src/weft/errors.rs`](src-tauri/src/weft/errors.rs).
+* Optimizing and refactoring code in [`src-tauri/src/weft/dao.rs`](src-tauri/src/weft/dao.rs).
 
 ## Recent Changes
 
+* [2025-05-08 10:05:54] - Applied several optimizations to [`src-tauri/src/weft/dao.rs`](src-tauri/src/weft/dao.rs), including using `HashMap::entry`, `matches!` macro, helper closures, and `Option::and_then`. Added `DriftDefinitionsNotFound` to [`src-tauri/src/weft/errors.rs`](src-tauri/src/weft/errors.rs) and updated its usage in `dao.rs`.
 * [2025-05-08 09:47:05] - Refactored `WeftError` enum in [`src-tauri/src/weft/errors.rs`](src-tauri/src/weft/errors.rs) for better organization and clarity.
 
 ## Open Questions/Issues

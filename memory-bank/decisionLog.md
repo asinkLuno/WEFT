@@ -56,3 +56,24 @@ The `cargo build` process failed due to incorrect `WeftError` enum variants bein
 - Updated `WeftError::MoaisNotDefined` to `WeftError::MoaiDefinitionsNotFound` in [`src-tauri/src/weft/dao.rs`](src-tauri/src/weft/dao.rs:1).
 - Updated `WeftError::FailedToSerializeMoai` to `WeftError::FailedToSerializeJson` in [`src-tauri/src/weft/dao.rs`](src-tauri/src/weft/dao.rs:1).
 - Updated `WeftError::FailedInNotify` to `WeftError::FileNotificationError` in [`src-tauri/src/weft/kappa.rs`](src-tauri/src/weft/kappa.rs:1).
+
+---
+### Decision (Code)
+[2025-05-08 10:06:47] - Optimized `src-tauri/src/weft/dao.rs` and added `DriftDefinitionsNotFound` error.
+
+**Rationale:**
+- Improve code readability and conciseness in `dao.rs` by leveraging Rust's idiomatic expressions and APIs (e.g., `HashMap::entry`, `matches!`, `Option::and_then`, helper closures).
+- Enhance error handling by providing a specific error variant (`DriftDefinitionsNotFound`) for cases where drift definitions are missing, maintaining consistency with `MoaiDefinitionsNotFound`.
+
+**Details:**
+- **[`src-tauri/src/weft/dao.rs`](src-tauri/src/weft/dao.rs):**
+    - `Moai::insert_extra_props`: Switched to `HashMap::entry` for cleaner insertion and duplicate key handling.
+    - `Dao::resolve_moai`: Used `HashMap::entry` for `was_moais` and `tagged_moais` updates.
+    - `Dao::new`: Simplified file extension check using `matches!`.
+    - `Dao::resolve_narratives`: Simplified `drift_keys` and `moai_keys` acquisition; extracted `check_ids` closure to reduce redundancy.
+    - `Dao::get_all_moai_links`: Used `?` operator for error propagation within `map`.
+    - `Dao::moai2json`: Simplified `date_mode` retrieval.
+    - `Dao::narrative_flow`: Used `ok_or(WeftError::DriftDefinitionsNotFound)` for safer access to `self.drift`.
+    - `Dao::date_mode`: Simplified using `Option::and_then`.
+- **[`src-tauri/src/weft/errors.rs`](src-tauri/src/weft/errors.rs):**
+    - Added `DriftDefinitionsNotFound` variant to the `WeftError` enum.

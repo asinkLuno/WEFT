@@ -56,17 +56,14 @@ impl Moai {
     }
 
     pub fn insert_extra_props(&mut self, key: String, value: JsonValue) -> Result<(), WeftError> {
-        if let Some(props) = &mut self.extra_props {
-            if props.contains_key(&key) {
-                return Err(WeftError::DuplicateKeyInExtraProps(key.clone()));
-            } else {
-                props.insert(key, value);
+        use std::collections::hash_map::Entry;
+        match self.extra_props.get_or_insert_with(HashMap::new).entry(key) {
+            Entry::Occupied(entry) => Err(WeftError::DuplicateKeyInExtraProps(entry.key().clone())),
+            Entry::Vacant(entry) => {
+                entry.insert(value);
+                Ok(())
             }
-        } else {
-            self.extra_props = Some(HashMap::new());
-            self.extra_props.as_mut().unwrap().insert(key, value);
         }
-        Ok(())
     }
 }
 
@@ -184,10 +181,9 @@ impl Dao {
         let ext = file_path
             .extension()
             .and_then(|s| s.to_str())
-            .unwrap_or_default()
-            .to_lowercase();
+            .unwrap_or_default();
 
-        if ext != "yaml" && ext != "yml" {
+        if !matches!(ext.to_lowercase().as_str(), "yaml" | "yml") {
             return Err(WeftError::UnsupportedFileType(ext.to_string()));
         }
 
@@ -241,27 +237,23 @@ impl Dao {
                         if !moais.contains_key(is_id) {
                             return Err(WeftError::MoaiNotDefined(is_id.clone()));
                         }
-                        if let Some(is_set) = self.was_moais.as_mut().unwrap().get_mut(is_id) {
-                            is_set.insert(id.clone());
-                        } else {
-                            self.was_moais
-                                .as_mut()
-                                .unwrap()
-                                .insert(is_id.clone(), HashSet::new());
-                        }
+                        self.was_moais
+                            .as_mut()
+                            .unwrap()
+                            .entry(is_id.clone())
+                            .or_insert_with(HashSet::new)
+                            .insert(id.clone());
                     }
                 }
 
                 if let Some(tags) = moai.tags() {
                     for tag in tags {
-                        if let Some(tag_set) = self.tagged_moais.as_mut().unwrap().get_mut(tag) {
-                            tag_set.insert(id.clone());
-                        } else {
-                            self.tagged_moais
-                                .as_mut()
-                                .unwrap()
-                                .insert(tag.clone(), HashSet::new());
-                        }
+                        self.tagged_moais
+                            .as_mut()
+                            .unwrap()
+                            .entry(tag.clone())
+                            .or_insert_with(HashSet::new)
+                            .insert(id.clone());
                     }
                 }
 
@@ -315,15 +307,17 @@ impl Dao {
     }
 
     fn resolve_narratives(&self) -> Result<(), WeftError> {
-        let drift_keys = match &self.drift {
-            Some(drift) => drift.keys().collect::<HashSet<&String>>(),
-            None => HashSet::<&String>::new(),
-        };
+        let drift_keys: HashSet<&String> = self
+            .drift
+            .as_ref()
+            .map(|drift| drift.keys().collect())
+            .unwrap_or_else(HashSet::new);
 
-        let moai_keys = match &self.moai {
-            Some(moai) => moai.keys().collect::<HashSet<&String>>(),
-            None => HashSet::<&String>::new(),
-        };
+        let moai_keys: HashSet<&String> = self
+            .moai
+            .as_ref()
+            .map(|moai| moai.keys().collect())
+            .unwrap_or_else(HashSet::new);
 
         // Find duplicates using HashSet intersection
         let duplicates: Vec<&String> = drift_keys
@@ -340,21 +334,20 @@ impl Dao {
         let all_id = drift_keys.union(&moai_keys).collect::<HashSet<_>>();
 
         if let Some(narratives) = &self.narrative {
+            let check_ids = |ids: Option<&Vec<String>>| -> Result<(), WeftError> {
+                if let Some(id_vec) = ids {
+                    for id in id_vec {
+                        if !all_id.contains(&id) {
+                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
+                        }
+                    }
+                }
+                Ok(())
+            };
+
             for (_, narrative) in narratives.iter() {
-                if let Some(subject) = narrative.subject() {
-                    for id in subject {
-                        if !all_id.contains(&id) {
-                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
-                        }
-                    }
-                }
-                if let Some(observer) = narrative.observer() {
-                    for id in observer {
-                        if !all_id.contains(&id) {
-                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
-                        }
-                    }
-                }
+                check_ids(narrative.subject())?;
+                check_ids(narrative.observer())?;
             }
         }
         Ok(())
@@ -423,16 +416,11 @@ impl Dao {
 
                         let mut moai_nodes: Vec<serde_json::Value> = Vec::new();
                         for id in &unique_moais {
-                            // Handle the Result explicitly instead of using ?
-                            match self.get_moai(&id) {
-                                Ok(moai) => {
-                                    moai_nodes.push(serde_json::json!({
-                                        "id": id,
-                                        "text": moai.full_name()
-                                    }));
-                                }
-                                Err(err) => return Err(err), // Return the error from the closure
-                            }
+                            let moai = self.get_moai(&id)?; // Use ? to propagate error
+                            moai_nodes.push(serde_json::json!({
+                                "id": id,
+                                "text": moai.full_name()
+                            }));
                         }
 
                         // Create MoaiLinkContextType structure
@@ -460,10 +448,10 @@ impl Dao {
         aqueduct: Option<&Aqueduct>,
     ) -> Result<serde_json::Value, WeftError> {
         if let Some(base_time) = moai.base_time() {
-            let date_mode = self.date_mode().map_or("Gregorian", |s| s);
+            let date_mode = self.date_mode().map(String::as_str).unwrap_or("Gregorian");
             let mut moai_json = serde_json::json!({
                 "id": id.clone(),
-                "start_time_duration": sub_phase(&start_time, &base_time, date_mode, aqueduct)?,
+                "start_time_duration": sub_phase(start_time, base_time, date_mode, aqueduct)?,
             });
             if let Some(end_time) = end_time {
                 let end_time_duration = sub_phase(&end_time, &base_time, &date_mode, aqueduct)?;
@@ -615,9 +603,11 @@ impl Dao {
             for (id, narrative) in narratives.iter() {
                 if let Some(subject) = narrative.subject() {
                     let mut flow_vec: Vec<serde_json::Value> = Vec::new();
-                    for id in subject {
-                        if self.drift.as_ref().unwrap().contains_key(id) {
-                            let drifts = self.drift.as_ref().unwrap().get(id).unwrap();
+                    for narrative_subject_id in subject {
+                        // Ensure self.drift is not None before trying to access it
+                        let drift_map = self.drift.as_ref().ok_or(WeftError::DriftDefinitionsNotFound)?;
+                        
+                        if let Some(drifts) = drift_map.get(narrative_subject_id) {
                             for drift in drifts {
                                 let json_obj = self.drift2json(
                                     drift.title(),
@@ -631,7 +621,8 @@ impl Dao {
                                 flow_vec.push(json_obj);
                             }
                         } else {
-                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
+                            // If the narrative_subject_id (which is a drift category key) is not in drift_map
+                            return Err(WeftError::EntityNotFoundInNarrative(narrative_subject_id.clone()));
                         }
                     }
                     flow_vec.sort_by(|a, b| {
@@ -649,11 +640,7 @@ impl Dao {
     }
 
     pub fn date_mode(&self) -> Option<&String> {
-        if let Some(ref story) = &self.story {
-            story.date_mode()
-        } else {
-            None
-        }
+        self.story.as_ref().and_then(|s| s.date_mode())
     }
 }
 

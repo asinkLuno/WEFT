@@ -40,6 +40,9 @@ pub enum WeftError {
     #[error("Moai definitions are not found in Dao.")]
     MoaiDefinitionsNotFound, // Was: MoaisNotDefined - Renamed for clarity
 
+    #[error("Drift definitions are not found in Dao.")]
+    DriftDefinitionsNotFound,
+
     #[error("Moai `{0}` is not defined in Dao.")]
     MoaiNotDefined(String), // Was: MoaiNotDefined(String)
 
