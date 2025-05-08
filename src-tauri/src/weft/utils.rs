@@ -1,10 +1,10 @@
-use super::{errors::RiverError, phase::Phase};
+use super::{errors::WeftError, phase::Phase};
 
 pub fn get_unit_gregorian(
     time_vec: &mut [i32; Phase::MAX_LENGTH],
     unit_index: usize,
     extra_case: bool,
-) -> Result<Option<([i32; 2], bool)>, RiverError> {
+) -> Result<Option<([i32; 2], bool)>, WeftError> {
     match unit_index {
         1 => Ok(Some(([0, 12], false))), //月
         2 => {
@@ -34,6 +34,6 @@ pub fn get_unit_gregorian(
         3 => Ok(Some(([0, 24], false))),
         4 => Ok(Some(([0, 60], false))),
         5 => Ok(Some(([0, 60], false))),
-        _ => Err(RiverError::PhaseUnitIndexOutOfRange),
+        _ => Err(WeftError::PhaseUnitIndexOutOfRange),
     }
 }

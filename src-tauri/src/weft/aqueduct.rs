@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use super::{
     dao::Moai,
-    errors::RiverError,
+    errors::WeftError,
     phase::{Phase, PhaseNoRecusive},
 };
 
@@ -31,14 +31,14 @@ pub trait PluginCaller {
     fn prepare_args(input: Self::Input) -> Vec<Dynamic>;
 
     /// Validate and convert the raw output to expected type
-    fn validate_output(output: Dynamic) -> Result<Self::Output, RiverError>;
+    fn validate_output(output: Dynamic) -> Result<Self::Output, WeftError>;
 
     /// Main calling interface
     fn call(
         aqueduct: &Aqueduct,
         plugin_name: &str,
         input: Self::Input,
-    ) -> Result<Self::Output, RiverError> {
+    ) -> Result<Self::Output, WeftError> {
         let args = Self::prepare_args(input);
         let raw_output = aqueduct.call_plugin(plugin_name, args)?;
         Self::validate_output(raw_output)
@@ -62,9 +62,9 @@ impl PluginCaller for PhasePlugin {
         ]
     }
 
-    fn validate_output(output: Dynamic) -> Result<Self::Output, RiverError> {
+    fn validate_output(output: Dynamic) -> Result<Self::Output, WeftError> {
         if !output.is::<Self::Output>() {
-            return Err(RiverError::SignatureMismatch(
+            return Err(WeftError::SignatureMismatch(
                 "Phase plugin return type mismatch".to_string(),
             ));
         }
@@ -82,12 +82,12 @@ impl PluginCaller for MaterialPlugin {
         vec![Dynamic::from(input)]
     }
 
-    fn validate_output(output: Dynamic) -> Result<Self::Output, RiverError> {
+    fn validate_output(output: Dynamic) -> Result<Self::Output, WeftError> {
         let output_type = output.type_name();
 
         // Helper closure to create consistent error messages
         let conversion_error =
-            || RiverError::SignatureMismatch(format!("Failed to convert {} to Value", output_type));
+            || WeftError::SignatureMismatch(format!("Failed to convert {} to Value", output_type));
 
         match output_type {
             "string" => output
@@ -120,7 +120,7 @@ impl PluginCaller for MaterialPlugin {
                     Err(conversion_error())
                 }
             }
-            _ => Err(RiverError::SignatureMismatch(format!(
+            _ => Err(WeftError::SignatureMismatch(format!(
                 "Unsupported material plugin return type: {}",
                 output_type
             ))),
@@ -175,31 +175,31 @@ impl Aqueduct {
     }
 
     /// Add a plugin from file
-    pub fn add_plugin(&self, path: &PathBuf) -> Result<(), RiverError> {
+    pub fn add_plugin(&self, path: &PathBuf) -> Result<(), WeftError> {
         if !path.exists() {
-            return Err(RiverError::FileNotFound(path.to_string_lossy().to_string()));
+            return Err(WeftError::FileNotFound(path.to_string_lossy().to_string()));
         }
 
         let name = match path.file_stem() {
             Some(name) => name.to_string_lossy().to_string(),
-            None => return Err(RiverError::FileNotFound(path.to_string_lossy().to_string())),
+            None => return Err(WeftError::FileNotFound(path.to_string_lossy().to_string())),
         };
 
         let ast = {
             let engine = self
                 .engine
                 .read()
-                .map_err(|_| RiverError::MutexLockFailed)?;
+                .map_err(|_| WeftError::MutexLockFailed)?;
             engine
                 .compile_file(path.clone())
-                .map_err(|e| RiverError::RhaiError(e))?
+                .map_err(|e| WeftError::RhaiScriptError(e))?
         };
 
         {
             let mut plugins = self
                 .plugins
                 .lock()
-                .map_err(|_| RiverError::MutexLockFailed)?;
+                .map_err(|_| WeftError::MutexLockFailed)?;
             plugins.insert(name, ast);
         }
 
@@ -207,15 +207,15 @@ impl Aqueduct {
     }
 
     /// Raw plugin calling method
-    fn call_plugin(&self, name: &str, args: Vec<Dynamic>) -> Result<Dynamic, RiverError> {
+    fn call_plugin(&self, name: &str, args: Vec<Dynamic>) -> Result<Dynamic, WeftError> {
         let ast = {
             let plugins = self
                 .plugins
                 .lock()
-                .map_err(|_| RiverError::MutexLockFailed)?;
+                .map_err(|_| WeftError::MutexLockFailed)?;
             plugins
                 .get(name)
-                .ok_or_else(|| RiverError::FunctionNotFound(name.to_string()))?
+                .ok_or_else(|| WeftError::RhaiFunctionNotFound(name.to_string()))?
                 .clone()
         };
 
@@ -224,10 +224,10 @@ impl Aqueduct {
             let engine = self
                 .engine
                 .read()
-                .map_err(|_| RiverError::MutexLockFailed)?;
+                .map_err(|_| WeftError::MutexLockFailed)?;
             engine
                 .call_fn(&mut scope, &ast, name, args)
-                .map_err(|e| RiverError::RhaiError(e))?
+                .map_err(|e| WeftError::RhaiScriptError(e))?
         };
 
         Ok(result)
@@ -238,21 +238,21 @@ impl Aqueduct {
         &self,
         plugin_name: &str,
         input: C::Input,
-    ) -> Result<C::Output, RiverError> {
+    ) -> Result<C::Output, WeftError> {
         C::call(self, plugin_name, input)
     }
 
-    pub fn has_plugin(&self, name: &str) -> Result<bool, RiverError> {
+    pub fn has_plugin(&self, name: &str) -> Result<bool, WeftError> {
         let plugins = self
             .plugins
             .lock()
-            .map_err(|_| RiverError::MutexLockFailed)?;
+            .map_err(|_| WeftError::MutexLockFailed)?;
         Ok(plugins.contains_key(name))
     }
 
-    pub fn cleanup(&self) {
-        if let Ok(mut plugins) = self.plugins.lock() {
-            plugins.clear();
-        }
-    }
+    // pub fn cleanup(&self) {
+    //     if let Ok(mut plugins) = self.plugins.lock() {
+    //         plugins.clear();
+    //     }
+    // }
 }

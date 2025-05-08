@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-mod river {
+mod weft{
     pub mod aqueduct;
     pub mod dao;
     pub mod errors;
@@ -7,7 +7,7 @@ mod river {
     pub mod phase;
     pub mod utils;
 }
-use crate::river::kappa::KappaFace;
+use crate::weft::kappa::KappaFace;
 
 // use serde_json::json;
 use std::sync::Mutex;
@@ -29,15 +29,15 @@ pub fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            river::kappa::watch_file,
-            river::kappa::unwatch_file,
-            river::kappa::get_story,
-            river::kappa::get_moai_full_name,
-            river::kappa::get_all_moais,
-            river::kappa::get_all_moai_links,
-            river::kappa::drift_flow,
-            river::kappa::moai_flow,
-            river::kappa::narrative_flow,
+            weft::kappa::watch_file,
+            weft::kappa::unwatch_file,
+            weft::kappa::get_story,
+            weft::kappa::get_moai_full_name,
+            weft::kappa::get_all_moais,
+            weft::kappa::get_all_moai_links,
+            weft::kappa::drift_flow,
+            weft::kappa::moai_flow,
+            weft::kappa::narrative_flow,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

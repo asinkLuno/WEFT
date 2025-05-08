@@ -1,7 +1,7 @@
-use super::errors::RiverError;
-use crate::river::aqueduct::Aqueduct;
-use crate::river::dao::Dao;
-use crate::river::dao::Story;
+use super::errors::WeftError;
+use crate::weft::aqueduct::Aqueduct;
+use crate::weft::dao::Dao;
+use crate::weft::dao::Story;
 use notify::RecommendedWatcher;
 use notify::RecursiveMode;
 use notify::{
@@ -29,11 +29,11 @@ impl KappaFace {
         self.receiver.take()
     }
 
-    fn init_debouncer(&mut self) -> Result<(), RiverError> {
+    fn init_debouncer(&mut self) -> Result<(), WeftError> {
         if self.debouncer.is_none() || self.receiver.is_none() {
             let (tx, rx) = std::sync::mpsc::channel();
             let debouncer = new_debouncer(std::time::Duration::from_millis(250), None, tx)
-                .map_err(|e| RiverError::FailedInNotify(e))?;
+                .map_err(|e| WeftError::FileNotificationError(e))?;
 
             self.debouncer = Some(debouncer);
             self.receiver = Some(rx);
@@ -41,7 +41,7 @@ impl KappaFace {
         Ok(())
     }
 
-    pub fn set_dao_and_aqueduct(&mut self, file_path: &PathBuf) -> Result<(), RiverError> {
+    pub fn set_dao_and_aqueduct(&mut self, file_path: &PathBuf) -> Result<(), WeftError> {
         let mut dao = Dao::new(file_path)?;
         let aqueduct = match dao.aqueduct() {
             Some(paths) => {
@@ -60,7 +60,7 @@ impl KappaFace {
         Ok(())
     }
 
-    pub fn watch_file(&mut self, file_path: &PathBuf) -> Result<(), RiverError> {
+    pub fn watch_file(&mut self, file_path: &PathBuf) -> Result<(), WeftError> {
         self.init_debouncer()?;
 
         self.set_dao_and_aqueduct(file_path)?;
@@ -68,9 +68,9 @@ impl KappaFace {
         if let Some(debouncer) = &mut self.debouncer {
             debouncer
                 .watch(&file_path, RecursiveMode::NonRecursive)
-                .map_err(|e| RiverError::FailedInNotify(e))?;
+                .map_err(|e| WeftError::FileNotificationError(e))?;
         } else {
-            return Err(RiverError::DebouncerNotInitialized);
+            return Err(WeftError::DebouncerNotInitialized);
         }
 
         Ok(())

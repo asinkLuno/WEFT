@@ -1,4 +1,4 @@
-use crate::river::phase::{sub_phase, Phase};
+use crate::weft::phase::{sub_phase, Phase};
 use rhai::{CustomType, TypeBuilder};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
@@ -12,7 +12,7 @@ use std::{
 
 use super::{
     aqueduct::{Aqueduct, MaterialPlugin},
-    errors::RiverError,
+    errors::WeftError,
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default, CustomType)]
@@ -27,7 +27,7 @@ pub struct Moai {
     #[serde(default, skip_serializing)]
     material: Option<HashMap<String, String>>, //材料
     #[serde(default)]
-    is: Option<Vec<String>>, //是什么
+    is: Option<Vec<String>>, //是什么，一个moai可以是另外一个moai
     #[serde(default)]
     tags: Option<Vec<String>>, //标签
     #[serde(flatten)]
@@ -55,10 +55,10 @@ impl Moai {
         self.base_time.as_ref()
     }
 
-    pub fn insert_extra_props(&mut self, key: String, value: JsonValue) -> Result<(), RiverError> {
+    pub fn insert_extra_props(&mut self, key: String, value: JsonValue) -> Result<(), WeftError> {
         if let Some(props) = &mut self.extra_props {
             if props.contains_key(&key) {
-                return Err(RiverError::DuplicateKeyInExtraProps(key.clone()));
+                return Err(WeftError::DuplicateKeyInExtraProps(key.clone()));
             } else {
                 props.insert(key, value);
             }
@@ -174,9 +174,9 @@ pub struct Dao {
 }
 
 impl Dao {
-    pub fn new(file_path: &PathBuf) -> Result<Self, RiverError> {
+    pub fn new(file_path: &PathBuf) -> Result<Self, WeftError> {
         if !file_path.exists() {
-            return Err(RiverError::FileNotFound(
+            return Err(WeftError::FileNotFound(
                 file_path.to_string_lossy().to_string(),
             ));
         }
@@ -188,21 +188,21 @@ impl Dao {
             .to_lowercase();
 
         if ext != "yaml" && ext != "yml" {
-            return Err(RiverError::UnsupportedFileType(ext.to_string()));
+            return Err(WeftError::UnsupportedFileType(ext.to_string()));
         }
 
         let file_content =
-            fs::read_to_string(file_path).map_err(|e| RiverError::FailedToReadFileContent(e))?;
+            fs::read_to_string(file_path).map_err(|e| WeftError::FailedToReadFileContent(e))?;
 
         let mut dao: Dao =
-            serde_yaml::from_str(&file_content).map_err(|e| RiverError::FailedToParseYaml(e))?;
+            serde_yaml::from_str(&file_content).map_err(|e| WeftError::FailedToParseYaml(e))?;
 
         dao.tagged_moais = Some(HashMap::new());
         dao.was_moais = Some(HashMap::new());
         Ok(dao)
     }
 
-    pub fn resolve(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+    pub fn resolve(&mut self, aqueduct: &Aqueduct) -> Result<(), WeftError> {
         self.resolve_story(aqueduct)?;
         self.resolve_moai(aqueduct)?;
         self.resolve_moai_links()?;
@@ -215,12 +215,12 @@ impl Dao {
         self.aqueduct.as_ref()
     }
 
-    fn resolve_story(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+    fn resolve_story(&mut self, aqueduct: &Aqueduct) -> Result<(), WeftError> {
         if let Some(ref story) = &self.story {
             if let Some(date_mode) = story.date_mode() {
                 if date_mode != "Gregorian" {
                     if !aqueduct.has_plugin(date_mode)? {
-                        return Err(RiverError::InvalidDateMode(date_mode.clone()));
+                        return Err(WeftError::InvalidDateMode(date_mode.clone()));
                     }
                 }
             }
@@ -228,7 +228,7 @@ impl Dao {
         Ok(())
     }
 
-    fn resolve_moai(&mut self, aqueduct: &Aqueduct) -> Result<(), RiverError> {
+    fn resolve_moai(&mut self, aqueduct: &Aqueduct) -> Result<(), WeftError> {
         if let Some(ref mut moais) = &mut self.moai {
             // Collect all moai IDs and validate them first
             let moai_ids: Vec<String> = moais.keys().cloned().collect();
@@ -239,7 +239,7 @@ impl Dao {
                 if let Some(is) = moai.is() {
                     for is_id in is {
                         if !moais.contains_key(is_id) {
-                            return Err(RiverError::MoaiNotDefined(is_id.clone()));
+                            return Err(WeftError::MoaiNotDefined(is_id.clone()));
                         }
                         if let Some(is_set) = self.was_moais.as_mut().unwrap().get_mut(is_id) {
                             is_set.insert(id.clone());
@@ -284,7 +284,7 @@ impl Dao {
         Ok(())
     }
 
-    fn resolve_moai_links(&self) -> Result<(), RiverError> {
+    fn resolve_moai_links(&self) -> Result<(), WeftError> {
         if let Some(ref links) = &self.moai_link {
             for link_vec in links.values() {
                 for link in link_vec {
@@ -298,7 +298,7 @@ impl Dao {
         Ok(())
     }
 
-    fn resolve_drifts(&self) -> Result<(), RiverError> {
+    fn resolve_drifts(&self) -> Result<(), WeftError> {
         if let Some(ref drifts) = &self.drift {
             for drift_vec in drifts.values() {
                 for drift in drift_vec {
@@ -314,7 +314,7 @@ impl Dao {
         Ok(())
     }
 
-    fn resolve_narratives(&self) -> Result<(), RiverError> {
+    fn resolve_narratives(&self) -> Result<(), WeftError> {
         let drift_keys = match &self.drift {
             Some(drift) => drift.keys().collect::<HashSet<&String>>(),
             None => HashSet::<&String>::new(),
@@ -332,7 +332,7 @@ impl Dao {
             .collect();
 
         if !duplicates.is_empty() {
-            return Err(RiverError::DuplicateKeysInDriftAndMoai(
+            return Err(WeftError::DuplicateKeysInDriftAndMoai(
                 duplicates.iter().map(|s| s.to_string()).collect(),
             ));
         }
@@ -344,14 +344,14 @@ impl Dao {
                 if let Some(subject) = narrative.subject() {
                     for id in subject {
                         if !all_id.contains(&id) {
-                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
+                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                 }
                 if let Some(observer) = narrative.observer() {
                     for id in observer {
                         if !all_id.contains(&id) {
-                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
+                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                 }
@@ -364,18 +364,18 @@ impl Dao {
         self.story.as_ref()
     }
 
-    pub fn get_moai(&self, id: &String) -> Result<&Moai, RiverError> {
+    pub fn get_moai(&self, id: &String) -> Result<&Moai, WeftError> {
         if let Some(ref moais) = &self.moai {
             let moai = moais
                 .get(id)
-                .ok_or_else(|| RiverError::MoaiNotDefined(id.clone()))?;
+                .ok_or_else(|| WeftError::MoaiNotDefined(id.clone()))?;
             Ok(moai)
         } else {
-            Err(RiverError::MoaisNotDefined)
+            Err(WeftError::MoaiDefinitionsNotFound)
         }
     }
 
-    pub fn get_all_moais(&self) -> Result<Option<HashMap<String, JsonValue>>, RiverError> {
+    pub fn get_all_moais(&self) -> Result<Option<HashMap<String, JsonValue>>, WeftError> {
         let result = self
             .moai
             .as_ref()
@@ -384,11 +384,11 @@ impl Dao {
                     .iter()
                     .map(|(id, moai)| {
                         let value = serde_json::to_value(moai)
-                            .map_err(|e| RiverError::FailedToSerializeMoai(e))?;
+                            .map_err(|e| WeftError::FailedToSerializeJson(e))?;
                         Ok((id.clone(), value))
                     })
                     // 显式指定collect的类型参数
-                    .collect::<Result<HashMap<String, JsonValue>, RiverError>>()
+                    .collect::<Result<HashMap<String, JsonValue>, WeftError>>()
             })
             .transpose()?;
         Ok(result)
@@ -396,7 +396,7 @@ impl Dao {
 
     pub fn get_all_moai_links(
         &self,
-    ) -> Result<Option<HashMap<String, serde_json::Value>>, RiverError> {
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, WeftError> {
         let result = self
             .moai_link
             .as_ref()
@@ -443,7 +443,7 @@ impl Dao {
 
                         Ok((key.clone(), moai_link_context))
                     })
-                    .collect::<Result<HashMap<String, serde_json::Value>, RiverError>>()
+                    .collect::<Result<HashMap<String, serde_json::Value>, WeftError>>()
                 // Collect into Result
             })
             .transpose()?; // Handle the Option<Result<...>> -> Result<Option<...>>
@@ -458,7 +458,7 @@ impl Dao {
         start_time: &Phase,
         end_time: Option<&Phase>,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<serde_json::Value, RiverError> {
+    ) -> Result<serde_json::Value, WeftError> {
         if let Some(base_time) = moai.base_time() {
             let date_mode = self.date_mode().map_or("Gregorian", |s| s);
             let mut moai_json = serde_json::json!({
@@ -468,7 +468,7 @@ impl Dao {
             if let Some(end_time) = end_time {
                 let end_time_duration = sub_phase(&end_time, &base_time, &date_mode, aqueduct)?;
                 moai_json["end_time_duration"] =
-                    serde_json::to_value(end_time_duration).map_err(|e| RiverError::from(e))?;
+                    serde_json::to_value(end_time_duration).map_err(|e| WeftError::from(e))?;
             }
             Ok(moai_json)
         } else {
@@ -487,7 +487,7 @@ impl Dao {
         end_time: Option<&Phase>,
         observed_moais: Option<&Vec<String>>,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<serde_json::Value, RiverError> {
+    ) -> Result<serde_json::Value, WeftError> {
         let mut json_obj = serde_json::json!({
             "title": title.clone(),
             "start_time": start_time,
@@ -498,7 +498,7 @@ impl Dao {
         }
         if let Some(end_time) = end_time {
             json_obj["end_time"] =
-                serde_json::to_value(end_time).map_err(|e| RiverError::from(e))?;
+                serde_json::to_value(end_time).map_err(|e| WeftError::from(e))?;
             json_obj["end_time_dt"] = serde_json::Value::String(end_time.phase2iso8601()?);
         }
         let mut moais = Vec::new();
@@ -532,7 +532,7 @@ impl Dao {
     pub fn drift_flow(
         &self,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, WeftError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(cate_drifts) = self.drift.as_ref() {
             for (cate, drifts) in cate_drifts {
@@ -566,7 +566,7 @@ impl Dao {
     pub fn moai_flow(
         &self,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, WeftError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         let all_drifts = self
             .drift
@@ -609,7 +609,7 @@ impl Dao {
     pub fn narrative_flow(
         &self,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<HashMap<String, Vec<serde_json::Value>>, RiverError> {
+    ) -> Result<HashMap<String, Vec<serde_json::Value>>, WeftError> {
         let mut result_map: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         if let Some(narratives) = &self.narrative {
             for (id, narrative) in narratives.iter() {
@@ -631,7 +631,7 @@ impl Dao {
                                 flow_vec.push(json_obj);
                             }
                         } else {
-                            return Err(RiverError::EntityNotFoundInNarrative(id.clone()));
+                            return Err(WeftError::EntityNotFoundInNarrative(id.clone()));
                         }
                     }
                     flow_vec.sort_by(|a, b| {

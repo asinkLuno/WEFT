@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
 use super::aqueduct::{Aqueduct, PhasePlugin};
-use super::errors::RiverError;
+use super::errors::WeftError;
 use super::utils::get_unit_gregorian;
 const MAX_DEPTH: usize = 1000;
 
@@ -32,10 +32,10 @@ fn add_time_vec(
     depth: usize,
     date_mode: &str,
     aqueduct: Option<&Aqueduct>,
-) -> Result<(), RiverError> {
+) -> Result<(), WeftError> {
     // Check if we've exceeded the maximum recursion depth
     if depth > MAX_DEPTH {
-        return Err(RiverError::MaximumRecursionDepthExceeded(MAX_DEPTH));
+        return Err(WeftError::MaximumRecursionDepthExceeded(MAX_DEPTH));
     }
     result[unit_index] = vec1[unit_index] + vec2[unit_index] + result[unit_index];
     vec1[unit_index] = 0;
@@ -51,7 +51,7 @@ fn add_time_vec(
                     (result.clone(), unit_index, extra_case),
                 )?;
             } else {
-                return Err(RiverError::AqueductNotInitialized);
+                return Err(WeftError::AqueductNotInitialized);
             }
         }
         match unit_range_varlen {
@@ -149,7 +149,7 @@ pub struct PhaseNoRecusive {
 }
 
 impl PhaseNoRecusive {
-    pub fn absolute_time(&self) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
+    pub fn absolute_time(&self) -> Result<[i32; Phase::MAX_LENGTH], WeftError> {
         match &self.ref_time {
             Some(ref_time) => Ok(operate_vectors(&self.base_time, ref_time, |a, b| a + b)),
             None => Ok(self.base_time.clone()),
@@ -160,7 +160,7 @@ impl PhaseNoRecusive {
         &self,
         date_mode: &str,
         aqueduct: Option<&Aqueduct>,
-    ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), RiverError> {
+    ) -> Result<(Option<String>, [i32; Phase::MAX_LENGTH]), WeftError> {
         let mut vec1 = [0; Phase::MAX_LENGTH];
         let mut vec2;
         let mut result = [0; Phase::MAX_LENGTH];
@@ -182,7 +182,7 @@ impl PhaseNoRecusive {
                 )?;
                 Ok((Some(base_time_name.clone()), result))
             }
-            (Some(_), None) => Err(RiverError::BaseTimeNameConflict),
+            (Some(_), None) => Err(WeftError::BaseTimeNameConflict),
             _ => {
                 vec2 = self.absolute_time()?;
                 add_time_vec(
@@ -220,16 +220,16 @@ pub struct Phase {
 impl Phase {
     pub const MAX_LENGTH: usize = 6;
 
-    fn check_vec(vec: &[i32; Phase::MAX_LENGTH]) -> Result<(), RiverError> {
+    fn check_vec(vec: &[i32; Phase::MAX_LENGTH]) -> Result<(), WeftError> {
         if vec[1..].iter().any(|&x| x < 0) {
-            return Err(RiverError::SubYearPartMustBeNonnegative);
+            return Err(WeftError::SubYearPartMustBeNonnegative);
         }
         Ok(())
     }
     fn validate(
         base_time: &BaseTime,
         ref_time: &Option<[i32; Phase::MAX_LENGTH]>,
-    ) -> Result<(), RiverError> {
+    ) -> Result<(), WeftError> {
         match base_time {
             BaseTime::Vec(vec) => {
                 Phase::check_vec(vec)?;
@@ -250,7 +250,7 @@ impl Phase {
         base_time: &mut BaseTime,
         ref_time: &mut Option<[i32; Phase::MAX_LENGTH]>,
         base_time_name: &mut Option<String>,
-    ) -> Result<PhaseNoRecusive, RiverError> {
+    ) -> Result<PhaseNoRecusive, WeftError> {
         match base_time {
             BaseTime::Vec(this_base_time) => Ok(PhaseNoRecusive {
                 base_time: this_base_time.clone(),
@@ -261,7 +261,7 @@ impl Phase {
                 if base_time_name.is_none() {
                     *base_time_name = phase.base_time_name.clone();
                 } else if phase.base_time_name.is_some() {
-                    return Err(RiverError::BaseTimeNameConflict);
+                    return Err(WeftError::BaseTimeNameConflict);
                 }
 
                 if let Some(parent_ref_time) = &phase.ref_time {
@@ -282,13 +282,13 @@ impl Phase {
             }
         }
     }
-    pub fn de_recursive(&self) -> Result<PhaseNoRecusive, RiverError> {
+    pub fn de_recursive(&self) -> Result<PhaseNoRecusive, WeftError> {
         let mut base_time = self.base_time.clone();
         let mut ref_time = self.ref_time.clone();
         let mut base_time_name = self.base_time_name.clone();
         Phase::_de_recusive(&mut base_time, &mut ref_time, &mut base_time_name)
     }
-    pub fn phase2iso8601(&self) -> Result<String, RiverError> {
+    pub fn phase2iso8601(&self) -> Result<String, WeftError> {
         let mut abs_time = self.de_recursive()?.absolute_time()?; // Fixed method name
         let mut humanized_time = [0; Phase::MAX_LENGTH];
         let mut p2 = [0; Phase::MAX_LENGTH];
@@ -452,7 +452,7 @@ pub fn sub_phase(
     p2: &Phase,
     date_mode: &str,
     aqueduct: Option<&Aqueduct>,
-) -> Result<[i32; Phase::MAX_LENGTH], RiverError> {
+) -> Result<[i32; Phase::MAX_LENGTH], WeftError> {
     let p1_de_recusive = p1.de_recursive()?;
     let p2_de_recusive = p2.de_recursive()?;
     let mut result = [0; Phase::MAX_LENGTH];
