@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import RelationGraph from './common/RelationGraph';
-import { useMoaiLinkStore, MoaiLinkContextType } from '@/store/moaiLinkStore';
+import { useDataStore } from '@/store';
+import type { MoaiLinkContextType } from '@/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -10,7 +11,7 @@ const MoaiLinkDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { linkList, isLoading, error, fetchLinkList } = useMoaiLinkStore();
+    const { linkList, isLoading, error, fetchLinkList } = useDataStore();
     const [graphData, setGraphData] = useState<MoaiLinkContextType | null>(
         null,
     );

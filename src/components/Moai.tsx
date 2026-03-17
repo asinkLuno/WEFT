@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import MasonryCards from './common/MasonryCards';
-import { useMoaiStore } from '@/store/moaiStore';
+import { useDataStore } from '@/store';
 
 interface MoaiListProps {
     searchQuery?: string;
@@ -16,32 +16,15 @@ const MoaiList: React.FC<MoaiListProps> = ({ searchQuery = '' }) => {
         isLoading,
         error,
         fetchMoaiList,
-        setupListener
-    } = useMoaiStore();
+    } = useDataStore();
 
     const { t } = useTranslation();
     const locale = i18n.language;
 
-    // 获取Moai列表数据和设置文件变化监听器
+    // 获取Moai列表数据
     useEffect(() => {
         fetchMoaiList();
-
-        // 设置监听器并返回清理函数
-        let cleanupListener: (() => void) | undefined;
-
-        const setup = async () => {
-            cleanupListener = await setupListener();
-        };
-
-        setup();
-
-        // 清理函数
-        return () => {
-            if (cleanupListener) {
-                cleanupListener();
-            }
-        };
-    }, [fetchMoaiList, setupListener]);
+    }, [fetchMoaiList]);
 
     if (isLoading) {
         return (

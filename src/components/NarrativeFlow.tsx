@@ -1,22 +1,21 @@
 import React from 'react';
-import { useNarrativeFlowStore } from '@/store/narrativeFlowStore';
+import { useDataStore } from '@/store';
 import { useTranslation } from 'react-i18next';
-import useFlowListener from '@/hooks/useFlowListener';
 import BaseFlow from './common/BaseFlow';
 import GanttChart from './common/GanttChart';
 import { useNavigate } from 'react-router-dom';
 
 const NarrativeFlow: React.FC = () => {
-    const { flowList, isLoading, error, fetchFlowList, setupListener } =
-        useNarrativeFlowStore();
+    const { narrativeFlow: flowList, isLoading, error, fetchNarrativeFlow } =
+        useDataStore();
 
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    useFlowListener({
-        fetchFlowList,
-        setupListener,
-    });
+    // Fetch data on mount
+    React.useEffect(() => {
+        fetchNarrativeFlow();
+    }, [fetchNarrativeFlow]);
 
     const handleCardClick = (id: string) => {
         navigate(`/narrativeflow/${encodeURIComponent(id)}`);

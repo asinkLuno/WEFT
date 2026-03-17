@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Book, FileText, Quote } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
-import { useStoryStore } from '@/store/storyStore';
+import { useDataStore } from '@/store';
 
 const StoryInfo: React.FC = () => {
     const {
@@ -10,30 +10,13 @@ const StoryInfo: React.FC = () => {
         isLoading,
         error,
         fetchStory,
-        setupListener
-    } = useStoryStore();
+    } = useDataStore();
 
     const { t } = useTranslation();
 
     useEffect(() => {
         fetchStory();
-
-        // 设置监听器并返回清理函数
-        let cleanupListener: (() => void) | undefined;
-
-        const setup = async () => {
-            cleanupListener = await setupListener();
-        };
-
-        setup();
-
-        // 清理函数
-        return () => {
-            if (cleanupListener) {
-                cleanupListener();
-            }
-        };
-    }, [fetchStory, setupListener]);
+    }, [fetchStory]);
 
     if (isLoading) {
         return (

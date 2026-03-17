@@ -9,7 +9,7 @@ import MoaiFlow from './MoaiFlow';
 import NarrativeFlow from './NarrativeFlow';
 import { logError } from '@/utils/logger';
 import { Input } from '@/components/ui/input';
-import { useFileStore, useTabsStore } from '@/store/index';
+import { useFileStore, useTabsStore, useDataStore } from '@/store';
 
 import {
     NavigationMenu,
@@ -37,6 +37,7 @@ export default function RiverTabs() {
         setSearchQuery,
         setupListeners,
     } = useTabsStore();
+    const { setupFileListener } = useDataStore();
 
     // Check if we're in detail view
     const isDetailView = !!location.pathname.match(/\/moai_link\/[^/]+$/);
@@ -103,9 +104,11 @@ export default function RiverTabs() {
     // 设置全局事件监听器
     useEffect(() => {
         let cleanupListener: (() => void) | undefined;
+        let cleanupFileListener: (() => void) | undefined;
 
         const setup = async () => {
             cleanupListener = await setupListeners();
+            cleanupFileListener = await setupFileListener();
         };
 
         setup();
@@ -123,9 +126,12 @@ export default function RiverTabs() {
             if (cleanupListener) {
                 cleanupListener();
             }
+            if (cleanupFileListener) {
+                cleanupFileListener();
+            }
             window.removeEventListener('stop-watching', handleStopWatching);
         };
-    }, [navigate, setFilePath, setupListeners]);
+    }, [navigate, setFilePath, setupListeners, setupFileListener]);
 
     // Clear search query when switching to Story tab
     useEffect(() => {

@@ -1,27 +1,24 @@
 import React from 'react';
 import GanttChart from './common/GanttChart';
-import { useMoaiFlowStore } from '@/store/moaiFlowStore';
+import { useDataStore } from '@/store';
 import { useTranslation } from 'react-i18next';
-import useFlowListener from '@/hooks/useFlowListener';
 import BaseFlow from './common/BaseFlow';
-import { SupportedLocale } from '../types/flow';
 
 const MoaiFlow: React.FC = () => {
     const {
-        flowList,
+        moaiFlow: flowList,
         moaiNames,
         isLoading,
         error,
-        fetchFlowList,
-        setupListener,
-    } = useMoaiFlowStore();
+        fetchMoaiFlow,
+    } = useDataStore();
 
     const { t } = useTranslation();
 
-    useFlowListener({
-        fetchFlowList,
-        setupListener,
-    });
+    // Fetch data on mount
+    React.useEffect(() => {
+        fetchMoaiFlow();
+    }, [fetchMoaiFlow]);
 
     return (
         <BaseFlow

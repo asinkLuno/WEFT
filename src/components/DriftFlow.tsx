@@ -1,22 +1,21 @@
 import React from 'react';
-import { useDriftFlowStore } from '@/store/driftFlowStore';
+import { useDataStore } from '@/store';
 import { useTranslation } from 'react-i18next';
-import useFlowListener from '@/hooks/useFlowListener';
 import BaseFlow from './common/BaseFlow';
 import GanttChart from './common/GanttChart';
 import { useNavigate } from 'react-router-dom';
 
 const DriftFlow: React.FC = () => {
-    const { flowList, isLoading, error, fetchFlowList, setupListener } =
-        useDriftFlowStore();
+    const { driftFlow: flowList, isLoading, error, fetchDriftFlow } =
+        useDataStore();
 
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    useFlowListener({
-        fetchFlowList,
-        setupListener,
-    });
+    // Fetch data on mount
+    React.useEffect(() => {
+        fetchDriftFlow();
+    }, [fetchDriftFlow]);
 
     const handleCardClick = (id: string) => {
         navigate(`/driftflow/${encodeURIComponent(id)}`);

@@ -3,7 +3,7 @@ import {
     Route,
     Routes,
     Navigate,
-} from 'react-router-dom'; // 添加 useNavigate
+} from 'react-router-dom';
 import Home from './components/Home';
 import RiverTabs from './components/RiverTabs';
 import Footer from './components/Footer';
@@ -21,29 +21,16 @@ const AppContent: React.FC = () => {
                         path="/tabs"
                         element={<Navigate to="/intro" replace />}
                     />
-                    <Route path="/intro" element={<RiverTabs />} />
-                    <Route path="/moai" element={<RiverTabs />} />
-                    <Route path="/moai/:id" element={<RiverTabs />} />
-                    <Route path="/moai_link" element={<RiverTabs />} />
-                    <Route path="/moai_link/:id" element={<RiverTabs />} />
-                    <Route path="/narrativeflow" element={<RiverTabs />} />
-                    <Route
-                        path="/narrativeflow/:graphKey"
-                        element={<RiverTabs />}
-                    />
-                    <Route path="/driftflow" element={<RiverTabs />} />
-                    <Route
-                        path="/driftflow/:graphKey"
-                        element={<RiverTabs />}
-                    />
-                    <Route path="/moaiflow" element={<RiverTabs />} />
-                    <Route path="/moaiflow/:title" element={<RiverTabs />} />
+                    {/* Dynamic routes for all tabs */}
+                    <Route path="/:tab" element={<RiverTabs />} />
+                    <Route path="/:tab/:id" element={<RiverTabs />} />
                 </Routes>
             </main>
             <Footer />
         </div>
     );
 };
+
 const App: React.FC = () => {
     return (
         <Router>
@@ -51,4 +38,5 @@ const App: React.FC = () => {
         </Router>
     );
 };
+
 export default App;

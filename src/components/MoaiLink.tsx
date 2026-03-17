@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import RelationGraph from './common/RelationGraph';
 import { useTranslation } from 'react-i18next';
 import MasonryCards from './common/MasonryCards';
-import { useMoaiLinkStore } from '@/store/moaiLinkStore';
+import { useDataStore } from '@/store';
+import type { MoaiLinkContextType } from '@/api';
 
 interface MoaiLinkProps {
     searchQuery?: string;
@@ -11,29 +12,13 @@ interface MoaiLinkProps {
 
 const MoaiLink: React.FC<MoaiLinkProps> = ({ searchQuery = '' }) => {
     const navigate = useNavigate();
-    const { linkList, isLoading, error, fetchLinkList, setupListener } =
-        useMoaiLinkStore();
+    const { linkList, isLoading, error, fetchLinkList } =
+        useDataStore();
     const { t } = useTranslation();
 
     useEffect(() => {
         fetchLinkList();
-
-        // 设置监听器并返回清理函数
-        let cleanupListener: (() => void) | undefined;
-
-        const setup = async () => {
-            cleanupListener = await setupListener();
-        };
-
-        setup();
-
-        // 清理函数
-        return () => {
-            if (cleanupListener) {
-                cleanupListener();
-            }
-        };
-    }, [fetchLinkList, setupListener]);
+    }, [fetchLinkList]);
 
     const handleCardClick = (id: string) => {
         navigate(`/moai_link/${encodeURIComponent(id)}`);
