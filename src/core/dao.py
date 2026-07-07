@@ -20,9 +20,9 @@ def _phase(data: list) -> Phase:
     ``Aqueduct.de_recursive``.
     """
     *base, tail = data
-    if isinstance(tail, list):            # [*base, ref]
+    if isinstance(tail, list):  # [*base, ref]
         return Phase(base_time=base, ref_time=_phase(tail))
-    return Phase(base_time=list(data))    # [*base] (no ref)
+    return Phase(base_time=list(data))  # [*base] (no ref)
 
 
 # ── Models ──────────────────────────────────────────────────────────
@@ -107,7 +107,9 @@ class Narrative(BaseModel):
     observe: list[str] | None = None
 
     @classmethod
-    def from_yaml(cls, data: dict, moais: dict[str, Moai], drifts: dict[str, list[Drift]]) -> Narrative:
+    def from_yaml(
+        cls, data: dict, moais: dict[str, Moai], drifts: dict[str, list[Drift]]
+    ) -> Narrative:
         for name in data.get("subject", []) or []:
             if name not in drifts:
                 raise KeyError(f"narrative subject 引用了不存在的 drift: {name!r}")
@@ -141,12 +143,14 @@ class Dao(BaseModel):
             moai_link={
                 label: [MoaiLink.from_yaml(link, moais) for link in links]
                 for label, links in raw.get("moai_link", {}).items()
-            } or None,
+            }
+            or None,
             drift=drifts,
             narrative={
                 name: Narrative.from_yaml(n, moais, drifts or {})
                 for name, n in raw.get("narrative", {}).items()
-            } or None,
+            }
+            or None,
         )
 
 
