@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 import yaml
 from pydantic import BaseModel
 
 from weft_backend.aqueduct import Phase, gregorian_aqueduct
+
+
+def _parse_time_str(s: str) -> list[int]:
+    """Parse ``"10Y4M2D0H0m0s"`` → ``[10, 4, 2, 0, 0, 0]``."""
+    m = re.match(r"(\d+)Y(\d+)M(\d+)D(\d+)H(\d+)m(\d+)s", s)
+    if not m:
+        raise ValueError(f"无法解析时间字符串: {s!r}")
+    return [int(x) for x in m.groups()]
 
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
@@ -97,6 +106,7 @@ class Drift(BaseModel):
     end_time: Phase | None = None
     description: str | None = None
     moais: list[Moai] | None = None
+    moai_offsets: dict[str, dict[str, str | None]] | None = None
 
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> Drift:
@@ -104,32 +114,107 @@ class Drift(BaseModel):
         for name in moai_names:
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
+
+        start_flat = gregorian_aqueduct.de_recursive(_phase(data["start_time"]))
+        end_flat = (
+            gregorian_aqueduct.de_recursive(_phase(data["end_time"]))
+            if "end_time" in data
+            else None
+        )
+
+        # ponytail: compute each moai's age at this drift event
+        offsets: dict[str, dict[str, str | None]] = {}
+        for name in moai_names:
+            moai = moais[name]
+            if moai.base_time is None:
+                continue
+            moai_flat = _parse_time_str(moai.base_time)
+            entry: dict[str, str | None] = {
+                "start": gregorian_aqueduct.humanize(
+                    gregorian_aqueduct.normalize(
+                        gregorian_aqueduct.minus(start_flat, moai_flat)
+                    )
+                )
+            }
+            if end_flat is not None:
+                entry["end"] = gregorian_aqueduct.humanize(
+                    gregorian_aqueduct.normalize(
+                        gregorian_aqueduct.minus(end_flat, moai_flat)
+                    )
+                )
+            else:
+                entry["end"] = None
+            offsets[name] = entry
+
         return cls(
             title=data["title"],
             start_time=_phase(data["start_time"]),
             end_time=_phase(data["end_time"]) if "end_time" in data else None,
             description=data.get("description"),
             moais=[moais[m] for m in moai_names] if moai_names else None,
+            moai_offsets=offsets or None,
         )
 
 
 class Narrative(BaseModel):
     subject: list[str] | None = None
     observe: list[str] | None = None
+    offsets: dict[str, list[dict[str, dict[str, str | None]]]] | None = None
 
     @classmethod
     def from_yaml(
         cls, data: dict, moais: dict[str, Moai], drifts: dict[str, list[Drift]]
     ) -> Narrative:
-        for name in data.get("subject", []) or []:
+        subject_names: list[str] = data.get("subject", []) or []
+        observer_names: list[str] = data.get("observer", []) or []
+        for name in subject_names:
             if name not in drifts:
                 raise KeyError(f"narrative subject 引用了不存在的 drift: {name!r}")
-        for name in data.get("observer", []) or []:
+        for name in observer_names:
             if name not in moais:
                 raise KeyError(f"narrative observer 引用了不存在的 moai: {name!r}")
+
+        # ponytail: for each observer moai, compute base_time minus each
+        # subject drift's start_time (and end_time if present)
+        offsets: dict[str, list[dict[str, dict[str, str | None]]]] = {}
+        for season in subject_names:
+            season_offsets: list[dict[str, dict[str, str | None]]] = []
+            for drift in drifts[season]:
+                drift_offsets: dict[str, dict[str, str | None]] = {}
+                start_flat = gregorian_aqueduct.de_recursive(drift.start_time)
+                end_flat = (
+                    gregorian_aqueduct.de_recursive(drift.end_time)
+                    if drift.end_time
+                    else None
+                )
+                for obs_name in observer_names:
+                    moai = moais[obs_name]
+                    if moai.base_time is None:
+                        continue
+                    moai_flat = _parse_time_str(moai.base_time)
+                    entry: dict[str, str | None] = {
+                        "start": gregorian_aqueduct.humanize(
+                            gregorian_aqueduct.normalize(
+                                gregorian_aqueduct.minus(moai_flat, start_flat)
+                            )
+                        )
+                    }
+                    if end_flat is not None:
+                        entry["end"] = gregorian_aqueduct.humanize(
+                            gregorian_aqueduct.normalize(
+                                gregorian_aqueduct.minus(moai_flat, end_flat)
+                            )
+                        )
+                    else:
+                        entry["end"] = None
+                    drift_offsets[obs_name] = entry
+                season_offsets.append(drift_offsets)
+            offsets[season] = season_offsets
+
         return cls(
             subject=data.get("subject"),
             observe=data.get("observer"),
+            offsets=offsets or None,
         )
 
 

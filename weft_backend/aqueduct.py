@@ -33,6 +33,11 @@ class Aqueduct:
         for brick in reversed(self.bricks):
             v = brick_values[brick.name] + c
             limit = brick.get_limit((brick_values))
+            # ponytail: when month is out of range (e.g. negative), days get
+            # maxsize and can't borrow. Fall back to 31. Only for D — Y is
+            # intentionally unbounded (negative years are valid).
+            if v < 0 and limit == maxsize and brick.name == "D":
+                limit = 31
             if limit != maxsize:
                 c = v // limit
                 v = v % limit
@@ -63,11 +68,8 @@ class Aqueduct:
     def minus(self, tu1: list[int], tu2: list[int]) -> list[int]:
         self.is_time_unit(tu1)
         self.is_time_unit(tu2)
-
-        res = [i - j for i, j in zip(tu1, tu2)]
-        if any(x < 0 for x in res):
-            raise ValueError(f"substitute 结果不能为负: {res}")
-        return res
+        # ponytail: negative components are fine — caller normalizes after
+        return [i - j for i, j in zip(tu1, tu2)]
 
     def de_recursive(self, phase: Phase) -> list[int]:
         result = phase.base_time
