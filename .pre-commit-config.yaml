@@ -21,3 +21,17 @@ repos:
         entry: ruff format --check
         language: system
         types: [python]
+
+      - id: next-lint
+        name: next-lint
+        entry: bash -c 'cd weft-frontend && npm run lint'
+        language: system
+        types_or: [javascript, ts, tsx, jsx]
+        pass_filenames: false
+
+      - id: prettier
+        name: prettier
+        entry: bash -c 'cd weft-frontend && npm run format'
+        language: system
+        types_or: [javascript, ts, tsx, jsx, json, css]
+        pass_filenames: false
