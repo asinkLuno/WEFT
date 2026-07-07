@@ -1,20 +1,11 @@
 from __future__ import annotations
 
-import re
 from typing import Literal
 
 import yaml
 from pydantic import BaseModel, computed_field
 
 from weft_backend.aqueduct import Phase, gregorian_aqueduct
-
-
-def _parse_time_str(s: str) -> list[int]:
-    """Parse ``"10Y4M2D0H0m0s"`` → ``[10, 4, 2, 0, 0, 0]``."""
-    m = re.match(r"(\d+)Y(\d+)M(\d+)D(\d+)H(\d+)m(\d+)s", s)
-    if not m:
-        raise ValueError(f"无法解析时间字符串: {s!r}")
-    return [int(x) for x in m.groups()]
 
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
@@ -34,25 +25,22 @@ def _phase(data: list) -> Phase:
     return Phase(base_time=list(data))  # [*base] (no ref)
 
 
-def _phase_str(data: list) -> str:
-    """YAML time list → normalized, human-readable string.
-
-    de_recursive unfolds ref references, normalize carries overflow
-    (13 months → +1 year), humanize renders e.g. ``10Y4M2D0H0m0s``.
-    """
-    phase = _phase(data)
-    flat = gregorian_aqueduct.de_recursive(phase)
-    return gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
-
-
 # ── Models ──────────────────────────────────────────────────────────
 
 
 class Moai(BaseModel):
     full_name: str
-    base_time: str | None = None
+    base_time: Phase | None = None
     description: str
     extra_props: dict | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def base_time_display(self) -> str | None:
+        if self.base_time is None:
+            return None
+        flat = gregorian_aqueduct.de_recursive(self.base_time)
+        return gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
 
     @classmethod
     def from_yaml(cls, data: dict) -> Moai:
@@ -60,7 +48,7 @@ class Moai(BaseModel):
         extra = {k: v for k, v in data.items() if k not in known}
         return cls(
             full_name=data["full_name"],
-            base_time=_phase_str(data["base_time"]) if "base_time" in data else None,
+            base_time=_phase(data["base_time"]) if "base_time" in data else None,
             description=data.get("description", ""),
             extra_props=extra or None,
         )
@@ -138,7 +126,7 @@ class Drift(BaseModel):
             moai = moais[name]
             if moai.base_time is None:
                 continue
-            moai_flat = _parse_time_str(moai.base_time)
+            moai_flat = gregorian_aqueduct.de_recursive(moai.base_time)
             entry: dict[str, str | None] = {
                 "start": gregorian_aqueduct.humanize(
                     gregorian_aqueduct.normalize(
@@ -207,5 +195,11 @@ if __name__ == "__main__":  # ponytail: smallest check that the parser holds
     assert with_ref.base_time == [1, 2, 3, 4, 5, 6]
     assert with_ref.ref_time.base_time == [1, 2, 3, 4, 5, 6]
     # de_recursive unfolds the ref; normalize + humanize render it
-    assert _phase_str([0, 4, 2, 0, 0, 0, [10, 0, 0, 0, 0, 0]]) == "10Y4M2D0H0m0s"
+    flat = gregorian_aqueduct.de_recursive(
+        _phase([0, 4, 2, 0, 0, 0, [10, 0, 0, 0, 0, 0]])
+    )
+    assert (
+        gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
+        == "10Y4M2D0H0m0s"
+    )
     print("ok")

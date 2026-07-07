@@ -6,11 +6,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 interface MoaiData {
   full_name: string;
-  base_time: string | null;
+  base_time_display: string | null;
   description: string;
   extra_props: Record<string, unknown> | null;
 }
@@ -59,10 +59,10 @@ export default async function MoaiPage() {
                     {moai.description}
                   </p>
                 )}
-                {moai.base_time && (
+                {moai.base_time_display && (
                   <div className="text-xs font-mono text-muted-foreground border-t pt-2">
                     <span className="font-semibold">base_time </span>
-                    {moai.base_time}
+                    {moai.base_time_display}
                   </div>
                 )}
                 {moai.extra_props && (

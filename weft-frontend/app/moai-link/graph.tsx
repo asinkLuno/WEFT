@@ -25,7 +25,7 @@ interface GraphData {
 
 interface MoaiInfo {
   full_name: string;
-  base_time: string | null;
+  base_time_display: string | null;
   description: string;
   extra_props: Record<string, unknown> | null;
 }
@@ -185,9 +185,9 @@ export function MoaiLinkGraph({
             <div className="font-semibold text-sm">
               {tooltip.moai.full_name}
             </div>
-            {tooltip.moai.base_time && (
+            {tooltip.moai.base_time_display && (
               <div className="text-xs font-mono text-muted-foreground mt-1">
-                {tooltip.moai.base_time}
+                {tooltip.moai.base_time_display}
               </div>
             )}
             {tooltip.moai.description && (

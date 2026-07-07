@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   description: "WEFT",
 };
 
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 const NAV_ITEMS = [
   { label: "story", href: "/story" },

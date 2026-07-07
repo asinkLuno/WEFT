@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 interface StoryData {
   title: string;

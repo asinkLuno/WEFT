@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 .venv
 Session.vim
+
+# Frontend build
+.next/

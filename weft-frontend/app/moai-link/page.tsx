@@ -1,6 +1,6 @@
 import { MoaiLinkGraph } from "./graph";
 
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 interface GraphNode {
   id: string;
@@ -22,7 +22,7 @@ interface GraphData {
 
 interface MoaiInfo {
   full_name: string;
-  base_time: string | null;
+  base_time_display: string | null;
   description: string;
   extra_props: Record<string, unknown> | null;
 }
