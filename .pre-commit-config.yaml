@@ -35,3 +35,10 @@ repos:
         language: system
         types_or: [javascript, ts, tsx, jsx, json, css]
         pass_filenames: false
+
+      - id: next-build
+        name: next-build
+        entry: bash -c 'cd weft-frontend && npm run build'
+        language: system
+        types_or: [javascript, ts, tsx, jsx]
+        pass_filenames: false
