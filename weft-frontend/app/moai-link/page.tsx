@@ -20,14 +20,27 @@ interface GraphData {
   links: GraphLink[];
 }
 
+interface MoaiInfo {
+  full_name: string;
+  base_time: string | null;
+  description: string;
+  extra_props: Record<string, unknown> | null;
+}
+
 async function fetchLinks(): Promise<GraphData> {
   const res = await fetch(`${BACKEND}/moai-link`, { next: { revalidate: 0 } });
   if (!res.ok) throw new Error(`/moai-link returned ${res.status}`);
   return res.json();
 }
 
+async function fetchMoais(): Promise<Record<string, MoaiInfo>> {
+  const res = await fetch(`${BACKEND}/moai`, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`/moai returned ${res.status}`);
+  return res.json();
+}
+
 export default async function MoaiLinkPage() {
-  const data = await fetchLinks();
+  const [data, moais] = await Promise.all([fetchLinks(), fetchMoais()]);
 
   if (data.nodes.length === 0) {
     return (
@@ -37,5 +50,5 @@ export default async function MoaiLinkPage() {
     );
   }
 
-  return <MoaiLinkGraph data={data} />;
+  return <MoaiLinkGraph data={data} moais={moais} />;
 }

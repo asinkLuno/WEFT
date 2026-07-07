@@ -4,7 +4,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from loguru import logger
@@ -93,6 +93,13 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
     @app.get("/moai")
     def get_moai(request: Request):
         return request.app.state.dao.moai or {}
+
+    @app.get("/moai/{moai_id}")
+    def get_moai_by_id(moai_id: str, request: Request):
+        moai = (request.app.state.dao.moai or {}).get(moai_id)
+        if moai is None:
+            raise HTTPException(status_code=404, detail="moai not found")
+        return moai.model_dump()
 
     @app.get("/moai-link")
     def get_moai_link(request: Request):
