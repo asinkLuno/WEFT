@@ -23,9 +23,16 @@ def make_app(yaml_path: str) -> FastAPI:
     async def lifespan(app: FastAPI):
         proc = None
         if _FRONTEND_DIR.is_dir():
-            logger.info("starting frontend dev server")
+            if not (_FRONTEND_DIR / ".next").is_dir():
+                logger.info("building frontend")
+                subprocess.run(
+                    ["npm", "run", "build"],
+                    cwd=_FRONTEND_DIR,
+                    check=True,
+                )
+            logger.info("starting frontend")
             proc = subprocess.Popen(
-                ["npm", "run", "dev"],
+                ["npm", "run", "start"],
                 cwd=_FRONTEND_DIR,
                 stdout=sys.stdout,
                 stderr=sys.stderr,
