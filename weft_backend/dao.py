@@ -5,7 +5,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel
 
-from src.core.aqueduct import Phase
+from weft_backend.aqueduct import Phase
 
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
