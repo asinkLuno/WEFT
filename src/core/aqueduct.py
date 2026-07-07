@@ -60,6 +60,15 @@ class Aqueduct:
         res = [i + j for i, j in zip(tu1, tu2)]
         return res
 
+    def substitute(self, tu1: list[int], tu2: list[int]) -> list[int]:
+        self.is_time_unit(tu1)
+        self.is_time_unit(tu2)
+
+        res = [i - j for i, j in zip(tu1, tu2)]
+        if any(x < 0 for x in res):
+            raise ValueError(f"substitute 结果不能为负: {res}")
+        return res
+
     def de_recursive(self, phase: Phase) -> list[int]:
         result = phase.base_time
         ref = phase.ref_time
