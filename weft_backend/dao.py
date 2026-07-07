@@ -5,7 +5,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel
 
-from weft_backend.aqueduct import Phase
+from weft_backend.aqueduct import Phase, gregorian_aqueduct
 
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
@@ -25,12 +25,23 @@ def _phase(data: list) -> Phase:
     return Phase(base_time=list(data))  # [*base] (no ref)
 
 
+def _phase_str(data: list) -> str:
+    """YAML time list → normalized, human-readable string.
+
+    de_recursive unfolds ref references, normalize carries overflow
+    (13 months → +1 year), humanize renders e.g. ``10Y4M2D0H0m0s``.
+    """
+    phase = _phase(data)
+    flat = gregorian_aqueduct.de_recursive(phase)
+    return gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
+
+
 # ── Models ──────────────────────────────────────────────────────────
 
 
 class Moai(BaseModel):
     full_name: str
-    base_time: Phase | None = None
+    base_time: str | None = None
     description: str
     extra_props: dict | None = None
 
@@ -40,7 +51,7 @@ class Moai(BaseModel):
         extra = {k: v for k, v in data.items() if k not in known}
         return cls(
             full_name=data["full_name"],
-            base_time=_phase(data["base_time"]) if "base_time" in data else None,
+            base_time=_phase_str(data["base_time"]) if "base_time" in data else None,
             description=data.get("description", ""),
             extra_props=extra or None,
         )
@@ -168,4 +179,6 @@ if __name__ == "__main__":  # ponytail: smallest check that the parser holds
     with_ref = _phase([1, 2, 3, 4, 5, 6, [1, 2, 3, 4, 5, 6]])
     assert with_ref.base_time == [1, 2, 3, 4, 5, 6]
     assert with_ref.ref_time.base_time == [1, 2, 3, 4, 5, 6]
+    # de_recursive unfolds the ref; normalize + humanize render it
+    assert _phase_str([0, 4, 2, 0, 0, 0, [10, 0, 0, 0, 0, 0]]) == "10Y4M2D0H0m0s"
     print("ok")

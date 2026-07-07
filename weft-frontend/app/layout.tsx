@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import {
   NavigationMenu,
@@ -6,6 +7,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { HotReload } from "./hot-reload";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +24,8 @@ export const metadata: Metadata = {
   title: "WEFT",
   description: "WEFT",
 };
+
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
 
 const NAV_ITEMS = [
   { label: "story", href: "/story" },
@@ -42,10 +46,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <HotReload backend={BACKEND} />
         <header className="flex items-center gap-6 border-b border-border px-6 py-3">
-          <a href="/" className="text-lg font-semibold tracking-wide">
+          <Link href="/" className="text-lg font-semibold tracking-wide">
             WEFT
-          </a>
+          </Link>
           <NavigationMenu>
             <NavigationMenuList className="gap-1">
               {NAV_ITEMS.map((item) => (

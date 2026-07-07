@@ -94,7 +94,9 @@ def get_days_in_month(ctx: dict) -> int:
         return 30
     if month == 2:
         return 29 if is_leap_year(year) else 28
-    raise ValueError(f"invalid month: {month}")
+    # ponytail: offset-only phases carry M=0 (e.g. "10 years"); no month →
+    # day can't carry, return maxsize so normalize skips it.
+    return maxsize
 
 
 gregorian_aqueduct = Aqueduct(
