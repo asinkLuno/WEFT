@@ -50,6 +50,30 @@ def make_app(yaml_path: str) -> FastAPI:
     def get_moai():
         return load_dao(yaml_path).moai or {}
 
+    @app.get("/moai-link")
+    def get_moai_link():
+        dao = load_dao(yaml_path)
+        if not dao.moai_link:
+            return {"nodes": [], "links": []}
+        name_to_key = {m.full_name: k for k, m in (dao.moai or {}).items()}
+        nodes: dict[str, dict] = {}
+        links = []
+        for label, link_list in dao.moai_link.items():
+            for link in link_list:
+                a, b = link.moais
+                sk = name_to_key.get(a.full_name, a.full_name)
+                tk = name_to_key.get(b.full_name, b.full_name)
+                nodes[sk] = {"id": sk, "full_name": a.full_name}
+                nodes[tk] = {"id": tk, "full_name": b.full_name}
+                links.append({
+                    "source": sk,
+                    "target": tk,
+                    "label": label,
+                    "relations": link.relations,
+                    "bidirectional": link.bidirectional,
+                })
+        return {"nodes": list(nodes.values()), "links": links}
+
     @app.get("/events")
     async def events():
         async def stream():
