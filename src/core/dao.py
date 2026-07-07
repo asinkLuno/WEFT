@@ -54,6 +54,9 @@ class MoaiLink(BaseModel):
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> MoaiLink:
         a, b = data["moais"]
+        for name in (a, b):
+            if name not in moais:
+                raise KeyError(f"moai_link 引用了不存在的 moai: {name!r}")
         return cls(
             moais=(moais[a], moais[b]),
             relations=data["relations"],
@@ -86,12 +89,16 @@ class Drift(BaseModel):
 
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> Drift:
+        moai_names = data.get("moais", [])
+        for name in moai_names:
+            if name not in moais:
+                raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
         return cls(
             title=data["title"],
             start_time=_phase(data["start_time"]),
             end_time=_phase(data["end_time"]) if "end_time" in data else None,
             description=data.get("description"),
-            moais=[moais[m] for m in data["moais"]] if "moais" in data else None,
+            moais=[moais[m] for m in moai_names] if moai_names else None,
         )
 
 
@@ -100,7 +107,13 @@ class Narrative(BaseModel):
     observe: list[str] | None = None
 
     @classmethod
-    def from_yaml(cls, data: dict) -> Narrative:
+    def from_yaml(cls, data: dict, moais: dict[str, Moai], drifts: dict[str, list[Drift]]) -> Narrative:
+        for name in data.get("subject", []) or []:
+            if name not in drifts:
+                raise KeyError(f"narrative subject 引用了不存在的 drift: {name!r}")
+        for name in data.get("observer", []) or []:
+            if name not in moais:
+                raise KeyError(f"narrative observer 引用了不存在的 moai: {name!r}")
         return cls(
             subject=data.get("subject"),
             observe=data.get("observer"),
@@ -118,6 +131,10 @@ class Dao(BaseModel):
     def from_yaml(cls, raw: dict) -> Dao:
         # Moai first: links and drifts reference moais by name.
         moais = {name: Moai.from_yaml(m) for name, m in raw.get("moai", {}).items()}
+        drifts = {
+            season: [Drift.from_yaml(d, moais) for d in events]
+            for season, events in raw.get("drift", {}).items()
+        } or None
         return cls(
             story=Story.from_yaml(raw.get("story", {})),
             moai=moais or None,
@@ -125,12 +142,10 @@ class Dao(BaseModel):
                 label: [MoaiLink.from_yaml(link, moais) for link in links]
                 for label, links in raw.get("moai_link", {}).items()
             } or None,
-            drift={
-                season: [Drift.from_yaml(d, moais) for d in events]
-                for season, events in raw.get("drift", {}).items()
-            } or None,
+            drift=drifts,
             narrative={
-                name: Narrative.from_yaml(n) for name, n in raw.get("narrative", {}).items()
+                name: Narrative.from_yaml(n, moais, drifts or {})
+                for name, n in raw.get("narrative", {}).items()
             } or None,
         )
 
