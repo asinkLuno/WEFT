@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .phase import Phase
+from src.core.aquedect import Phase
 
 
 class Moai(BaseModel):
