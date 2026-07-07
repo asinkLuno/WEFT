@@ -32,7 +32,6 @@ const NAV_ITEMS = [
   { label: "moai", href: "/moai" },
   { label: "moai link", href: "/moai-link" },
   { label: "drift", href: "/drift" },
-  { label: "narrative", href: "/narrative" },
 ] as const;
 
 export default function RootLayout({

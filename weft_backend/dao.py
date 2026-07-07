@@ -4,7 +4,7 @@ import re
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from weft_backend.aqueduct import Phase, gregorian_aqueduct
 
@@ -108,6 +108,16 @@ class Drift(BaseModel):
     moais: list[Moai] | None = None
     moai_offsets: dict[str, dict[str, str | None]] | None = None
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def flat_start(self) -> list[int]:
+        return gregorian_aqueduct.de_recursive(self.start_time)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def flat_end(self) -> list[int] | None:
+        return gregorian_aqueduct.de_recursive(self.end_time) if self.end_time else None
+
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> Drift:
         moai_names = data.get("moais", [])
@@ -156,74 +166,11 @@ class Drift(BaseModel):
         )
 
 
-class Narrative(BaseModel):
-    subject: list[str] | None = None
-    observe: list[str] | None = None
-    offsets: dict[str, list[dict[str, dict[str, str | None]]]] | None = None
-
-    @classmethod
-    def from_yaml(
-        cls, data: dict, moais: dict[str, Moai], drifts: dict[str, list[Drift]]
-    ) -> Narrative:
-        subject_names: list[str] = data.get("subject", []) or []
-        observer_names: list[str] = data.get("observer", []) or []
-        for name in subject_names:
-            if name not in drifts:
-                raise KeyError(f"narrative subject 引用了不存在的 drift: {name!r}")
-        for name in observer_names:
-            if name not in moais:
-                raise KeyError(f"narrative observer 引用了不存在的 moai: {name!r}")
-
-        # ponytail: for each observer moai, compute base_time minus each
-        # subject drift's start_time (and end_time if present)
-        offsets: dict[str, list[dict[str, dict[str, str | None]]]] = {}
-        for season in subject_names:
-            season_offsets: list[dict[str, dict[str, str | None]]] = []
-            for drift in drifts[season]:
-                drift_offsets: dict[str, dict[str, str | None]] = {}
-                start_flat = gregorian_aqueduct.de_recursive(drift.start_time)
-                end_flat = (
-                    gregorian_aqueduct.de_recursive(drift.end_time)
-                    if drift.end_time
-                    else None
-                )
-                for obs_name in observer_names:
-                    moai = moais[obs_name]
-                    if moai.base_time is None:
-                        continue
-                    moai_flat = _parse_time_str(moai.base_time)
-                    entry: dict[str, str | None] = {
-                        "start": gregorian_aqueduct.humanize(
-                            gregorian_aqueduct.normalize(
-                                gregorian_aqueduct.minus(moai_flat, start_flat)
-                            )
-                        )
-                    }
-                    if end_flat is not None:
-                        entry["end"] = gregorian_aqueduct.humanize(
-                            gregorian_aqueduct.normalize(
-                                gregorian_aqueduct.minus(moai_flat, end_flat)
-                            )
-                        )
-                    else:
-                        entry["end"] = None
-                    drift_offsets[obs_name] = entry
-                season_offsets.append(drift_offsets)
-            offsets[season] = season_offsets
-
-        return cls(
-            subject=data.get("subject"),
-            observe=data.get("observer"),
-            offsets=offsets or None,
-        )
-
-
 class Dao(BaseModel):
     story: Story
     moai: dict[str, Moai] | None = None
     moai_link: dict[str, list[MoaiLink]] | None = None
     drift: dict[str, list[Drift]] | None = None
-    narrative: dict[str, Narrative] | None = None
 
     @classmethod
     def from_yaml(cls, raw: dict) -> Dao:
@@ -242,11 +189,6 @@ class Dao(BaseModel):
             }
             or None,
             drift=drifts,
-            narrative={
-                name: Narrative.from_yaml(n, moais, drifts or {})
-                for name, n in raw.get("narrative", {}).items()
-            }
-            or None,
         )
 
 

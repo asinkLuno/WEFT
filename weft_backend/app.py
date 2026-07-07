@@ -116,17 +116,6 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
             raise HTTPException(status_code=404, detail="season not found")
         return [d.model_dump() for d in drift]
 
-    @app.get("/narrative")
-    def get_narrative(request: Request):
-        return request.app.state.dao.narrative or {}
-
-    @app.get("/narrative/{narrative_id}")
-    def get_narrative_by_id(narrative_id: str, request: Request):
-        narrative = (request.app.state.dao.narrative or {}).get(narrative_id)
-        if narrative is None:
-            raise HTTPException(status_code=404, detail="narrative not found")
-        return narrative.model_dump()
-
     @app.get("/story")
     def get_story(request: Request):
         return request.app.state.dao.story.model_dump()
