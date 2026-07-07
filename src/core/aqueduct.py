@@ -60,7 +60,7 @@ class Aqueduct:
         res = [i + j for i, j in zip(tu1, tu2)]
         return res
 
-    def substitute(self, tu1: list[int], tu2: list[int]) -> list[int]:
+    def minus(self, tu1: list[int], tu2: list[int]) -> list[int]:
         self.is_time_unit(tu1)
         self.is_time_unit(tu2)
 
