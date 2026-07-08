@@ -67,7 +67,8 @@ function groupByLabel(
           from: l.source,
           to: l.target,
           text: l.relations,
-          data: { bidirectional: l.bidirectional },
+          showStartArrow: false,
+          showEndArrow: !l.bidirectional,
         })),
       },
     };
