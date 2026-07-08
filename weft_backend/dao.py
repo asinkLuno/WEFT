@@ -29,6 +29,7 @@ def _phase(data: list) -> Phase:
 
 
 class Moai(BaseModel):
+    key: str
     full_name: str
     base_time: Phase | None = None
     description: str
@@ -68,6 +69,7 @@ class Moai(BaseModel):
         known = set(cls.model_fields)
         extra = {k: v for k, v in data.items() if k not in known}
         moai = cls(
+            key=data["_key"],
             full_name=data["full_name"],
             base_time=_phase(data["base_time"]) if "base_time" in data else None,
             description=data.get("description", ""),
@@ -121,7 +123,6 @@ class Drift(BaseModel):
     end_time: Phase | None = None
     description: str | None = None
     moais: list[Moai] | None = None
-    moai_offsets: dict[str, dict[str, str | None]] | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -133,6 +134,35 @@ class Drift(BaseModel):
     def flat_end(self) -> list[int] | None:
         return gregorian_aqueduct.de_recursive(self.end_time) if self.end_time else None
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def moai_offsets(self) -> dict[str, dict[str, str | None]] | None:
+        """每个关联 moai 在漂移事件发生/结束时的年龄（人性化字符串）。"""
+        if not self.moais:
+            return None
+        result: dict[str, dict[str, str | None]] = {}
+        for m in self.moais:
+            if m.base_time is None:
+                continue
+            m_flat = gregorian_aqueduct.de_recursive(m.base_time)
+            entry: dict[str, str | None] = {
+                "start": gregorian_aqueduct.humanize(
+                    gregorian_aqueduct.normalize(
+                        gregorian_aqueduct.minus(self.flat_start, m_flat)
+                    )
+                )
+            }
+            if self.flat_end is not None:
+                entry["end"] = gregorian_aqueduct.humanize(
+                    gregorian_aqueduct.normalize(
+                        gregorian_aqueduct.minus(self.flat_end, m_flat)
+                    )
+                )
+            else:
+                entry["end"] = None
+            result[m.key] = entry
+        return result or None
+
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> Drift:
         moai_names = data.get("moais", [])
@@ -140,44 +170,12 @@ class Drift(BaseModel):
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
 
-        start_time = _phase(data["start_time"])
-        end_time = _phase(data["end_time"]) if "end_time" in data else None
-        start_flat = gregorian_aqueduct.de_recursive(start_time)
-        end_flat = (
-            gregorian_aqueduct.de_recursive(end_time) if end_time is not None else None
-        )
-
-        # ponytail: compute each moai's age at this drift event
-        offsets: dict[str, dict[str, str | None]] = {}
-        for name in moai_names:
-            moai = moais[name]
-            if moai.base_time is None:
-                continue
-            moai_flat = gregorian_aqueduct.de_recursive(moai.base_time)
-            entry: dict[str, str | None] = {
-                "start": gregorian_aqueduct.humanize(
-                    gregorian_aqueduct.normalize(
-                        gregorian_aqueduct.minus(start_flat, moai_flat)
-                    )
-                )
-            }
-            if end_flat is not None:
-                entry["end"] = gregorian_aqueduct.humanize(
-                    gregorian_aqueduct.normalize(
-                        gregorian_aqueduct.minus(end_flat, moai_flat)
-                    )
-                )
-            else:
-                entry["end"] = None
-            offsets[name] = entry
-
         return cls(
             title=data["title"],
-            start_time=start_time,
-            end_time=end_time,
+            start_time=_phase(data["start_time"]),
+            end_time=_phase(data["end_time"]) if "end_time" in data else None,
             description=data.get("description"),
             moais=[moais[m] for m in moai_names] if moai_names else None,
-            moai_offsets=offsets or None,
         )
 
 
@@ -190,7 +188,10 @@ class Dao(BaseModel):
     @classmethod
     def from_yaml(cls, raw: dict) -> Dao:
         # Moai first: links and drifts reference moais by name.
-        moais = {name: Moai.from_yaml(m) for name, m in raw.get("moai", {}).items()}
+        moais = {
+            name: Moai.from_yaml({"_key": name, **m})
+            for name, m in raw.get("moai", {}).items()
+        }
         drifts = {
             season: [Drift.from_yaml(d, moais) for d in events]
             for season, events in raw.get("drift", {}).items()
