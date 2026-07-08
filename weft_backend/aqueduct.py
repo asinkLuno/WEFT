@@ -88,8 +88,8 @@ def get_days_in_month(ctx: dict) -> int:
     def is_leap_year(year: int) -> bool:
         return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
 
-    month = ctx["M"]
-    year = ctx["Y"]
+    month = ctx["月"]
+    year = ctx["年"]
     if month in {1, 3, 5, 7, 8, 10, 12}:
         return 31
     if month in {4, 6, 9, 11}:
@@ -103,12 +103,12 @@ def get_days_in_month(ctx: dict) -> int:
 
 gregorian_aqueduct = Aqueduct(
     [
-        Brick("Y", get_limit=lambda ctx: maxsize),
-        Brick("M", get_limit=lambda ctx: 12),
-        Brick("D", get_limit=get_days_in_month),
-        Brick("H", get_limit=lambda ctx: 24),
-        Brick("m", get_limit=lambda ctx: 60),
-        Brick("s", get_limit=lambda ctx: 60),
+        Brick("年", get_limit=lambda ctx: maxsize),
+        Brick("月", get_limit=lambda ctx: 12),
+        Brick("日", get_limit=get_days_in_month),
+        Brick("时", get_limit=lambda ctx: 24),
+        Brick("分", get_limit=lambda ctx: 60),
+        Brick("秒", get_limit=lambda ctx: 60),
     ]
 )
 
