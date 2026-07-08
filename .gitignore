@@ -12,3 +12,6 @@ Session.vim
 
 # Frontend build
 .next/
+
+# Docs build
+site/

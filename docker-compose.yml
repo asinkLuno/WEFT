@@ -1,0 +1,10 @@
+services:
+  weft-docs:
+    build: .
+    restart: unless-stopped
+    networks:
+      - caddy-net
+
+networks:
+  caddy-net:
+    external: true

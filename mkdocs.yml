@@ -1,0 +1,27 @@
+site_name: Weft
+site_description: WEFT — World-building, Era, and Fantasy Timeline
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.inlinehilite
+
+nav:
+  - 概述: index.md
+  - YAML 规范: weft-yaml.md
+  - API: api.md
