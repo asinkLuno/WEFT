@@ -47,7 +47,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <HotReload backend={BACKEND} />
         <header className="flex items-center gap-6 border-b border-border px-6 py-3">
-          <Link href="/" className="text-lg font-semibold tracking-wide">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-semibold tracking-wide"
+          >
+            <img src="/logo-icon.svg" alt="WEFT" className="h-5 w-5" />
             WEFT
           </Link>
           <NavigationMenu>
