@@ -34,9 +34,9 @@ class Aqueduct:
             v = brick_values[brick.name] + c
             limit = brick.get_limit((brick_values))
             # ponytail: when month is out of range (e.g. negative), days get
-            # maxsize and can't borrow. Fall back to 31. Only for D — Y is
+            # maxsize and can't borrow. Fall back to 31. Only for 日 — 年 is
             # intentionally unbounded (negative years are valid).
-            if v < 0 and limit == maxsize and brick.name == "D":
+            if v < 0 and limit == maxsize and brick.name == "日":
                 limit = 31
             if limit != maxsize:
                 c = v // limit

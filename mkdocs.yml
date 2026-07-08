@@ -24,4 +24,7 @@ markdown_extensions:
 nav:
   - 概述: index.md
   - YAML 规范: weft-yaml.md
+  - Moai 实体: moai.md
+  - Drift 事件: drift.md
+  - 时间引擎: phase.md
   - API: api.md
