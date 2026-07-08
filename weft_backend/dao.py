@@ -140,11 +140,11 @@ class Drift(BaseModel):
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
 
-        start_flat = gregorian_aqueduct.de_recursive(_phase(data["start_time"]))
+        start_time = _phase(data["start_time"])
+        end_time = _phase(data["end_time"]) if "end_time" in data else None
+        start_flat = gregorian_aqueduct.de_recursive(start_time)
         end_flat = (
-            gregorian_aqueduct.de_recursive(_phase(data["end_time"]))
-            if "end_time" in data
-            else None
+            gregorian_aqueduct.de_recursive(end_time) if end_time is not None else None
         )
 
         # ponytail: compute each moai's age at this drift event
@@ -173,8 +173,8 @@ class Drift(BaseModel):
 
         return cls(
             title=data["title"],
-            start_time=_phase(data["start_time"]),
-            end_time=_phase(data["end_time"]) if "end_time" in data else None,
+            start_time=start_time,
+            end_time=end_time,
             description=data.get("description"),
             moais=[moais[m] for m in moai_names] if moai_names else None,
             moai_offsets=offsets or None,
@@ -214,19 +214,3 @@ def load_dao(path: str) -> Dao:
     """Load a YAML file and return a fully-resolved ``Dao``."""
     with open(path) as fh:
         return Dao.from_yaml(yaml.safe_load(fh))
-
-
-if __name__ == "__main__":  # ponytail: smallest check that the parser holds
-    assert _phase([1, 2, 3, 4, 5, 6]).base_time == [1, 2, 3, 4, 5, 6]
-    with_ref = _phase([1, 2, 3, 4, 5, 6, [1, 2, 3, 4, 5, 6]])
-    assert with_ref.base_time == [1, 2, 3, 4, 5, 6]
-    assert with_ref.ref_time.base_time == [1, 2, 3, 4, 5, 6]
-    # de_recursive unfolds the ref; normalize + humanize render it
-    flat = gregorian_aqueduct.de_recursive(
-        _phase([0, 4, 2, 0, 0, 0, [10, 0, 0, 0, 0, 0]])
-    )
-    assert (
-        gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
-        == "10Y4M2D0H0m0s"
-    )
-    print("ok")
