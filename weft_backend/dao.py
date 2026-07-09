@@ -36,8 +36,12 @@ class Moai(BaseModel):
     materials: list[str] = Field(default_factory=list)
     extra_props: dict | None = None
 
-    def _apply_material(self, name: str) -> str | None:
-        """应用单个 material 函数。"""
+    def apply_material(self, name: str) -> str | None:
+        """应用单个 material 函数，返回计算出的派生属性。
+
+        material 读取 Moai 的某个属性，通过一系列计算得到另一个属性。
+        当前支持的 material 见 :mod:`weft_backend.material` 的 ``MATERIALS`` 注册表。
+        """
         from weft_backend.material import MATERIALS
 
         fn = MATERIALS.get(name)
@@ -47,14 +51,6 @@ class Moai(BaseModel):
             return None
         flat = gregorian_aqueduct.de_recursive(self.base_time)
         return fn(flat)
-
-    def apply_material(self, name: str):
-        """应用一个 material 函数，返回计算出的派生属性。
-
-        material 读取 Moai 的某个属性，通过一系列计算得到另一个属性。
-        当前支持的 material 见 :mod:`weft_backend.material` 的 ``MATERIALS`` 注册表。
-        """
-        return self._apply_material(name)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -78,7 +74,7 @@ class Moai(BaseModel):
         )
         # 解析时计算 materials，结果写入 extra_props
         if moai.materials and moai.base_time is not None:
-            computed = {name: moai._apply_material(name) for name in moai.materials}
+            computed = {name: moai.apply_material(name) for name in moai.materials}
             moai.extra_props = {**(moai.extra_props or {}), **computed}
         return moai
 
