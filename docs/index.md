@@ -58,8 +58,6 @@ uv sync
 # 启动（后端 + 前端）
 uv run weft serve tests/guojing.yml
 
-# 检查时间线
-uv run python -m weft_backend.check tests/guojing.yml
 ```
 
 ---
@@ -73,7 +71,6 @@ weft/
 │   ├── dao.py        # 数据模型与 YAML 解析
 │   ├── aqueduct.py   # 时间运算引擎
 │   ├── material.py   # 派生属性计算（如星座）
-│   └── check.py      # 时间线检查工具
 ├── weft-frontend/    # Next.js 前端
 │   ├── app/          # 页面
 │   └── components/   # 组件

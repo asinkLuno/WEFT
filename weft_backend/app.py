@@ -10,7 +10,6 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 from watchfiles import awatch
 
-from weft_backend.check import check
 from weft_backend.dao import Dao, load_dao
 
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "weft-frontend"
@@ -117,11 +116,6 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
     @app.get("/story")
     def get_story(request: Request):
         return request.app.state.dao.story.model_dump()
-
-    @app.get("/check")
-    def get_check(request: Request):
-        report, warnings = check(request.app.state.dao)
-        return {"report": report, "warnings": warnings}
 
     @app.get("/events")
     async def events(request: Request):
