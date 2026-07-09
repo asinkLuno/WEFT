@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import tomllib
+from pathlib import Path
 from typing import Callable, Literal
 
 import yaml
@@ -66,7 +69,7 @@ class Moai(BaseModel):
         return self.aqueduct.humanize(self.aqueduct.normalize(flat))
 
     @classmethod
-    def from_yaml(cls, data: dict, aqueduct: Aqueduct) -> Moai:
+    def from_dict(cls, data: dict, aqueduct: Aqueduct) -> Moai:
         known = set(cls.model_fields)
         extra = {k: v for k, v in data.items() if k not in known}
         moai = cls(
@@ -92,7 +95,7 @@ class MoaiLink(BaseModel):
     bidirectional: bool
 
     @classmethod
-    def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> MoaiLink:
+    def from_dict(cls, data: dict, moais: dict[str, Moai]) -> MoaiLink:
         a, b = data["moais"]
         for name in (a, b):
             if name not in moais:
@@ -110,7 +113,7 @@ class Story(BaseModel):
     date_mode: Literal["gregorian"]
 
     @classmethod
-    def from_yaml(cls, data: dict) -> Story:
+    def from_dict(cls, data: dict) -> Story:
         return cls(
             title=data.get("title"),
             description=data.get("description"),
@@ -139,7 +142,7 @@ class Drift(BaseModel):
         return self.aqueduct.de_recursive(self.end_time) if self.end_time else None
 
     @classmethod
-    def from_yaml(
+    def from_dict(
         cls, title: str, data: dict, moais: dict[str, Moai], aqueduct: Aqueduct
     ) -> Drift:
         moai_names = data.get("moais", [])
@@ -187,28 +190,28 @@ class Dao(BaseModel):
     drift: dict[str, list[Drift]] | None = None
 
     @classmethod
-    def from_yaml(cls, raw: dict) -> Dao:
+    def from_dict(cls, raw: dict) -> Dao:
         story_raw = raw.get("story", {})
         date_mode = story_raw.get("date_mode", "gregorian")
         aqueduct = AQUEDUCTS[date_mode]
 
         # Moai first: links and drifts reference moais by name.
         moais = {
-            name: Moai.from_yaml({"_key": name, **m}, aqueduct)
+            name: Moai.from_dict({"_key": name, **m}, aqueduct)
             for name, m in raw.get("moai", {}).items()
         }
         drifts = {
             season: [
-                Drift.from_yaml(title, data, moais, aqueduct)
+                Drift.from_dict(title, data, moais, aqueduct)
                 for title, data in events.items()
             ]
             for season, events in raw.get("drift", {}).items()
         } or None
         return cls(
-            story=Story.from_yaml(story_raw),
+            story=Story.from_dict(story_raw),
             moai=moais or None,
             moai_link={
-                label: [MoaiLink.from_yaml(link, moais) for link in links]
+                label: [MoaiLink.from_dict(link, moais) for link in links]
                 for label, links in raw.get("moai_link", {}).items()
             }
             or None,
@@ -220,6 +223,19 @@ class Dao(BaseModel):
 
 
 def load_dao(path: str) -> Dao:
-    """Load a YAML file and return a fully-resolved ``Dao``."""
-    with open(path) as fh:
-        return Dao.from_yaml(yaml.safe_load(fh))
+    """Load a story file and return a fully-resolved ``Dao``.
+
+    Format is detected from the file extension: ``.yaml`` / ``.yml`` (YAML),
+    ``.json`` (JSON), ``.toml`` (TOML).
+    """
+    suffix = Path(path).suffix.lower()
+    with open(path, "rb" if suffix == ".toml" else "r") as fh:  # type: ignore[assignment]
+        if suffix in (".yaml", ".yml"):
+            raw = yaml.safe_load(fh)
+        elif suffix == ".json":
+            raw = json.load(fh)
+        elif suffix == ".toml":
+            raw = tomllib.load(fh)
+        else:
+            raise ValueError(f"不支持的文件格式: {suffix}")
+    return Dao.from_dict(raw)
