@@ -15,7 +15,7 @@ import json
 import sys
 
 from weft_backend.aqueduct import gregorian_aqueduct
-from weft_backend.dao import Dao, _phase, load_dao
+from weft_backend.dao import AQUEDUCTS, Dao, _phase, load_dao
 
 
 def resolve_time_list(data: list) -> str:
@@ -24,7 +24,7 @@ def resolve_time_list(data: list) -> str:
     相对时间表的 ref 必须内嵌在列表里；跨文件的 YAML 锚点 (``*name``) 只能通过
     整个文件检查 (见 :func:`check`) 解析。
     """
-    flat = gregorian_aqueduct.de_recursive(_phase(data))
+    flat = gregorian_aqueduct.de_recursive(_phase(data, gregorian_aqueduct))
     return gregorian_aqueduct.humanize(gregorian_aqueduct.normalize(flat))
 
 
@@ -36,6 +36,7 @@ def check(dao: Dao) -> tuple[list[str], list[str]]:
 
     文件 IO 留给调用方 (CLI 的 :func:`main` / API 端点)，这里只看数据。
     """
+    aqueduct = AQUEDUCTS[dao.story.date_mode]
     report: list[str] = []
     warnings: list[str] = []
 
@@ -48,21 +49,19 @@ def check(dao: Dao) -> tuple[list[str], list[str]]:
         if m.base_time is None:
             report.append(f"  {key} ({m.full_name}): (无 base_time)")
             continue
-        norm_base[key] = gregorian_aqueduct.normalize(
-            gregorian_aqueduct.de_recursive(m.base_time)
-        )
+        norm_base[key] = aqueduct.normalize(aqueduct.de_recursive(m.base_time))
         report.append(f"  {key} ({m.full_name}): {m.base_time_display}")
 
     # ── 漂移事件 ──
     for season, events in (dao.drift or {}).items():
         report.append(f"# 漂移 [{season}]")
         for d in events:
-            ns = gregorian_aqueduct.normalize(d.flat_start)
+            ns = aqueduct.normalize(d.flat_start)
             report.append(f"  · {d.title}")
-            report.append(f"      时间: {gregorian_aqueduct.humanize(ns)}")
+            report.append(f"      时间: {aqueduct.humanize(ns)}")
             if d.flat_end is not None:
-                ne = gregorian_aqueduct.normalize(d.flat_end)
-                report.append(f"      结束: {gregorian_aqueduct.humanize(ne)}")
+                ne = aqueduct.normalize(d.flat_end)
+                report.append(f"      结束: {aqueduct.humanize(ne)}")
                 if ne < ns:
                     warnings.append(f"[{season}] «{d.title}» 结束早于开始")
             for name, off in (d.moai_offsets or {}).items():

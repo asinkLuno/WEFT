@@ -17,9 +17,13 @@ _ZODIAC = (
 )
 
 
-def constellation(flat_time: list[int]) -> str:
-    """从 gregorian [Y, M, D, H, m, s] 计算星座。"""
-    month, day = flat_time[1], flat_time[2]
+def constellation(moai) -> str:
+    """从 Moai 的 base_time 计算星座。"""
+
+    if moai.base_time is None:
+        return "未知"
+    flat = moai.aqueduct.de_recursive(moai.base_time)
+    month, day = flat[1], flat[2]
     for (sm, sd), (em, ed), name in _ZODIAC:
         if (month == sm and day >= sd) or (month == em and day <= ed):
             return name
@@ -33,12 +37,18 @@ MATERIALS: dict[str, callable] = {
 
 
 if __name__ == "__main__":
+    from weft_backend.aqueduct import Phase, gregorian_aqueduct
+
+    def _moai(bt):
+        """Helper: make a minimal moai-like object for testing."""
+        return type("M", (), {"base_time": bt, "aqueduct": gregorian_aqueduct})()
+
     # 边界测试
-    assert constellation([2000, 1, 1, 0, 0, 0]) == "摩羯座"  # Jan 1
-    assert constellation([2000, 1, 20, 0, 0, 0]) == "水瓶座"  # Jan 20
-    assert constellation([2000, 2, 18, 0, 0, 0]) == "水瓶座"  # Feb 18
-    assert constellation([2000, 2, 19, 0, 0, 0]) == "双鱼座"  # Feb 19
-    assert constellation([2000, 7, 23, 0, 0, 0]) == "狮子座"  # Jul 23
-    assert constellation([2000, 12, 21, 0, 0, 0]) == "射手座"  # Dec 21
-    assert constellation([2000, 12, 22, 0, 0, 0]) == "摩羯座"  # Dec 22
+    assert constellation(_moai(Phase(base_time=[2000, 1, 1]))) == "摩羯座"
+    assert constellation(_moai(Phase(base_time=[2000, 1, 20]))) == "水瓶座"
+    assert constellation(_moai(Phase(base_time=[2000, 2, 18]))) == "水瓶座"
+    assert constellation(_moai(Phase(base_time=[2000, 2, 19]))) == "双鱼座"
+    assert constellation(_moai(Phase(base_time=[2000, 7, 23]))) == "狮子座"
+    assert constellation(_moai(Phase(base_time=[2000, 12, 21]))) == "射手座"
+    assert constellation(_moai(Phase(base_time=[2000, 12, 22]))) == "摩羯座"
     print("ok")
