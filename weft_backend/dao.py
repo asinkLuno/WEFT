@@ -129,6 +129,7 @@ class Drift(BaseModel):
     end_time: Phase | None = None
     description: str | None = None
     moais: list[str] | None = None
+    moai_offsets: dict[str, dict[str, str | None]] | None = None
     aqueduct: Aqueduct = Field(exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
@@ -159,26 +160,32 @@ class Drift(BaseModel):
             aqueduct=aqueduct,
         )
 
-        # 将偏移量写回各 moai 的 journal，避免在 Drift 上多维护 moai_offsets
+        # 将偏移量写回各 moai 的 journal，同时存一份 humanized 字符串给前端
+        offsets: dict[str, dict[str, str | None]] = {}
         if drift.moais:
             for name in drift.moais:
                 m = moais[name]
                 if m.base_time is None:
                     continue
                 m_flat = aqueduct.de_recursive(m.base_time)
-                start_phase = Phase(
-                    base_time=aqueduct.normalize(
-                        aqueduct.minus(drift.flat_start, m_flat)
-                    )
+                start_flat = aqueduct.normalize(
+                    aqueduct.minus(drift.flat_start, m_flat)
                 )
+                start_phase = Phase(base_time=start_flat)
                 end_phase = None
+                end_str = None
                 if drift.flat_end is not None:
-                    end_phase = Phase(
-                        base_time=aqueduct.normalize(
-                            aqueduct.minus(drift.flat_end, m_flat)
-                        )
+                    end_flat = aqueduct.normalize(
+                        aqueduct.minus(drift.flat_end, m_flat)
                     )
+                    end_phase = Phase(base_time=end_flat)
+                    end_str = aqueduct.humanize(end_flat)
                 m.journal[drift.title] = (start_phase, end_phase)
+                offsets[name] = {
+                    "start": aqueduct.humanize(start_flat),
+                    "end": end_str,
+                }
+        drift.moai_offsets = offsets if offsets else None
 
         return drift
 

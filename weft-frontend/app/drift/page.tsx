@@ -15,7 +15,7 @@ interface DriftEvent {
   end_time: { base_time: number[]; ref_time: unknown } | null;
   flat_start: number[];
   flat_end: number[] | null;
-  moais: MoaiData[] | null;
+  moais: string[] | null;
   moai_offsets: Record<string, { start: string; end: string | null }> | null;
 }
 
@@ -55,8 +55,6 @@ export default async function DriftPage() {
   return (
     <main className="flex-1 px-6 py-8">
       <div className="mx-auto max-w-7xl">
-        <h1 className="text-2xl font-semibold mb-6">Drift Timeline</h1>
-
         {totalEvents === 0 ? (
           <p className="text-muted-foreground">No drift events found.</p>
         ) : (

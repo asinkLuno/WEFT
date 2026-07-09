@@ -57,7 +57,8 @@ class Aqueduct:
         res = ""
         names = [b.name for b in self.bricks]
         for n, v in zip(names, values):
-            res += f"{v}{n}"
+            if v != 0:
+                res += f"{v}{n}"
         return res
 
     def plus(self, tu1: list[int], tu2: list[int]) -> list[int]:
