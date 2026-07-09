@@ -46,7 +46,7 @@ class Moai(BaseModel):
     materials: list[str] = Field(default_factory=list)
     extra_props: dict | None = None
     aqueduct: Aqueduct = Field(exclude=True)
-    journal: dict[str, tuple[Phase, Phase | None]] = Field(default_factory=dict)
+    journal: dict[str, tuple[str, str | None]] = Field(default_factory=dict)
 
     def apply_material(self, name: str) -> str | None:
         """应用单个 material 函数，返回计算出的派生属性。
@@ -129,7 +129,6 @@ class Drift(BaseModel):
     end_time: Phase | None = None
     description: str | None = None
     moais: list[str] | None = None
-    moai_offsets: dict[str, dict[str, str | None]] | None = None
     aqueduct: Aqueduct = Field(exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
@@ -160,8 +159,7 @@ class Drift(BaseModel):
             aqueduct=aqueduct,
         )
 
-        # 将偏移量写回各 moai 的 journal，同时存一份 humanized 字符串给前端
-        offsets: dict[str, dict[str, str | None]] = {}
+        # 计算各 moai 相对偏移量，humanize 后写入 journal
         if drift.moais:
             for name in drift.moais:
                 m = moais[name]
@@ -171,21 +169,14 @@ class Drift(BaseModel):
                 start_flat = aqueduct.normalize(
                     aqueduct.minus(drift.flat_start, m_flat)
                 )
-                start_phase = Phase(base_time=start_flat)
-                end_phase = None
+                start_str = aqueduct.humanize(start_flat)
                 end_str = None
                 if drift.flat_end is not None:
                     end_flat = aqueduct.normalize(
                         aqueduct.minus(drift.flat_end, m_flat)
                     )
-                    end_phase = Phase(base_time=end_flat)
                     end_str = aqueduct.humanize(end_flat)
-                m.journal[drift.title] = (start_phase, end_phase)
-                offsets[name] = {
-                    "start": aqueduct.humanize(start_flat),
-                    "end": end_str,
-                }
-        drift.moai_offsets = offsets if offsets else None
+                m.journal[drift.title] = (start_str, end_str)
 
         return drift
 

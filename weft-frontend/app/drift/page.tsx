@@ -5,6 +5,7 @@ interface MoaiData {
   base_time_display: string | null;
   description: string;
   extra_props: Record<string, unknown> | null;
+  journal: Record<string, [string, string | null]>;
 }
 type MoaiMap = Record<string, MoaiData>;
 
@@ -16,7 +17,6 @@ interface DriftEvent {
   flat_start: number[];
   flat_end: number[] | null;
   moais: string[] | null;
-  moai_offsets: Record<string, { start: string; end: string | null }> | null;
 }
 
 type DriftMap = Record<string, DriftEvent[]>;
@@ -61,9 +61,7 @@ export default async function DriftPage() {
           <div className="space-y-10">
             {entries.map(({ key, events }) => {
               const moaiKeys = [
-                ...new Set(
-                  events.flatMap((r) => Object.keys(r.moai_offsets ?? {})),
-                ),
+                ...new Set(events.flatMap((r) => r.moais ?? [])),
               ];
               return (
                 <section key={key}>
@@ -100,15 +98,15 @@ export default async function DriftPage() {
                               </div>
                             </td>
                             {moaiKeys.map((mk) => {
-                              const off = drift.moai_offsets?.[mk];
+                              const entry = moais[mk]?.journal?.[drift.title];
+                              const start = entry?.[0];
+                              const end = entry?.[1];
                               return (
                                 <td key={mk} className="px-3 py-2 align-top">
-                                  {off ? (
+                                  {start ? (
                                     <span className="font-mono text-xs whitespace-nowrap">
-                                      {off.start}
-                                      {off.end != null ? (
-                                        <> ~ {off.end}</>
-                                      ) : null}
+                                      {start}
+                                      {end ? <> ~ {end}</> : null}
                                     </span>
                                   ) : (
                                     <span className="text-muted-foreground/40">
