@@ -123,7 +123,7 @@ class Story(BaseModel):
 class Drift(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
-    title: str = Field(max_length=20)
+    title: str
     start_time: Phase
     end_time: Phase | None = None
     description: str | None = None
@@ -141,14 +141,16 @@ class Drift(BaseModel):
         return self.aqueduct.de_recursive(self.end_time) if self.end_time else None
 
     @classmethod
-    def from_yaml(cls, data: dict, moais: dict[str, Moai], aqueduct: Aqueduct) -> Drift:
+    def from_yaml(
+        cls, title: str, data: dict, moais: dict[str, Moai], aqueduct: Aqueduct
+    ) -> Drift:
         moai_names = data.get("moais", [])
         for name in moai_names:
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
 
         drift = cls(
-            title=data["title"],
+            title=title,
             start_time=_phase(data["start_time"], aqueduct),
             end_time=_phase(data["end_time"], aqueduct) if "end_time" in data else None,
             description=data.get("description"),
@@ -197,7 +199,10 @@ class Dao(BaseModel):
             for name, m in raw.get("moai", {}).items()
         }
         drifts = {
-            season: [Drift.from_yaml(d, moais, aqueduct) for d in events]
+            season: [
+                Drift.from_yaml(title, data, moais, aqueduct)
+                for title, data in events.items()
+            ]
             for season, events in raw.get("drift", {}).items()
         } or None
         return cls(
