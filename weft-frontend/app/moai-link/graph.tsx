@@ -4,41 +4,14 @@ import { useMemo, useState, useCallback, memo } from "react";
 import RelationGraph, { RGSlotOnNode } from "@relation-graph/react";
 import type { RGJsonData, RGNodeSlotProps } from "@relation-graph/react";
 import "@relation-graph/react/style.css";
-
-interface GraphNode {
-  id: string;
-  full_name: string;
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-  label: string;
-  relations: string;
-  bidirectional: boolean;
-}
-
-interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
-
-interface MoaiInfo {
-  full_name: string;
-  base_time_display: string | null;
-  description: string;
-  extra_props: Record<string, unknown> | null;
-}
+import type { GraphLink, GraphNode, LinkGraph, Moai, MoaiMap } from "@/lib/api";
 
 interface SubGraph {
   label: string;
   graphData: RGJsonData;
 }
 
-function groupByLabel(
-  data: GraphData,
-  moais: Record<string, MoaiInfo>,
-): SubGraph[] {
+function groupByLabel(data: LinkGraph): SubGraph[] {
   const byLabel = new Map<string, GraphLink[]>();
   for (const link of data.links) {
     const list = byLabel.get(link.label);
@@ -60,7 +33,7 @@ function groupByLabel(
       graphData: {
         nodes: nodes.map((n) => ({
           id: n.id,
-          text: n.full_name,
+          text: n.name,
         })),
         lines: links.map((l, i) => ({
           id: `${label}-${i}`,
@@ -84,11 +57,11 @@ const GRAPH_OPTIONS = {
   defaultLineColor: "oklch(0.556 0 0 / 0.4)",
   defaultLineWidth: 1,
   backgroundColor: "oklch(0.97 0 0)",
-  disableDragNode: true,
+  disableDragNode: false,
 } as const;
 
 interface TooltipState {
-  moai: MoaiInfo;
+  moai: Moai;
   x: number;
   y: number;
 }
@@ -97,7 +70,7 @@ interface TooltipState {
 // or props change, so this must stay constant across parent re-renders.
 const renderNodeSlot = ({ node }: RGNodeSlotProps) => (
   <div
-    className="flex items-center px-3 py-1.5 text-sm cursor-default"
+    className="flex items-center px-3 py-1.5 text-sm cursor-grab"
     data-moai-id={node.id}
   >
     <span>{node.text}</span>
@@ -137,10 +110,10 @@ export function MoaiLinkGraph({
   data,
   moais,
 }: {
-  data: GraphData;
-  moais: Record<string, MoaiInfo>;
+  data: LinkGraph;
+  moais: MoaiMap;
 }) {
-  const subGraphs = useMemo(() => groupByLabel(data, moais), [data, moais]);
+  const subGraphs = useMemo(() => groupByLabel(data), [data]);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   // Single handler on the graph wrapper: the force layout drifts nodes, so a
@@ -183,9 +156,7 @@ export function MoaiLinkGraph({
           style={{ left: tooltip.x, top: tooltip.y }}
         >
           <div className="w-64 bg-white border border-border rounded-lg shadow-lg p-3 text-left">
-            <div className="font-semibold text-sm">
-              {tooltip.moai.full_name}
-            </div>
+            <div className="font-semibold text-sm">{tooltip.moai.name}</div>
             {tooltip.moai.base_time_display && (
               <div className="text-xs font-mono text-muted-foreground mt-1">
                 {tooltip.moai.base_time_display}

@@ -8,32 +8,54 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from loguru import logger
+from pydantic import BaseModel
 from watchfiles import awatch
 
-from weft_backend.dao import Dao, load_dao
+from weft_backend.dao import Dao, Drift, Moai, Story, load_dao
 
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "weft-frontend"
 
 
-def _build_link_graph(dao: Dao) -> dict:
+# ── API response models (drive the OpenAPI schema → frontend TS types) ──
+
+
+class GraphNode(BaseModel):
+    id: str
+    name: str
+
+
+class GraphLink(BaseModel):
+    source: str
+    target: str
+    label: str
+    relations: str
+    bidirectional: bool
+
+
+class LinkGraph(BaseModel):
+    nodes: list[GraphNode]
+    links: list[GraphLink]
+
+
+def _build_link_graph(dao: Dao) -> LinkGraph:
     """Pre-transform moai_link into {nodes, links} for the force-graph."""
-    links_data: list[dict] = []
-    nodes_map: dict[str, dict] = {}
+    links: list[GraphLink] = []
+    nodes: dict[str, GraphNode] = {}
     for label, link_list in (dao.moai_link or {}).items():
         for link in link_list:
             a, b = link.moais
-            nodes_map[a.name] = {"id": a.name, "name": a.name}
-            nodes_map[b.name] = {"id": b.name, "name": b.name}
-            links_data.append(
-                {
-                    "source": a.name,
-                    "target": b.name,
-                    "label": label,
-                    "relations": link.relations,
-                    "bidirectional": link.bidirectional,
-                }
+            nodes[a.name] = GraphNode(id=a.name, name=a.name)
+            nodes[b.name] = GraphNode(id=b.name, name=b.name)
+            links.append(
+                GraphLink(
+                    source=a.name,
+                    target=b.name,
+                    label=label,
+                    relations=link.relations,
+                    bidirectional=link.bidirectional,
+                )
             )
-    return {"nodes": list(nodes_map.values()), "links": links_data}
+    return LinkGraph(nodes=list(nodes.values()), links=links)
 
 
 def _load(yaml_path: str) -> tuple[Dao, dict]:
@@ -88,34 +110,34 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
     )
 
     @app.get("/moai")
-    def get_moai(request: Request):
+    def get_moai(request: Request) -> dict[str, Moai]:
         return request.app.state.dao.moai or {}
 
     @app.get("/moai/{moai_id}")
-    def get_moai_by_id(moai_id: str, request: Request):
+    def get_moai_by_id(moai_id: str, request: Request) -> Moai:
         moai = (request.app.state.dao.moai or {}).get(moai_id)
         if moai is None:
             raise HTTPException(status_code=404, detail="moai not found")
-        return moai.model_dump()
+        return moai
 
     @app.get("/moai-link")
-    def get_moai_link(request: Request):
+    def get_moai_link(request: Request) -> LinkGraph:
         return request.app.state.moai_link_graph
 
     @app.get("/drift")
-    def get_drift(request: Request):
+    def get_drift(request: Request) -> dict[str, list[Drift]]:
         return request.app.state.dao.drift or {}
 
     @app.get("/drift/{season}")
-    def get_drift_by_season(season: str, request: Request):
+    def get_drift_by_season(season: str, request: Request) -> list[Drift]:
         drift = (request.app.state.dao.drift or {}).get(season)
         if drift is None:
             raise HTTPException(status_code=404, detail="season not found")
-        return [d.model_dump() for d in drift]
+        return drift
 
     @app.get("/story")
-    def get_story(request: Request):
-        return request.app.state.dao.story.model_dump()
+    def get_story(request: Request) -> Story:
+        return request.app.state.dao.story
 
     @app.get("/events")
     async def events(request: Request):

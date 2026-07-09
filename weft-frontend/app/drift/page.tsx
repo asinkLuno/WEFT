@@ -1,31 +1,4 @@
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
-
-interface MoaiData {
-  full_name: string;
-  base_time_display: string | null;
-  description: string;
-  extra_props: Record<string, unknown> | null;
-  journal: Record<string, [string, string | null]>;
-}
-type MoaiMap = Record<string, MoaiData>;
-
-interface DriftEvent {
-  title: string;
-  description: string | null;
-  start_time: { base_time: number[]; ref_time: unknown };
-  end_time: { base_time: number[]; ref_time: unknown } | null;
-  flat_start: number[];
-  flat_end: number[] | null;
-  moais: string[] | null;
-}
-
-type DriftMap = Record<string, DriftEvent[]>;
-
-async function fetchJson(url: string): Promise<unknown> {
-  const res = await fetch(url, { next: { revalidate: 0 } });
-  if (!res.ok) throw new Error(`${url} returned ${res.status}`);
-  return res.json();
-}
+import { fetchJson, type DriftMap, type MoaiMap } from "@/lib/api";
 
 function cmpList(a: number[], b: number[]): number {
   for (let i = 0; i < a.length; i++) {
@@ -35,10 +8,10 @@ function cmpList(a: number[], b: number[]): number {
 }
 
 export default async function DriftPage() {
-  const [driftsRaw, moais] = (await Promise.all([
-    fetchJson(`${BACKEND}/drift`),
-    fetchJson(`${BACKEND}/moai`),
-  ])) as [DriftMap, MoaiMap];
+  const [driftsRaw, moais] = await Promise.all([
+    fetchJson<DriftMap>("/drift"),
+    fetchJson<MoaiMap>("/moai"),
+  ]);
 
   const entries = Object.entries(driftsRaw)
     .map(([key, events]) => ({
@@ -76,12 +49,10 @@ export default async function DriftPage() {
                           {moaiKeys.map((k) => (
                             <th
                               key={k}
+                              title={moais[k]?.description || undefined}
                               className="text-left px-3 py-2 font-medium whitespace-nowrap min-w-[140px]"
                             >
-                              <div className="text-xs text-muted-foreground">
-                                {k}
-                              </div>
-                              <div>{moais[k]?.full_name ?? k}</div>
+                              {k}
                             </th>
                           ))}
                         </tr>

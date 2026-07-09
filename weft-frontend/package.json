@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --check .",
-    "format:fix": "prettier --write ."
+    "format:fix": "prettier --write .",
+    "gen:types": "../.venv/bin/python scripts/gen-openapi.py lib/openapi.json && openapi-typescript lib/openapi.json -o lib/schema.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3",
     "tailwindcss": "^4",
     "typescript": "^5"

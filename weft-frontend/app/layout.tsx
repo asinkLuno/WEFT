@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { HotReload } from "./hot-reload";
 import "./globals.css";
+import { BACKEND } from "@/lib/api";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,8 +25,6 @@ export const metadata: Metadata = {
   title: "WEFT",
   description: "WEFT",
 };
-
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 const NAV_ITEMS = [
   { label: "story", href: "/story" },

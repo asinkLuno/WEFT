@@ -5,26 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
-
-interface MoaiData {
-  full_name: string;
-  base_time_display: string | null;
-  description: string;
-  extra_props: Record<string, unknown> | null;
-}
-
-type MoaiMap = Record<string, MoaiData>;
-
-async function getMoais(): Promise<MoaiMap> {
-  const res = await fetch(`${BACKEND}/moai`, { next: { revalidate: 0 } });
-  if (!res.ok) throw new Error(`/moai returned ${res.status}`);
-  return res.json();
-}
+import { fetchJson, type MoaiMap } from "@/lib/api";
 
 export default async function MoaiPage() {
-  const moais = await getMoais();
+  const moais = await fetchJson<MoaiMap>("/moai");
   const entries = Object.entries(moais);
 
   if (entries.length === 0) {
@@ -47,7 +31,7 @@ export default async function MoaiPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg leading-tight">
-                  {moai.full_name}
+                  {moai.name}
                 </CardTitle>
                 <CardDescription className="font-mono text-xs">
                   {key}
