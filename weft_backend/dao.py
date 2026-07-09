@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from weft_backend.aqueduct import Phase, gregorian_aqueduct
 
+from weft_backend.material import MATERIALS
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
 
@@ -14,15 +15,18 @@ from weft_backend.aqueduct import Phase, gregorian_aqueduct
 def _phase(data: list) -> Phase:
     """Parse a YAML time list ``[*base, ref?]`` into a Phase.
 
-    Leading ints are ``base_time`` (the offset, 6 wide for gregorian); an
-    optional trailing list is ``ref_time`` (recursively another time list,
-    the point the offset is relative to). The two compose later via
-    ``Aqueduct.de_recursive``.
+    Leading ints are ``base_time`` ; an optional trailing list is ``ref_time``
+    (recursively another time list, the point the offset is relative to).
+    Short base_time arrays are zero-padded to the aqueduct brick count.
     """
+    n = len(gregorian_aqueduct.bricks)
     *base, tail = data
     if isinstance(tail, list):  # [*base, ref]
-        return Phase(base_time=base, ref_time=_phase(tail))
-    return Phase(base_time=list(data))  # [*base] (no ref)
+        return Phase(
+            base_time=list(base) + [0] * (n - len(base)), ref_time=_phase(tail)
+        )
+    base = list(data) + [0] * (n - len(data))
+    return Phase(base_time=base)
 
 
 # ── Models ──────────────────────────────────────────────────────────
@@ -42,7 +46,6 @@ class Moai(BaseModel):
         material 读取 Moai 的某个属性，通过一系列计算得到另一个属性。
         当前支持的 material 见 :mod:`weft_backend.material` 的 ``MATERIALS`` 注册表。
         """
-        from weft_backend.material import MATERIALS
 
         fn = MATERIALS.get(name)
         if fn is None:
