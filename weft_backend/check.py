@@ -64,12 +64,18 @@ def check(dao: Dao) -> tuple[list[str], list[str]]:
                 report.append(f"      结束: {aqueduct.humanize(ne)}")
                 if ne < ns:
                     warnings.append(f"[{season}] «{d.title}» 结束早于开始")
-            for name, off in (d.moai_offsets or {}).items():
-                moai = dao.moai[name]
-                report.append(f"      {moai.full_name} ({name}) 时年: {off['start']}")
-                if ns < norm_base[name]:
+            for m in d.moais or []:
+                entry = m.journal.get(d.title)
+                if entry is None:
+                    continue
+                start_phase, _ = entry
+                report.append(
+                    f"      {m.full_name} ({m.key}) 时年: "
+                    f"{aqueduct.humanize(aqueduct.normalize(start_phase.base_time))}"
+                )
+                if ns < norm_base[m.key]:
                     warnings.append(
-                        f"[{season}] «{d.title}» 早于 {moai.full_name} 的出生时间"
+                        f"[{season}] «{d.title}» 早于 {m.full_name} 的出生时间"
                     )
 
     return report, warnings

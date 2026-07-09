@@ -44,6 +44,7 @@ class Moai(BaseModel):
     materials: list[str] = Field(default_factory=list)
     extra_props: dict | None = None
     aqueduct: Aqueduct = Field(exclude=True)
+    journal: dict[str, tuple[Phase, Phase | None]] = Field(default_factory=dict)
 
     def apply_material(self, name: str) -> str | None:
         """应用单个 material 函数，返回计算出的派生属性。
@@ -139,33 +140,6 @@ class Drift(BaseModel):
     def flat_end(self) -> list[int] | None:
         return self.aqueduct.de_recursive(self.end_time) if self.end_time else None
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def moai_offsets(self) -> dict[str, dict[str, str | None]] | None:
-        """每个关联 moai 在漂移事件发生/结束时的年龄（人性化字符串）。"""
-        if not self.moais:
-            return None
-        result: dict[str, dict[str, str | None]] = {}
-        for m in self.moais:
-            if m.base_time is None:
-                continue
-            m_flat = self.aqueduct.de_recursive(m.base_time)
-            entry: dict[str, str | None] = {
-                "start": self.aqueduct.humanize(
-                    self.aqueduct.normalize(
-                        self.aqueduct.minus(self.flat_start, m_flat)
-                    )
-                )
-            }
-            if self.flat_end is not None:
-                entry["end"] = self.aqueduct.humanize(
-                    self.aqueduct.normalize(self.aqueduct.minus(self.flat_end, m_flat))
-                )
-            else:
-                entry["end"] = None
-            result[m.key] = entry
-        return result or None
-
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai], aqueduct: Aqueduct) -> Drift:
         moai_names = data.get("moais", [])
@@ -173,7 +147,7 @@ class Drift(BaseModel):
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
 
-        return cls(
+        drift = cls(
             title=data["title"],
             start_time=_phase(data["start_time"], aqueduct),
             end_time=_phase(data["end_time"], aqueduct) if "end_time" in data else None,
@@ -181,6 +155,28 @@ class Drift(BaseModel):
             moais=[moais[m] for m in moai_names] if moai_names else None,
             aqueduct=aqueduct,
         )
+
+        # 将偏移量写回各 moai 的 journal，避免在 Drift 上多维护 moai_offsets
+        if drift.moais:
+            for m in drift.moais:
+                if m.base_time is None:
+                    continue
+                m_flat = aqueduct.de_recursive(m.base_time)
+                start_phase = Phase(
+                    base_time=aqueduct.normalize(
+                        aqueduct.minus(drift.flat_start, m_flat)
+                    )
+                )
+                end_phase = None
+                if drift.flat_end is not None:
+                    end_phase = Phase(
+                        base_time=aqueduct.normalize(
+                            aqueduct.minus(drift.flat_end, m_flat)
+                        )
+                    )
+                m.journal[drift.title] = (start_phase, end_phase)
+
+        return drift
 
 
 class Dao(BaseModel):
