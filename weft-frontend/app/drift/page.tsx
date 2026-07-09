@@ -94,12 +94,12 @@ export default async function DriftPage() {
                         {events.map((drift, idx) => (
                           <tr key={idx} className="border-b hover:bg-muted/30">
                             <td className="px-3 py-2 align-top sticky left-0 bg-background border-r">
-                              <div className="font-medium">{drift.title}</div>
-                              {drift.description && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {drift.description}
-                                </div>
-                              )}
+                              <div
+                                className="font-medium"
+                                title={drift.description ?? undefined}
+                              >
+                                {drift.title}
+                              </div>
                             </td>
                             {moaiKeys.map((mk) => {
                               const off = drift.moai_offsets?.[mk];
