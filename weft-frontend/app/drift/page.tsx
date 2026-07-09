@@ -1,4 +1,12 @@
 import { fetchJson, type DriftMap, type MoaiMap } from "@/lib/api";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 function cmpList(a: number[], b: number[]): number {
   for (let i = 0; i < a.length; i++) {
@@ -39,41 +47,41 @@ export default async function DriftPage() {
               return (
                 <section key={key}>
                   <h2 className="text-lg font-semibold mb-2">{key}</h2>
-                  <div className="overflow-x-auto border rounded-lg">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-muted/50 border-b">
-                          <th className="text-left px-3 py-2 font-medium whitespace-nowrap sticky left-0 bg-muted/50">
+                  <div className="overflow-hidden border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="sticky left-0 bg-muted/50 z-10">
                             Event
-                          </th>
+                          </TableHead>
                           {moaiKeys.map((k) => (
-                            <th
+                            <TableHead
                               key={k}
                               title={moais[k]?.description || undefined}
-                              className="text-left px-3 py-2 font-medium whitespace-nowrap min-w-[140px]"
+                              className="min-w-[140px]"
                             >
                               {k}
-                            </th>
+                            </TableHead>
                           ))}
-                        </tr>
-                      </thead>
-                      <tbody>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {events.map((drift, idx) => (
-                          <tr key={idx} className="border-b hover:bg-muted/30">
-                            <td className="px-3 py-2 align-top sticky left-0 bg-background border-r">
+                          <TableRow key={idx}>
+                            <TableCell className="align-top sticky left-0 bg-background border-r whitespace-normal z-10">
                               <div
                                 className="font-medium"
                                 title={drift.description ?? undefined}
                               >
                                 {drift.title}
                               </div>
-                            </td>
+                            </TableCell>
                             {moaiKeys.map((mk) => {
                               const entry = moais[mk]?.journal?.[drift.title];
                               const start = entry?.[0];
                               const end = entry?.[1];
                               return (
-                                <td key={mk} className="px-3 py-2 align-top">
+                                <TableCell key={mk} className="align-top">
                                   {start ? (
                                     <span className="font-mono text-xs whitespace-nowrap">
                                       {start}
@@ -84,13 +92,13 @@ export default async function DriftPage() {
                                       —
                                     </span>
                                   )}
-                                </td>
+                                </TableCell>
                               );
                             })}
-                          </tr>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </section>
               );
