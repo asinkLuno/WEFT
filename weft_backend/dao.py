@@ -69,11 +69,11 @@ class Moai(BaseModel):
         return self.aqueduct.humanize(self.aqueduct.normalize(flat))
 
     @classmethod
-    def from_dict(cls, data: dict, aqueduct: Aqueduct) -> Moai:
+    def from_dict(cls, name: str, data: dict, aqueduct: Aqueduct) -> Moai:
         known = set(cls.model_fields)
         extra = {k: v for k, v in data.items() if k not in known}
         moai = cls(
-            name=data["_key"],
+            name=name,
             base_time=_phase(data["base_time"], aqueduct)
             if "base_time" in data
             else None,
@@ -197,7 +197,7 @@ class Dao(BaseModel):
 
         # Moai first: links and drifts reference moais by name.
         moais = {
-            name: Moai.from_dict({"_key": name, **m}, aqueduct)
+            name: Moai.from_dict(name, m, aqueduct)
             for name, m in raw.get("moai", {}).items()
         }
         drifts = {
