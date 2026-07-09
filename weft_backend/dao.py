@@ -124,7 +124,7 @@ class Story(BaseModel):
 class Drift(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
-    title: str
+    title: str = Field(max_length=20)
     start_time: Phase
     end_time: Phase | None = None
     description: str | None = None
