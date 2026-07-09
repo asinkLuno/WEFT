@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "weft-backend"
 version = "0.1.0"
@@ -26,6 +30,12 @@ dev = [
     "ty>=0.0.55",
     "vulture>=2.16",
 ]
+
+[tool.setuptools.packages.find]
+include = ["weft_backend*"]
+
+[project.scripts]
+weft = "weft_backend.main:cli"
 
 [tool.ruff]
 lint.select = ["I", "F"]    # isort + pyflakes (unused imports etc.)
