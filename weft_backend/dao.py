@@ -149,7 +149,6 @@ class Drift(BaseModel):
         for name in moai_names:
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
-
         drift = cls(
             title=title,
             start_time=_phase(data["start_time"], aqueduct),
@@ -198,13 +197,22 @@ class Dao(BaseModel):
             name: Moai.from_dict(name, m, aqueduct)
             for name, m in raw.get("moai", {}).items()
         }
-        drifts = {
-            season: [
+        drifts: dict[str, list[Drift]] = {}
+        for season, events in raw.get("drift", {}).items():
+            drifts[season] = [
                 Drift.from_dict(title, data, moais, aqueduct)
                 for title, data in events.items()
             ]
-            for season, events in raw.get("drift", {}).items()
-        } or None
+        # 按各 season 最早 drift 的 start_time 排序
+        if drifts:
+            drifts = dict(
+                sorted(
+                    drifts.items(),
+                    key=lambda item: min(d.flat_start for d in item[1]),
+                )
+            )
+        else:
+            drifts = None
         return cls(
             story=Story.from_dict(story_raw),
             moai=moais or None,

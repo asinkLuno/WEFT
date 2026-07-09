@@ -86,6 +86,15 @@ class Aqueduct:
                 ref = None
         return result
 
+    def cmp_flat(self, a: list[int], b: list[int]) -> int:
+        """逐位比较两个展平后的时间列表。返回 -1, 0, 1。"""
+        for x, y in zip(a, b):
+            if x < y:
+                return -1
+            if x > y:
+                return 1
+        return 0
+
 
 def get_days_in_month(ctx: dict) -> int:
     def is_leap_year(year: int) -> bool:
