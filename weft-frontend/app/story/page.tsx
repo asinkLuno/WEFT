@@ -10,7 +10,6 @@ const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 
 interface StoryData {
   title: string;
-  summary: string | null;
   description: string | null;
   date_mode: string;
 }
@@ -33,11 +32,6 @@ export default async function StoryPage() {
             <CardDescription>timeline mode: {story.date_mode}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {story.summary && (
-              <p className="text-base text-muted-foreground leading-relaxed">
-                {story.summary}
-              </p>
-            )}
             {story.description && (
               <div className="prose prose-sm max-w-none text-muted-foreground">
                 {story.description}

@@ -90,7 +90,7 @@ class Moai(BaseModel):
 class MoaiLink(BaseModel):
     moais: tuple[Moai, Moai]
     relations: str
-    bidirectional: bool = True
+    bidirectional: bool
 
     @classmethod
     def from_yaml(cls, data: dict, moais: dict[str, Moai]) -> MoaiLink:
@@ -107,15 +107,13 @@ class MoaiLink(BaseModel):
 
 class Story(BaseModel):
     title: str
-    summary: str | None = None
     description: str | None = None
     date_mode: Literal["gregorian"]
 
     @classmethod
     def from_yaml(cls, data: dict) -> Story:
         return cls(
-            title=data.get("title", ""),
-            summary=data.get("summary"),
+            title=data.get("title"),
             description=data.get("description"),
             date_mode="gregorian",
         )
