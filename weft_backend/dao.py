@@ -37,8 +37,7 @@ def _phase(data: list, aqueduct: Aqueduct) -> Phase:
 class Moai(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
-    key: str
-    full_name: str
+    name: str
     base_time: Phase | None = None
     description: str
     materials: list[str] = Field(default_factory=list)
@@ -71,8 +70,7 @@ class Moai(BaseModel):
         known = set(cls.model_fields)
         extra = {k: v for k, v in data.items() if k not in known}
         moai = cls(
-            key=data["_key"],
-            full_name=data["full_name"],
+            name=data["_key"],
             base_time=_phase(data["base_time"], aqueduct)
             if "base_time" in data
             else None,
@@ -127,7 +125,7 @@ class Drift(BaseModel):
     start_time: Phase
     end_time: Phase | None = None
     description: str | None = None
-    moais: list[Moai] | None = None
+    moais: list[str] | None = None
     aqueduct: Aqueduct = Field(exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
@@ -154,13 +152,14 @@ class Drift(BaseModel):
             start_time=_phase(data["start_time"], aqueduct),
             end_time=_phase(data["end_time"], aqueduct) if "end_time" in data else None,
             description=data.get("description"),
-            moais=[moais[m] for m in moai_names] if moai_names else None,
+            moais=moai_names or None,
             aqueduct=aqueduct,
         )
 
         # 将偏移量写回各 moai 的 journal，避免在 Drift 上多维护 moai_offsets
         if drift.moais:
-            for m in drift.moais:
+            for name in drift.moais:
+                m = moais[name]
                 if m.base_time is None:
                     continue
                 m_flat = aqueduct.de_recursive(m.base_time)

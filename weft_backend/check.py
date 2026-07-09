@@ -47,10 +47,10 @@ def check(dao: Dao) -> tuple[list[str], list[str]]:
     ] = {}  # ponytail: 缓存 normalize 后的出生时间，供时序比较
     for key, m in (dao.moai or {}).items():
         if m.base_time is None:
-            report.append(f"  {key} ({m.full_name}): (无 base_time)")
+            report.append(f"  {m.name}: (无 base_time)")
             continue
         norm_base[key] = aqueduct.normalize(aqueduct.de_recursive(m.base_time))
-        report.append(f"  {key} ({m.full_name}): {m.base_time_display}")
+        report.append(f"  {m.name}: {m.base_time_display}")
 
     # ── 漂移事件 ──
     for season, events in (dao.drift or {}).items():
@@ -64,19 +64,18 @@ def check(dao: Dao) -> tuple[list[str], list[str]]:
                 report.append(f"      结束: {aqueduct.humanize(ne)}")
                 if ne < ns:
                     warnings.append(f"[{season}] «{d.title}» 结束早于开始")
-            for m in d.moais or []:
+            for name in d.moais or []:
+                m = dao.moai[name]
                 entry = m.journal.get(d.title)
                 if entry is None:
                     continue
                 start_phase, _ = entry
                 report.append(
-                    f"      {m.full_name} ({m.key}) 时年: "
+                    f"      {name} 时年: "
                     f"{aqueduct.humanize(aqueduct.normalize(start_phase.base_time))}"
                 )
-                if ns < norm_base[m.key]:
-                    warnings.append(
-                        f"[{season}] «{d.title}» 早于 {m.full_name} 的出生时间"
-                    )
+                if ns < norm_base[name]:
+                    warnings.append(f"[{season}] «{d.title}» 早于 {name} 的出生时间")
 
     return report, warnings
 

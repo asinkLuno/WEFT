@@ -19,19 +19,16 @@ _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "weft-frontend"
 def _build_link_graph(dao: Dao) -> dict:
     """Pre-transform moai_link into {nodes, links} for the force-graph."""
     links_data: list[dict] = []
-    name_to_key = {m.full_name: k for k, m in (dao.moai or {}).items()}
     nodes_map: dict[str, dict] = {}
     for label, link_list in (dao.moai_link or {}).items():
         for link in link_list:
             a, b = link.moais
-            sk = name_to_key.get(a.full_name, a.full_name)
-            tk = name_to_key.get(b.full_name, b.full_name)
-            nodes_map[sk] = {"id": sk, "full_name": a.full_name}
-            nodes_map[tk] = {"id": tk, "full_name": b.full_name}
+            nodes_map[a.name] = {"id": a.name, "name": a.name}
+            nodes_map[b.name] = {"id": b.name, "name": b.name}
             links_data.append(
                 {
-                    "source": sk,
-                    "target": tk,
+                    "source": a.name,
+                    "target": b.name,
                     "label": label,
                     "relations": link.relations,
                     "bidirectional": link.bidirectional,
