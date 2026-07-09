@@ -118,7 +118,7 @@ class Story(BaseModel):
 
 
 class Drift(BaseModel):
-    title: str
+    title: str = Field(max_length=20)
     start_time: Phase
     end_time: Phase | None = None
     description: str | None = None
