@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Callable
+
 from sys import maxsize
+from typing import Callable
+
 from pydantic import BaseModel
 
 
