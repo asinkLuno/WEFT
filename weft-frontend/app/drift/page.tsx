@@ -1,19 +1,11 @@
-import { fetchJson, type Drift, type DriftMap, type MoaiMap } from "@/lib/api";
+import { fetchJson, type DriftMap, type MoaiMap } from "@/lib/api";
+import { EventHoverCard } from "./event-hover-card";
 
 function cmpList(a: number[], b: number[]): number {
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return a[i] - b[i];
   }
   return 0;
-}
-
-function eventTooltip(event: Drift): string {
-  const time = event.end_time_display
-    ? `${event.start_time_display} — ${event.end_time_display}`
-    : event.start_time_display;
-  const moais = event.moais?.length ? `\n${event.moais.join("、")}` : "";
-  const description = event.description ? `\n\n${event.description}` : "";
-  return `${event.title}\n${time}${moais}${description}`;
 }
 
 export default async function DriftPage() {
@@ -94,7 +86,13 @@ export default async function DriftPage() {
                   const endTick = event.end_tick ?? event.start_tick;
                   const width =
                     ((endTick - event.start_tick) / tickRange) * 100;
-                  const tooltip = eventTooltip(event);
+                  const cardProps = {
+                    title: event.title,
+                    start: event.start_time_display,
+                    end: event.end_time_display,
+                    description: event.description ?? null,
+                    moais: event.moais ?? [],
+                  };
 
                   return (
                     <div
@@ -102,12 +100,17 @@ export default async function DriftPage() {
                       className="grid min-h-16 grid-cols-[240px_1fr] border-b last:border-b-0"
                     >
                       <div className="min-w-0 border-r px-4 py-2.5">
-                        <div
-                          className="truncate text-sm font-medium"
-                          title={tooltip}
-                        >
-                          {event.title}
-                        </div>
+                        <EventHoverCard
+                          {...cardProps}
+                          trigger={
+                            <button
+                              type="button"
+                              className="block w-full truncate rounded-sm text-left text-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/50"
+                            >
+                              {event.title}
+                            </button>
+                          }
+                        />
                         <div className="mt-1 truncate text-xs text-muted-foreground">
                           {(event.moais ?? []).map((name, index) => (
                             <span key={name} title={moais[name]?.description}>
@@ -118,23 +121,35 @@ export default async function DriftPage() {
                         </div>
                       </div>
 
-                      <div
-                        className="relative bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px)] bg-[size:25%_100%]"
-                        aria-label={tooltip}
-                      >
+                      <div className="relative bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px)] bg-[size:25%_100%]">
                         {event.end_tick === null ? (
-                          <div
-                            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] border border-primary bg-primary shadow-sm"
-                            style={{
-                              left: `clamp(6px, ${left}%, calc(100% - 6px))`,
-                            }}
-                            title={tooltip}
+                          <EventHoverCard
+                            {...cardProps}
+                            trigger={
+                              <button
+                                type="button"
+                                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] border border-primary bg-primary shadow-sm outline-none hover:ring-4 hover:ring-primary/15 focus-visible:ring-4 focus-visible:ring-ring/40"
+                                style={{
+                                  left: `clamp(6px, ${left}%, calc(100% - 6px))`,
+                                }}
+                                aria-label={event.title}
+                              />
+                            }
                           />
                         ) : (
-                          <div
-                            className="absolute top-1/2 h-7 min-w-1 -translate-y-1/2 rounded-md border border-primary/20 bg-primary/85 shadow-sm"
-                            style={{ left: `${left}%`, width: `${width}%` }}
-                            title={tooltip}
+                          <EventHoverCard
+                            {...cardProps}
+                            trigger={
+                              <button
+                                type="button"
+                                className="absolute top-1/2 h-7 min-w-1 -translate-y-1/2 rounded-md border border-primary/20 bg-primary/85 shadow-sm outline-none hover:bg-primary hover:ring-4 hover:ring-primary/15 focus-visible:ring-4 focus-visible:ring-ring/40"
+                                style={{
+                                  left: `${left}%`,
+                                  width: `${width}%`,
+                                }}
+                                aria-label={event.title}
+                              />
+                            }
                           />
                         )}
                       </div>
