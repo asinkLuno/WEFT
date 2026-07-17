@@ -146,6 +146,8 @@ export interface components {
     schemas: {
         /** Drift */
         Drift: {
+            /** Id */
+            id: string;
             /** Title */
             title: string;
             start_time: components["schemas"]["Phase"];
@@ -231,6 +233,8 @@ export interface components {
             subject: string[];
             /** Observer */
             observer: string;
+            /** Drifts */
+            drifts: components["schemas"]["Drift"][];
         };
         /** Phase */
         Phase: {

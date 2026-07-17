@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   NavigationMenu,
@@ -37,7 +38,7 @@ export default function RootLayout({
             href="/"
             className="flex items-center gap-2 text-lg font-semibold tracking-wide"
           >
-            <img src="/logo-icon.svg" alt="WEFT" className="h-5 w-5" />
+            <Image src="/logo-icon.svg" alt="WEFT" width={20} height={20} />
             WEFT
           </Link>
           <NavigationMenu>

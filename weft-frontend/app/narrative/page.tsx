@@ -1,15 +1,9 @@
-import {
-  fetchJson,
-  type DriftMap,
-  type MoaiMap,
-  type NarrativeMap,
-} from "@/lib/api";
+import { fetchJson, type MoaiMap, type NarrativeMap } from "@/lib/api";
 import { compareDriftTime, DriftGantt, GanttLegend } from "../drift/gantt";
 
 export default async function NarrativePage() {
-  const [narratives, drifts, moais] = await Promise.all([
+  const [narratives, moais] = await Promise.all([
     fetchJson<NarrativeMap>("/narrative"),
-    fetchJson<DriftMap>("/drift"),
     fetchJson<MoaiMap>("/moai"),
   ]);
 
@@ -17,9 +11,7 @@ export default async function NarrativePage() {
     .map(([name, narrative]) => ({
       name,
       narrative,
-      events: narrative.subject
-        .flatMap((subject) => drifts[subject] ?? [])
-        .toSorted(compareDriftTime),
+      events: narrative.drifts.toSorted(compareDriftTime),
     }))
     .filter(({ events }) => events.length > 0);
   const eventCount = entries.reduce(

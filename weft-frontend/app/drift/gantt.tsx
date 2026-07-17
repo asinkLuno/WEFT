@@ -71,13 +71,13 @@ export function DriftGantt({
               description: event.description ?? null,
               moais: (event.moais ?? []).map((name) => ({
                 name,
-                offset: moais[name]?.journal?.[event.title] ?? null,
+                offset: moais[name]?.journal?.[event.id] ?? null,
               })),
             };
 
             return (
               <div
-                key={`${event.title}-${event.start_tick}`}
+                key={event.id}
                 className="grid min-h-16 grid-cols-[240px_1fr] border-b last:border-b-0"
               >
                 <div className="min-w-0 border-r px-4 py-2.5">

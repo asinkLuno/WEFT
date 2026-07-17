@@ -24,12 +24,18 @@ def _phase(data: list, aqueduct: Aqueduct) -> Phase:
     Short base_time arrays are zero-padded to the aqueduct brick count.
     """
     n = len(aqueduct.bricks)
+    if not isinstance(data, list) or not data:
+        raise ValueError("时间必须是非空列表")
     *base, tail = data
     if isinstance(tail, list):  # [*base, ref]
+        if len(base) > n or not all(type(value) is int for value in base):
+            raise ValueError(f"时间偏移必须包含至多 {n} 个整数")
         return Phase(
             base_time=list(base) + [0] * (n - len(base)),
             ref_time=_phase(tail, aqueduct),
         )
+    if len(data) > n or not all(type(value) is int for value in data):
+        raise ValueError(f"时间必须包含至多 {n} 个整数")
     base = list(data) + [0] * (n - len(data))
     return Phase(base_time=base)
 
@@ -127,6 +133,7 @@ class Story(BaseModel):
 class Drift(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
+    id: str
     title: str = Field(max_length=20)
     start_time: Phase
     end_time: Phase | None = None
@@ -166,13 +173,19 @@ class Drift(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, title: str, data: dict, moais: dict[str, Moai], aqueduct: Aqueduct
+        cls,
+        group: str,
+        title: str,
+        data: dict,
+        moais: dict[str, Moai],
+        aqueduct: Aqueduct,
     ) -> Drift:
         moai_names = data.get("moais", [])
         for name in moai_names:
             if name not in moais:
                 raise KeyError(f"drift 引用了不存在的 moai: {name!r}")
         drift = cls(
+            id=f"{group}/{title}",
             title=title,
             start_time=_phase(data["start_time"], aqueduct),
             end_time=_phase(data["end_time"], aqueduct) if "end_time" in data else None,
@@ -180,6 +193,8 @@ class Drift(BaseModel):
             moais=moai_names or None,
             aqueduct=aqueduct,
         )
+        if drift.end_tick is not None and drift.end_tick < drift.start_tick:
+            raise ValueError(f"drift {drift.id!r} 的 end_time 不能早于 start_time")
 
         # 计算各 moai 相对偏移量，humanize 后写入 journal
         if drift.moais:
@@ -194,6 +209,7 @@ class Narrative(BaseModel):
 
     subject: list[str]
     observer: str
+    drifts: list[Drift]
 
     @classmethod
     def from_dict(
@@ -215,13 +231,17 @@ class Narrative(BaseModel):
         if observer not in moais:
             raise KeyError(f"narrative 引用了不存在的 observer moai: {observer!r}")
 
-        narrative = cls(subject=subject, observer=observer)
         observer_moai = moais[observer]
+        narrative_drifts: list[Drift] = []
         for drift_name in subject:
             for drift in drifts[drift_name]:
-                drift.moais = list(dict.fromkeys([*(drift.moais or []), observer]))
-                _record_moai_drift_time(observer_moai, drift, aqueduct)
-        return narrative
+                narrative_drift = drift.model_copy(deep=True)
+                narrative_drift.moais = list(
+                    dict.fromkeys([*(narrative_drift.moais or []), observer])
+                )
+                _record_moai_drift_time(observer_moai, narrative_drift, aqueduct)
+                narrative_drifts.append(narrative_drift)
+        return cls(subject=subject, observer=observer, drifts=narrative_drifts)
 
 
 def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> None:
@@ -235,7 +255,7 @@ def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> Non
         if drift.flat_end is not None
         else None
     )
-    moai.journal[drift.title] = (
+    moai.journal[drift.id] = (
         aqueduct.humanize(start),
         aqueduct.humanize(end) if end is not None else None,
     )
@@ -252,7 +272,10 @@ class Dao(BaseModel):
     def from_dict(cls, raw: dict) -> Dao:
         story_raw = raw.get("story", {})
         date_mode = story_raw.get("date_mode", "gregorian")
-        aqueduct = AQUEDUCTS[date_mode]
+        try:
+            aqueduct = AQUEDUCTS[date_mode]
+        except KeyError as exc:
+            raise ValueError(f"不支持的 date_mode: {date_mode!r}") from exc
 
         # Moai first: links and drifts reference moais by name.
         moais = {
@@ -267,7 +290,7 @@ class Dao(BaseModel):
         drifts: dict[str, list[Drift]] = {}
         for season, events in drift_raw.items():
             drifts[season] = [
-                Drift.from_dict(title, data, moais, aqueduct)
+                Drift.from_dict(season, title, data, moais, aqueduct)
                 for title, data in events.items()
             ]
         # 按各 season 最早 drift 的 start_time 排序
@@ -275,7 +298,10 @@ class Dao(BaseModel):
             drifts = dict(
                 sorted(
                     drifts.items(),
-                    key=lambda item: min(d.flat_start for d in item[1]),
+                    key=lambda item: (
+                        not item[1],
+                        min((d.flat_start for d in item[1]), default=[]),
+                    ),
                 )
             )
         return cls(
