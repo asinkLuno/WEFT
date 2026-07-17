@@ -52,7 +52,7 @@ function escapeHtml(value: unknown): string {
 
 function formatTooltip(moai: Moai): string {
   const time = moai.base_time_display
-    ? `<div style="margin-top:4px;color:#71717a;font-family:monospace;font-size:12px">${escapeHtml(moai.base_time_display)}</div>`
+    ? `<div style="margin-top:4px;color:#75685b;font-family:monospace;font-size:12px">${escapeHtml(moai.base_time_display)}</div>`
     : "";
   const description = moai.description
     ? `<div style="margin-top:6px;max-width:256px;white-space:normal;line-height:1.5">${escapeHtml(moai.description)}</div>`
@@ -64,7 +64,7 @@ function formatTooltip(moai: Moai): string {
     )
     .join("");
   const extra = properties
-    ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e4e4e7;color:#71717a">${properties}</div>`
+    ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #d8c9b5;color:#75685b">${properties}</div>`
     : "";
 
   return `<div style="font-size:12px"><strong style="font-size:14px">${escapeHtml(moai.name)}</strong>${time}${description}${extra}</div>`;
@@ -76,7 +76,7 @@ function graphOption(graph: SubGraph, moais: MoaiMap): EChartsOption {
     tooltip: {
       trigger: "item",
       confine: true,
-      borderColor: "#e4e4e7",
+      borderColor: "#d8c9b5",
       formatter: (params: TooltipComponentFormatterCallbackParams) => {
         const item = Array.isArray(params) ? params[0] : params;
         if (!item || item.dataType !== "node") return "";
@@ -122,7 +122,7 @@ function graphOption(graph: SubGraph, moais: MoaiMap): EChartsOption {
         label: {
           show: true,
           position: "inside",
-          color: "#27272a",
+          color: "#342c26",
           fontSize: 13,
           overflow: "truncate",
           width: 150,
@@ -131,19 +131,19 @@ function graphOption(graph: SubGraph, moais: MoaiMap): EChartsOption {
           show: true,
           formatter: (params: DefaultLabelFormatterCallbackParams) =>
             (params.data as { relations?: string }).relations ?? "",
-          color: "#71717a",
+          color: "#75685b",
           fontSize: 11,
-          backgroundColor: "rgba(250, 250, 250, 0.85)",
+          backgroundColor: "rgba(250, 246, 237, 0.9)",
           padding: [2, 4],
           borderRadius: 2,
         },
         itemStyle: {
-          color: "#fafafa",
-          borderColor: "#71717a",
+          color: "#faf6ed",
+          borderColor: "#8f5a45",
           borderWidth: 1,
         },
         lineStyle: {
-          color: "#a1a1aa",
+          color: "#b09b84",
           width: 1,
           opacity: 0.7,
           curveness: 0.08,
@@ -181,7 +181,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
       <h2 className="mb-2 px-2 text-lg font-semibold">{graph.label}</h2>
       <div
         ref={containerRef}
-        className="h-[50vh] overflow-hidden rounded-lg border border-border bg-zinc-50"
+        className="h-[50vh] overflow-hidden rounded-lg border border-border bg-muted/30"
         role="img"
         aria-label={`${graph.label} relationship graph`}
       />
