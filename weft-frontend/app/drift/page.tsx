@@ -60,7 +60,10 @@ function DriftGantt({
               start: event.start_time_display,
               end: event.end_time_display,
               description: event.description ?? null,
-              moais: event.moais ?? [],
+              moais: (event.moais ?? []).map((name) => ({
+                name,
+                offset: moais[name]?.journal?.[event.title] ?? null,
+              })),
             };
 
             return (

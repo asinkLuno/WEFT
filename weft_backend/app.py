@@ -11,7 +11,7 @@ from loguru import logger
 from pydantic import BaseModel
 from watchfiles import awatch
 
-from weft_backend.dao import Dao, Drift, Moai, Story, load_dao
+from weft_backend.dao import Dao, Drift, Moai, Narrative, Story, load_dao
 
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "weft-frontend"
 
@@ -134,6 +134,10 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
         if drift is None:
             raise HTTPException(status_code=404, detail="season not found")
         return drift
+
+    @app.get("/narrative")
+    def get_narrative(request: Request) -> dict[str, Narrative]:
+        return request.app.state.dao.narrative or {}
 
     @app.get("/story")
     def get_story(request: Request) -> Story:

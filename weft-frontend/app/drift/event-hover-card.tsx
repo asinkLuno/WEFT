@@ -14,7 +14,10 @@ interface EventHoverCardProps {
   start: string;
   end: string | null;
   description: string | null;
-  moais: string[];
+  moais: Array<{
+    name: string;
+    offset: [string, string | null] | null;
+  }>;
   trigger: ReactElement;
 }
 
@@ -54,14 +57,24 @@ export function EventHoverCard({
           {moais.length > 0 && (
             <div className="flex items-start gap-2 border-t pt-3">
               <UsersIcon className="mt-1 size-3.5 shrink-0 text-muted-foreground" />
-              <div className="flex flex-wrap gap-1.5">
-                {moais.map((name) => (
-                  <span
+              <div className="min-w-0 flex-1 space-y-1.5">
+                {moais.map(({ name, offset }) => (
+                  <div
                     key={name}
-                    className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                    className="flex items-baseline justify-between gap-3 rounded-md bg-muted px-2 py-1 text-xs"
                   >
-                    {name}
-                  </span>
+                    <span className="font-medium">{name}</span>
+                    <span className="text-right font-mono text-muted-foreground">
+                      {offset ? (
+                        <>
+                          Δ {offset[0]}
+                          {offset[1] ? ` — ${offset[1]}` : ""}
+                        </>
+                      ) : (
+                        "No base time"
+                      )}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>

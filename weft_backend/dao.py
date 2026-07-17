@@ -184,23 +184,61 @@ class Drift(BaseModel):
         # 计算各 moai 相对偏移量，humanize 后写入 journal
         if drift.moais:
             for name in drift.moais:
-                m = moais[name]
-                if m.base_time is None:
-                    continue
-                m_flat = aqueduct.de_recursive(m.base_time)
-                start_flat = aqueduct.normalize(
-                    aqueduct.minus(drift.flat_start, m_flat)
-                )
-                start_str = aqueduct.humanize(start_flat)
-                end_str = None
-                if drift.flat_end is not None:
-                    end_flat = aqueduct.normalize(
-                        aqueduct.minus(drift.flat_end, m_flat)
-                    )
-                    end_str = aqueduct.humanize(end_flat)
-                m.journal[drift.title] = (start_str, end_str)
+                _record_moai_drift_time(moais[name], drift, aqueduct)
 
         return drift
+
+
+class Narrative(BaseModel):
+    """A selection of drift groups viewed relative to one moai."""
+
+    subject: list[str]
+    observer: str
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+        drifts: dict[str, list[Drift]],
+        moais: dict[str, Moai],
+        aqueduct: Aqueduct,
+    ) -> Narrative:
+        subject = data.get("subject", [])
+        observer = data.get("observer")
+        if not isinstance(subject, list) or not all(
+            isinstance(name, str) for name in subject
+        ):
+            raise ValueError("narrative.subject 必须是 drift 名称列表")
+        for name in subject:
+            if name not in drifts:
+                raise KeyError(f"narrative 引用了不存在的 drift: {name!r}")
+        if observer not in moais:
+            raise KeyError(f"narrative 引用了不存在的 observer moai: {observer!r}")
+
+        narrative = cls(subject=subject, observer=observer)
+        observer_moai = moais[observer]
+        for drift_name in subject:
+            for drift in drifts[drift_name]:
+                drift.moais = list(dict.fromkeys([*(drift.moais or []), observer]))
+                _record_moai_drift_time(observer_moai, drift, aqueduct)
+        return narrative
+
+
+def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> None:
+    """Store a drift's start/end offsets from a moai's base time."""
+    if moai.base_time is None:
+        return
+    base = aqueduct.de_recursive(moai.base_time)
+    start = aqueduct.normalize(aqueduct.minus(drift.flat_start, base))
+    end = (
+        aqueduct.normalize(aqueduct.minus(drift.flat_end, base))
+        if drift.flat_end is not None
+        else None
+    )
+    moai.journal[drift.title] = (
+        aqueduct.humanize(start),
+        aqueduct.humanize(end) if end is not None else None,
+    )
 
 
 class Dao(BaseModel):
@@ -208,6 +246,7 @@ class Dao(BaseModel):
     moai: dict[str, Moai] | None = None
     moai_link: dict[str, list[MoaiLink]] | None = None
     drift: dict[str, list[Drift]] | None = None
+    narrative: dict[str, Narrative] | None = None
 
     @classmethod
     def from_dict(cls, raw: dict) -> Dao:
@@ -220,8 +259,13 @@ class Dao(BaseModel):
             name: Moai.from_dict(name, m, aqueduct)
             for name, m in raw.get("moai", {}).items()
         }
+        drift_raw = dict(raw.get("drift", {}))
+        # Backward compatibility for files that initially placed narrative
+        # below drift. A top-level narrative takes precedence.
+        nested_narrative_raw = drift_raw.pop("narrative", {})
+        narrative_raw = raw.get("narrative", nested_narrative_raw)
         drifts: dict[str, list[Drift]] = {}
-        for season, events in raw.get("drift", {}).items():
+        for season, events in drift_raw.items():
             drifts[season] = [
                 Drift.from_dict(title, data, moais, aqueduct)
                 for title, data in events.items()
@@ -243,6 +287,11 @@ class Dao(BaseModel):
             }
             or None,
             drift=drifts or None,
+            narrative={
+                name: Narrative.from_dict(data, drifts, moais, aqueduct)
+                for name, data in narrative_raw.items()
+            }
+            or None,
         )
 
 
