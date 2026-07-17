@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/narrative": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Narrative */
+        get: operations["get_narrative_narrative_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/story": {
         parameters: {
             query?: never;
@@ -204,6 +221,16 @@ export interface components {
             };
             /** Base Time Display */
             readonly base_time_display: string | null;
+        };
+        /**
+         * Narrative
+         * @description A selection of drift groups viewed relative to one moai.
+         */
+        Narrative: {
+            /** Subject */
+            subject: string[];
+            /** Observer */
+            observer: string;
         };
         /** Phase */
         Phase: {
@@ -368,6 +395,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_narrative_narrative_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["Narrative"];
+                    };
                 };
             };
         };

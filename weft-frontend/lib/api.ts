@@ -7,6 +7,7 @@ export const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
 type Schemas = components["schemas"];
 export type Moai = Schemas["Moai"];
 export type Drift = Schemas["Drift"];
+export type Narrative = Schemas["Narrative"];
 export type Story = Schemas["Story"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphLink = Schemas["GraphLink"];
@@ -14,6 +15,7 @@ export type LinkGraph = Schemas["LinkGraph"];
 
 export type MoaiMap = Record<string, Moai>;
 export type DriftMap = Record<string, Drift[]>;
+export type NarrativeMap = Record<string, Narrative>;
 
 /** Fetch JSON from the backend with the no-cache policy every page uses. */
 export async function fetchJson<T>(path: string): Promise<T> {
