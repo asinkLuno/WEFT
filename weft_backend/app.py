@@ -58,7 +58,7 @@ def _build_link_graph(dao: Dao) -> LinkGraph:
     return LinkGraph(nodes=list(nodes.values()), links=links)
 
 
-def _load(yaml_path: str) -> tuple[Dao, dict]:
+def _load(yaml_path: str) -> tuple[Dao, LinkGraph]:
     """Parse the YAML world and build the link graph (used on boot + reload)."""
     dao = load_dao(yaml_path)
     return dao, _build_link_graph(dao)

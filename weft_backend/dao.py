@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import tomllib
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field, computed_field
@@ -55,7 +55,7 @@ class Moai(BaseModel):
         当前支持的 material 见 :mod:`weft_backend.material` 的 ``MATERIALS`` 注册表。
         """
 
-        fn: Callable = MATERIALS.get(name, None)
+        fn = MATERIALS.get(name)
         if fn is None:
             raise ValueError(f"未知的 material: {name!r}")
         return fn(self)
@@ -114,8 +114,11 @@ class Story(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict) -> Story:
+        title = data.get("title")
+        if not isinstance(title, str):
+            raise ValueError("story.title 必须是字符串")
         return cls(
-            title=data.get("title"),
+            title=title,
             description=data.get("description"),
             date_mode="gregorian",
         )
@@ -140,6 +143,26 @@ class Drift(BaseModel):
     @property
     def flat_end(self) -> list[int] | None:
         return self.aqueduct.de_recursive(self.end_time) if self.end_time else None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def start_tick(self) -> int:
+        return self.aqueduct.to_tick(self.flat_start)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def end_tick(self) -> int | None:
+        return self.aqueduct.to_tick(self.flat_end) if self.flat_end else None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def start_time_display(self) -> str:
+        return self.aqueduct.humanize(self.flat_start)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def end_time_display(self) -> str | None:
+        return self.aqueduct.humanize(self.flat_end) if self.flat_end else None
 
     @classmethod
     def from_dict(
@@ -211,8 +234,6 @@ class Dao(BaseModel):
                     key=lambda item: min(d.flat_start for d in item[1]),
                 )
             )
-        else:
-            drifts = None
         return cls(
             story=Story.from_dict(story_raw),
             moai=moais or None,
@@ -221,7 +242,7 @@ class Dao(BaseModel):
                 for label, links in raw.get("moai_link", {}).items()
             }
             or None,
-            drift=drifts,
+            drift=drifts or None,
         )
 
 

@@ -141,6 +141,14 @@ export interface components {
             readonly flat_start: number[];
             /** Flat End */
             readonly flat_end: number[] | null;
+            /** Start Tick */
+            readonly start_tick: number;
+            /** End Tick */
+            readonly end_tick: number | null;
+            /** Start Time Display */
+            readonly start_time_display: string;
+            /** End Time Display */
+            readonly end_time_display: string | null;
         };
         /** GraphLink */
         GraphLink: {

@@ -13,8 +13,13 @@ class Brick:
 
 
 class Aqueduct:
-    def __init__(self, bricks: list[Brick]):
+    def __init__(
+        self,
+        bricks: list[Brick],
+        to_tick: Callable[[list[int]], int] | None = None,
+    ):
         self.bricks = bricks
+        self._to_tick = to_tick
 
     def is_time_unit(self, value: object) -> None:
         """检查是否为合法的 time_unit，不合法则抛出 ValueError。"""
@@ -95,6 +100,17 @@ class Aqueduct:
                 return 1
         return 0
 
+    def to_tick(self, values: list[int]) -> int:
+        """Convert an absolute time to this aqueduct's smallest-unit coordinate."""
+        self.is_time_unit(values)
+        if self._to_tick is None:
+            raise NotImplementedError("this aqueduct does not define a tick conversion")
+        return self._to_tick(values)
+
+    def distance(self, start: list[int], end: list[int]) -> int:
+        """Return the distance from start to end in the smallest time unit."""
+        return self.to_tick(end) - self.to_tick(start)
+
 
 def get_days_in_month(ctx: dict) -> int:
     def is_leap_year(year: int) -> bool:
@@ -113,6 +129,40 @@ def get_days_in_month(ctx: dict) -> int:
     return maxsize
 
 
+def gregorian_to_tick(values: list[int]) -> int:
+    """Return proleptic-Gregorian seconds for an absolute time.
+
+    The coordinate uses astronomical year numbering and intentionally has no
+    Unix-epoch dependency. Out-of-range components are carried naturally, so
+    resolved relative phases such as month 14 or hour -1 remain representable.
+    """
+    year, month, day, hour, minute, second = values
+
+    year_carry, month_index = divmod(month - 1, 12)
+    year += year_carry
+    month = month_index + 1
+
+    day_carry, seconds_in_day = divmod(hour * 3600 + minute * 60 + second, 86400)
+
+    # Howard Hinnant's civil-date conversion, adapted to Python's floor
+    # division. Its arbitrary origin is irrelevant: only tick differences are
+    # exposed to timeline consumers.
+    adjusted_year = year - (1 if month <= 2 else 0)
+    era = adjusted_year // 400
+    year_of_era = adjusted_year - era * 400
+    shifted_month = month + (-3 if month > 2 else 9)
+    day_of_year = (153 * shifted_month + 2) // 5
+    day_of_era = (
+        year_of_era * 365
+        + year_of_era // 4
+        - year_of_era // 100
+        + day_of_year
+    )
+    days = era * 146097 + day_of_era + day - 1 + day_carry
+
+    return days * 86400 + seconds_in_day
+
+
 gregorian_aqueduct = Aqueduct(
     [
         Brick("年", get_limit=lambda ctx: maxsize),
@@ -121,7 +171,8 @@ gregorian_aqueduct = Aqueduct(
         Brick("时", get_limit=lambda ctx: 24),
         Brick("分", get_limit=lambda ctx: 60),
         Brick("秒", get_limit=lambda ctx: 60),
-    ]
+    ],
+    to_tick=gregorian_to_tick,
 )
 
 

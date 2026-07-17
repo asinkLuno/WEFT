@@ -1,5 +1,14 @@
 """Moai material functions — 从 Moai 属性计算出派生属性。"""
 
+from typing import Callable, Protocol
+
+from weft_backend.aqueduct import Aqueduct, Phase
+
+
+class MaterialTarget(Protocol):
+    base_time: Phase | None
+    aqueduct: Aqueduct
+
 # (start_m, start_d), (end_m, end_d), name
 _ZODIAC = (
     ((1, 20), (2, 18), "水瓶座"),
@@ -17,7 +26,7 @@ _ZODIAC = (
 )
 
 
-def constellation(moai) -> str:
+def constellation(moai: MaterialTarget) -> str:
     """从 Moai 的 base_time 计算星座。"""
 
     if moai.base_time is None:
@@ -31,13 +40,13 @@ def constellation(moai) -> str:
 
 
 # 注册表: 名称 → 计算函数
-MATERIALS: dict[str, callable] = {
+MATERIALS: dict[str, Callable[[MaterialTarget], str | None]] = {
     "constellation": constellation,
 }
 
 
 if __name__ == "__main__":
-    from weft_backend.aqueduct import Phase, gregorian_aqueduct
+    from weft_backend.aqueduct import gregorian_aqueduct
 
     def _moai(bt):
         """Helper: make a minimal moai-like object for testing."""
