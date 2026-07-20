@@ -59,7 +59,7 @@ class Moai(BaseModel):
     aqueduct: Aqueduct = Field(exclude=True)
     journal: dict[str, tuple[str, str | None]] = Field(default_factory=dict)
 
-    def apply_material(self, name: str) -> str | None:
+    def apply_material(self, name: str) -> Any:
         """应用单个 material 函数，返回计算出的派生属性。
 
         material 接收 Moai 实例，可读取任意属性（base_time, extra_props 等）。
@@ -94,7 +94,7 @@ class Moai(BaseModel):
             aqueduct=aqueduct,
         )
         # 解析时计算 materials，结果写入 extra_props
-        if moai.materials and moai.base_time is not None:
+        if moai.materials:
             computed = {name: moai.apply_material(name) for name in moai.materials}
             moai.extra_props = {**(moai.extra_props or {}), **computed}
         return moai
@@ -205,7 +205,7 @@ class Drift(BaseModel):
 
 
 class Narrative(BaseModel):
-    """A selection of drift groups viewed relative to one moai."""
+    """A chapter outline selecting drift groups or individual events."""
 
     subject: list[str]
     observer: str
@@ -217,28 +217,46 @@ class Narrative(BaseModel):
         data: RawMapping,
         drifts: Mapping[str, list[Drift]],
         moais: Mapping[str, Moai],
-        aqueduct: Aqueduct,
     ) -> Narrative:
         subject = data.get("subject", [])
         observer = data.get("observer")
         if not isinstance(subject, list) or not all(
             isinstance(name, str) for name in subject
         ):
-            raise ValueError("narrative.subject 必须是 drift 名称列表")
-        for name in subject:
-            if name not in drifts:
-                raise KeyError(f"narrative 引用了不存在的 drift: {name!r}")
+            raise ValueError("narrative.subject 必须是 drift 分组或事件 ID 列表")
+        if not isinstance(observer, str):
+            raise ValueError("narrative.observer 必须是 moai 名称")
         if observer not in moais:
             raise KeyError(f"narrative 引用了不存在的 observer moai: {observer!r}")
 
+        drifts_by_id = {
+            drift.id: drift for events in drifts.values() for drift in events
+        }
         narrative_drifts: list[Drift] = []
-        for drift_name in subject:
-            for drift in drifts[drift_name]:
-                narrative_drift = drift.model_copy(deep=True)
-                narrative_drift.moais = list(
-                    dict.fromkeys([*(narrative_drift.moais or []), observer])
+        for reference in subject:
+            if reference in drifts:
+                referenced_drifts = drifts[reference]
+            elif reference in drifts_by_id:
+                referenced_drifts = [drifts_by_id[reference]]
+            else:
+                raise KeyError(
+                    f"narrative 引用了不存在的 drift 分组或事件: {reference!r}"
                 )
-                narrative_drifts.append(narrative_drift)
+            narrative_drifts.extend(
+                drift.model_copy(deep=True) for drift in referenced_drifts
+            )
+
+        observer_absences = [
+            drift.id
+            for drift in narrative_drifts
+            if observer not in (drift.moais or ())
+        ]
+        if observer_absences:
+            formatted_ids = ", ".join(repr(drift_id) for drift_id in observer_absences)
+            raise ValueError(
+                f"narrative observer {observer!r} 未在以下事件中在场: {formatted_ids}"
+            )
+
         return cls(subject=subject, observer=observer, drifts=narrative_drifts)
 
 
@@ -262,7 +280,6 @@ def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> Non
 def _populate_journals(
     moais: Mapping[str, Moai],
     drifts: Mapping[str, list[Drift]],
-    narratives: Mapping[str, Narrative],
     aqueduct: Aqueduct,
 ) -> None:
     """Populate journals after all models and references have been resolved."""
@@ -270,11 +287,6 @@ def _populate_journals(
         for drift in events:
             for moai_name in drift.moais or ():
                 _record_moai_drift_time(moais[moai_name], drift, aqueduct)
-
-    for narrative in narratives.values():
-        observer = moais[narrative.observer]
-        for drift in narrative.drifts:
-            _record_moai_drift_time(observer, drift, aqueduct)
 
 
 class Dao(BaseModel):
@@ -321,10 +333,10 @@ class Dao(BaseModel):
                 )
             )
         narratives = {
-            name: Narrative.from_dict(data, drifts, moais, aqueduct)
+            name: Narrative.from_dict(data, drifts, moais)
             for name, data in narrative_raw.items()
         }
-        _populate_journals(moais, drifts, narratives, aqueduct)
+        _populate_journals(moais, drifts, aqueduct)
         return cls(
             story=Story.from_dict(story_raw),
             moai=moais,

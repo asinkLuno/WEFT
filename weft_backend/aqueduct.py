@@ -59,6 +59,8 @@ class Aqueduct:
     def humanize(self, values: Sequence[int]) -> str:
         """转为人类可读的字符串。"""
         self.validate_time_unit(values)
+        if not any(values):
+            return "0年0月0日"
         return "".join(
             f"{value}{brick.name}"
             for brick, value in zip(self.bricks, values, strict=True)

@@ -226,7 +226,7 @@ export interface components {
         };
         /**
          * Narrative
-         * @description A selection of drift groups viewed relative to one moai.
+         * @description A chapter outline selecting drift groups or individual events.
          */
         Narrative: {
             /** Subject */
