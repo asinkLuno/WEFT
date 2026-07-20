@@ -41,7 +41,7 @@ def _build_link_graph(dao: Dao) -> LinkGraph:
     """Pre-transform moai_link into {nodes, links} for the force-graph."""
     links: list[GraphLink] = []
     nodes: dict[str, GraphNode] = {}
-    for label, link_list in (dao.moai_link or {}).items():
+    for label, link_list in dao.moai_link.items():
         for link in link_list:
             a, b = link.moais
             nodes[a.name] = GraphNode(id=a.name, name=a.name)
@@ -111,11 +111,11 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
 
     @app.get("/moai")
     def get_moai(request: Request) -> dict[str, Moai]:
-        return request.app.state.dao.moai or {}
+        return request.app.state.dao.moai
 
     @app.get("/moai/{moai_id}")
     def get_moai_by_id(moai_id: str, request: Request) -> Moai:
-        moai = (request.app.state.dao.moai or {}).get(moai_id)
+        moai = request.app.state.dao.moai.get(moai_id)
         if moai is None:
             raise HTTPException(status_code=404, detail="moai not found")
         return moai
@@ -126,18 +126,18 @@ def make_app(yaml_path: str, host: str, port: int) -> FastAPI:
 
     @app.get("/drift")
     def get_drift(request: Request) -> dict[str, list[Drift]]:
-        return request.app.state.dao.drift or {}
+        return request.app.state.dao.drift
 
     @app.get("/drift/{season}")
     def get_drift_by_season(season: str, request: Request) -> list[Drift]:
-        drift = (request.app.state.dao.drift or {}).get(season)
+        drift = request.app.state.dao.drift.get(season)
         if drift is None:
             raise HTTPException(status_code=404, detail="season not found")
         return drift
 
     @app.get("/narrative")
     def get_narrative(request: Request) -> dict[str, Narrative]:
-        return request.app.state.dao.narrative or {}
+        return request.app.state.dao.narrative
 
     @app.get("/story")
     def get_story(request: Request) -> Story:

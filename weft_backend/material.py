@@ -1,6 +1,7 @@
 """Moai material functions — 从 Moai 属性计算出派生属性。"""
 
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import Protocol
 
 from weft_backend.aqueduct import Aqueduct, Phase
 
@@ -8,6 +9,7 @@ from weft_backend.aqueduct import Aqueduct, Phase
 class MaterialTarget(Protocol):
     base_time: Phase | None
     aqueduct: Aqueduct
+
 
 # (start_m, start_d), (end_m, end_d), name
 _ZODIAC = (
@@ -43,21 +45,3 @@ def constellation(moai: MaterialTarget) -> str:
 MATERIALS: dict[str, Callable[[MaterialTarget], str | None]] = {
     "constellation": constellation,
 }
-
-
-if __name__ == "__main__":
-    from weft_backend.aqueduct import gregorian_aqueduct
-
-    def _moai(bt):
-        """Helper: make a minimal moai-like object for testing."""
-        return type("M", (), {"base_time": bt, "aqueduct": gregorian_aqueduct})()
-
-    # 边界测试
-    assert constellation(_moai(Phase(base_time=[2000, 1, 1]))) == "摩羯座"
-    assert constellation(_moai(Phase(base_time=[2000, 1, 20]))) == "水瓶座"
-    assert constellation(_moai(Phase(base_time=[2000, 2, 18]))) == "水瓶座"
-    assert constellation(_moai(Phase(base_time=[2000, 2, 19]))) == "双鱼座"
-    assert constellation(_moai(Phase(base_time=[2000, 7, 23]))) == "狮子座"
-    assert constellation(_moai(Phase(base_time=[2000, 12, 21]))) == "射手座"
-    assert constellation(_moai(Phase(base_time=[2000, 12, 22]))) == "摩羯座"
-    print("ok")

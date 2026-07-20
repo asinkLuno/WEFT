@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import yaml
 from pydantic import BaseModel, Field, computed_field
@@ -16,7 +17,10 @@ AQUEDUCTS: dict[str, Aqueduct] = {"gregorian": gregorian_aqueduct}
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
 
 
-def _phase(data: list, aqueduct: Aqueduct) -> Phase:
+RawMapping = Mapping[str, Any]
+
+
+def _phase(data: object, aqueduct: Aqueduct) -> Phase:
     """Parse a YAML time list ``[*base, ref?]`` into a Phase.
 
     Leading ints are ``base_time`` ; an optional trailing list is ``ref_time``
@@ -30,13 +34,14 @@ def _phase(data: list, aqueduct: Aqueduct) -> Phase:
     if isinstance(tail, list):  # [*base, ref]
         if len(base) > n or not all(type(value) is int for value in base):
             raise ValueError(f"时间偏移必须包含至多 {n} 个整数")
+        integer_base = cast(list[int], base)
         return Phase(
-            base_time=list(base) + [0] * (n - len(base)),
+            base_time=integer_base + [0] * (n - len(integer_base)),
             ref_time=_phase(tail, aqueduct),
         )
     if len(data) > n or not all(type(value) is int for value in data):
         raise ValueError(f"时间必须包含至多 {n} 个整数")
-    base = list(data) + [0] * (n - len(data))
+    base = cast(list[int], data) + [0] * (n - len(data))
     return Phase(base_time=base)
 
 
@@ -50,7 +55,7 @@ class Moai(BaseModel):
     base_time: Phase | None = None
     description: str
     materials: list[str] = Field(default_factory=list)
-    extra_props: dict | None = None
+    extra_props: dict[str, Any] | None = None
     aqueduct: Aqueduct = Field(exclude=True)
     journal: dict[str, tuple[str, str | None]] = Field(default_factory=dict)
 
@@ -75,7 +80,7 @@ class Moai(BaseModel):
         return self.aqueduct.humanize(self.aqueduct.normalize(flat))
 
     @classmethod
-    def from_dict(cls, name: str, data: dict, aqueduct: Aqueduct) -> Moai:
+    def from_dict(cls, name: str, data: RawMapping, aqueduct: Aqueduct) -> Moai:
         known = set(cls.model_fields)
         extra = {k: v for k, v in data.items() if k not in known}
         moai = cls(
@@ -101,7 +106,7 @@ class MoaiLink(BaseModel):
     bidirectional: bool
 
     @classmethod
-    def from_dict(cls, data: dict, moais: dict[str, Moai]) -> MoaiLink:
+    def from_dict(cls, data: RawMapping, moais: Mapping[str, Moai]) -> MoaiLink:
         a, b = data["moais"]
         for name in (a, b):
             if name not in moais:
@@ -119,7 +124,7 @@ class Story(BaseModel):
     date_mode: Literal["gregorian"]
 
     @classmethod
-    def from_dict(cls, data: dict) -> Story:
+    def from_dict(cls, data: RawMapping) -> Story:
         title = data.get("title")
         if not isinstance(title, str):
             raise ValueError("story.title 必须是字符串")
@@ -176,8 +181,8 @@ class Drift(BaseModel):
         cls,
         group: str,
         title: str,
-        data: dict,
-        moais: dict[str, Moai],
+        data: RawMapping,
+        moais: Mapping[str, Moai],
         aqueduct: Aqueduct,
     ) -> Drift:
         moai_names = data.get("moais", [])
@@ -196,11 +201,6 @@ class Drift(BaseModel):
         if drift.end_tick is not None and drift.end_tick < drift.start_tick:
             raise ValueError(f"drift {drift.id!r} 的 end_time 不能早于 start_time")
 
-        # 计算各 moai 相对偏移量，humanize 后写入 journal
-        if drift.moais:
-            for name in drift.moais:
-                _record_moai_drift_time(moais[name], drift, aqueduct)
-
         return drift
 
 
@@ -214,9 +214,9 @@ class Narrative(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: dict,
-        drifts: dict[str, list[Drift]],
-        moais: dict[str, Moai],
+        data: RawMapping,
+        drifts: Mapping[str, list[Drift]],
+        moais: Mapping[str, Moai],
         aqueduct: Aqueduct,
     ) -> Narrative:
         subject = data.get("subject", [])
@@ -231,7 +231,6 @@ class Narrative(BaseModel):
         if observer not in moais:
             raise KeyError(f"narrative 引用了不存在的 observer moai: {observer!r}")
 
-        observer_moai = moais[observer]
         narrative_drifts: list[Drift] = []
         for drift_name in subject:
             for drift in drifts[drift_name]:
@@ -239,7 +238,6 @@ class Narrative(BaseModel):
                 narrative_drift.moais = list(
                     dict.fromkeys([*(narrative_drift.moais or []), observer])
                 )
-                _record_moai_drift_time(observer_moai, narrative_drift, aqueduct)
                 narrative_drifts.append(narrative_drift)
         return cls(subject=subject, observer=observer, drifts=narrative_drifts)
 
@@ -261,15 +259,33 @@ def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> Non
     )
 
 
+def _populate_journals(
+    moais: Mapping[str, Moai],
+    drifts: Mapping[str, list[Drift]],
+    narratives: Mapping[str, Narrative],
+    aqueduct: Aqueduct,
+) -> None:
+    """Populate journals after all models and references have been resolved."""
+    for events in drifts.values():
+        for drift in events:
+            for moai_name in drift.moais or ():
+                _record_moai_drift_time(moais[moai_name], drift, aqueduct)
+
+    for narrative in narratives.values():
+        observer = moais[narrative.observer]
+        for drift in narrative.drifts:
+            _record_moai_drift_time(observer, drift, aqueduct)
+
+
 class Dao(BaseModel):
     story: Story
-    moai: dict[str, Moai] | None = None
-    moai_link: dict[str, list[MoaiLink]] | None = None
-    drift: dict[str, list[Drift]] | None = None
-    narrative: dict[str, Narrative] | None = None
+    moai: dict[str, Moai] = Field(default_factory=dict)
+    moai_link: dict[str, list[MoaiLink]] = Field(default_factory=dict)
+    drift: dict[str, list[Drift]] = Field(default_factory=dict)
+    narrative: dict[str, Narrative] = Field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, raw: dict) -> Dao:
+    def from_dict(cls, raw: RawMapping) -> Dao:
         story_raw = raw.get("story", {})
         date_mode = story_raw.get("date_mode", "gregorian")
         try:
@@ -304,40 +320,45 @@ class Dao(BaseModel):
                     ),
                 )
             )
+        narratives = {
+            name: Narrative.from_dict(data, drifts, moais, aqueduct)
+            for name, data in narrative_raw.items()
+        }
+        _populate_journals(moais, drifts, narratives, aqueduct)
         return cls(
             story=Story.from_dict(story_raw),
-            moai=moais or None,
+            moai=moais,
             moai_link={
                 label: [MoaiLink.from_dict(link, moais) for link in links]
                 for label, links in raw.get("moai_link", {}).items()
-            }
-            or None,
-            drift=drifts or None,
-            narrative={
-                name: Narrative.from_dict(data, drifts, moais, aqueduct)
-                for name, data in narrative_raw.items()
-            }
-            or None,
+            },
+            drift=drifts,
+            narrative=narratives,
         )
 
 
 # ── Public API ──────────────────────────────────────────────────────
 
 
-def load_dao(path: str) -> Dao:
+def load_dao(path: str | Path) -> Dao:
     """Load a story file and return a fully-resolved ``Dao``.
 
     Format is detected from the file extension: ``.yaml`` / ``.yml`` (YAML),
     ``.json`` (JSON), ``.toml`` (TOML).
     """
-    suffix = Path(path).suffix.lower()
-    with open(path, "rb" if suffix == ".toml" else "r") as fh:  # type: ignore[assignment]
-        if suffix in (".yaml", ".yml"):
-            raw = yaml.safe_load(fh)
-        elif suffix == ".json":
-            raw = json.load(fh)
-        elif suffix == ".toml":
+    source = Path(path)
+    suffix = source.suffix.lower()
+    if suffix == ".toml":
+        with source.open("rb") as fh:
             raw = tomllib.load(fh)
-        else:
-            raise ValueError(f"不支持的文件格式: {suffix}")
+    elif suffix in {".yaml", ".yml"}:
+        with source.open(encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh)
+    elif suffix == ".json":
+        with source.open(encoding="utf-8") as fh:
+            raw = json.load(fh)
+    else:
+        raise ValueError(f"不支持的文件格式: {suffix}")
+    if not isinstance(raw, Mapping):
+        raise ValueError("故事文件的顶层必须是映射")
     return Dao.from_dict(raw)

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from sys import maxsize
-from typing import Callable
 
 from pydantic import BaseModel
 
 
+@dataclass(frozen=True, slots=True)
 class Brick:
-    def __init__(self, name: str, get_limit: Callable[[dict[str, int]], int]):
-        self.name = name
-        self.get_limit = get_limit
+    name: str
+    get_limit: Callable[[Mapping[str, int]], int]
 
 
 class Aqueduct:
@@ -21,25 +22,26 @@ class Aqueduct:
         self.bricks = bricks
         self._to_tick = to_tick
 
-    def is_time_unit(self, value: object) -> None:
+    def validate_time_unit(self, value: object) -> None:
         """检查是否为合法的 time_unit，不合法则抛出 ValueError。"""
-        if not isinstance(value, list):
-            raise ValueError(f"期望 list[int]，实际类型: {type(value).__name__}")
+        if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+            raise ValueError(f"期望整数序列，实际类型: {type(value).__name__}")
         if len(value) != len(self.bricks):
             raise ValueError(f"长度应为 {len(self.bricks)}，实际: {len(value)}")
-        if not all(isinstance(x, int) for x in value):
+        if not all(type(x) is int for x in value):
             raise ValueError(f"元素应全为 int，实际: {value}")
 
-    def normalize(self, values: list[int]) -> list[int]:
-        self.is_time_unit(values)
+    def normalize(self, values: Sequence[int]) -> list[int]:
+        self.validate_time_unit(values)
 
         c = 0
-        res = []
-        names = [i.name for i in self.bricks]
-        brick_values = {k: v for k, v in zip(names, values)}
+        result = []
+        brick_values = {
+            brick.name: value for brick, value in zip(self.bricks, values, strict=True)
+        }
         for brick in reversed(self.bricks):
             v = brick_values[brick.name] + c
-            limit = brick.get_limit((brick_values))
+            limit = brick.get_limit(brick_values)
             # ponytail: when month is out of range (e.g. negative), days get
             # maxsize and can't borrow. Fall back to 31. Only for 日 — 年 is
             # intentionally unbounded (negative years are valid).
@@ -50,34 +52,29 @@ class Aqueduct:
                 v = v % limit
             else:
                 c = 0
-            res.append(v)
+            result.append(v)
 
-        return res[::-1]
+        return result[::-1]
 
-    def humanize(self, values: list[int]) -> str:
-        """
-        转为人类可读的字符串
-        """
-        self.is_time_unit(values)
-        res = ""
-        names = [b.name for b in self.bricks]
-        for n, v in zip(names, values):
-            if v != 0:
-                res += f"{v}{n}"
-        return res
+    def humanize(self, values: Sequence[int]) -> str:
+        """转为人类可读的字符串。"""
+        self.validate_time_unit(values)
+        return "".join(
+            f"{value}{brick.name}"
+            for brick, value in zip(self.bricks, values, strict=True)
+            if value
+        )
 
-    def plus(self, tu1: list[int], tu2: list[int]) -> list[int]:
-        self.is_time_unit(tu1)
-        self.is_time_unit(tu2)
+    def plus(self, tu1: Sequence[int], tu2: Sequence[int]) -> list[int]:
+        self.validate_time_unit(tu1)
+        self.validate_time_unit(tu2)
+        return [i + j for i, j in zip(tu1, tu2, strict=True)]
 
-        res = [i + j for i, j in zip(tu1, tu2)]
-        return res
-
-    def minus(self, tu1: list[int], tu2: list[int]) -> list[int]:
-        self.is_time_unit(tu1)
-        self.is_time_unit(tu2)
+    def minus(self, tu1: Sequence[int], tu2: Sequence[int]) -> list[int]:
+        self.validate_time_unit(tu1)
+        self.validate_time_unit(tu2)
         # ponytail: negative components are fine — caller normalizes after
-        return [i - j for i, j in zip(tu1, tu2)]
+        return [i - j for i, j in zip(tu1, tu2, strict=True)]
 
     def de_recursive(self, phase: Phase) -> list[int]:
         result = phase.base_time
@@ -93,26 +90,26 @@ class Aqueduct:
 
     def cmp_flat(self, a: list[int], b: list[int]) -> int:
         """逐位比较两个展平后的时间列表。返回 -1, 0, 1。"""
-        for x, y in zip(a, b):
+        for x, y in zip(a, b, strict=True):
             if x < y:
                 return -1
             if x > y:
                 return 1
         return 0
 
-    def to_tick(self, values: list[int]) -> int:
+    def to_tick(self, values: Sequence[int]) -> int:
         """Convert an absolute time to this aqueduct's smallest-unit coordinate."""
-        self.is_time_unit(values)
+        self.validate_time_unit(values)
         if self._to_tick is None:
             raise NotImplementedError("this aqueduct does not define a tick conversion")
-        return self._to_tick(values)
+        return self._to_tick(list(values))
 
-    def distance(self, start: list[int], end: list[int]) -> int:
+    def distance(self, start: Sequence[int], end: Sequence[int]) -> int:
         """Return the distance from start to end in the smallest time unit."""
         return self.to_tick(end) - self.to_tick(start)
 
 
-def get_days_in_month(ctx: dict) -> int:
+def get_days_in_month(ctx: Mapping[str, int]) -> int:
     def is_leap_year(year: int) -> bool:
         return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
 
@@ -152,12 +149,7 @@ def gregorian_to_tick(values: list[int]) -> int:
     year_of_era = adjusted_year - era * 400
     shifted_month = month + (-3 if month > 2 else 9)
     day_of_year = (153 * shifted_month + 2) // 5
-    day_of_era = (
-        year_of_era * 365
-        + year_of_era // 4
-        - year_of_era // 100
-        + day_of_year
-    )
+    day_of_era = year_of_era * 365 + year_of_era // 4 - year_of_era // 100 + day_of_year
     days = era * 146097 + day_of_era + day - 1 + day_carry
 
     return days * 86400 + seconds_in_day
