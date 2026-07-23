@@ -1,6 +1,6 @@
 [package]
 name = "weft"
-version = "0.1.0"
+version = "0.1.1"
 description = "WEFT — World-building, Era, and Fantasy Timeline"
 edition = "2021"
 

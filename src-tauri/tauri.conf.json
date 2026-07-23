@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "WEFT",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.weft.app",
   "build": {
-    "beforeDevCommand": "yarn --cwd ../weft-frontend dev",
+    "beforeDevCommand": "yarn --cwd weft-frontend dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "yarn --cwd ../weft-frontend build",
+    "beforeBuildCommand": "yarn --cwd weft-frontend build",
     "frontendDist": "../weft-frontend/dist",
     "features": ["pytauri/standalone"]
   },
