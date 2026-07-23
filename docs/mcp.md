@@ -216,14 +216,14 @@ marketplace，再安装插件：
 ### Claude Code
 
 ```bash
-claude plugin marketplace add asinkLuno/WEFT@release
+claude plugin marketplace add asinkLuno/WEFT
 claude plugin install weft-yaml@weft
 ```
 
 ### Codex
 
 ```bash
-codex plugin marketplace add asinkLuno/WEFT --ref release
+codex plugin marketplace add asinkLuno/WEFT
 codex plugin add weft-yaml@weft
 ```
 
