@@ -36,3 +36,6 @@ rm -rf "$TEMP"
 
 echo "==> embedded python at $DEST"
 "$DEST/bin/python3" --version
+
+echo "==> installing WEFT and runtime dependencies into embedded python"
+uv pip install --python "$DEST/bin/python3" "$ROOT"

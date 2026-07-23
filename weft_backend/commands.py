@@ -1,47 +1,15 @@
 """PyTauri commands exposed to the desktop frontend."""
 
-from __future__ import annotations
-
 from pytauri import Commands
 
-from weft_backend.dao import Drift, Moai, Narrative, Story
-from weft_backend.graph import LinkGraph
-from weft_backend.state import STATE
+from weft_backend.command_handlers import (
+    get_drift,
+    get_moai,
+    get_moai_link,
+    get_narrative,
+    get_story,
+)
 
 commands = Commands()
-
-
-def _require_dao():
-    if STATE.dao is None or STATE.link_graph is None:
-        raise RuntimeError("no story loaded")
-    return STATE.dao, STATE.link_graph
-
-
-@commands.command()
-async def get_story() -> Story:
-    dao, _ = _require_dao()
-    return dao.story
-
-
-@commands.command()
-async def get_moai() -> dict[str, Moai]:
-    dao, _ = _require_dao()
-    return dao.moai
-
-
-@commands.command()
-async def get_drift() -> dict[str, list[Drift]]:
-    dao, _ = _require_dao()
-    return dao.drift
-
-
-@commands.command()
-async def get_narrative() -> dict[str, Narrative]:
-    dao, _ = _require_dao()
-    return dao.narrative
-
-
-@commands.command()
-async def get_moai_link() -> LinkGraph:
-    _, link_graph = _require_dao()
-    return link_graph
+for handler in (get_story, get_moai, get_drift, get_narrative, get_moai_link):
+    commands.command()(handler)

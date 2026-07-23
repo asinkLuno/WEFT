@@ -2,7 +2,9 @@
 
 **WEFT** — World-building, Era, and Fantasy Timeline。
 
-一个**没有边界**的小说辅助写作工具。
+一个**没有边界、面向 AI 协作**的小说辅助写作工具。既可以通过 Tauri
+桌面界面浏览故事，也可以让 Claude Code、Codex 等 Agent 通过
+[MCP](mcp.md) 直接校验和理解故事文件。
 
 ---
 
@@ -49,18 +51,31 @@
 
 ---
 
+## 架构
+
+```text
+React + Vite ──Tauri IPC──> PyTauri commands ──> Python 领域模型
+                                         ▲
+Code Agent ───────stdio MCP──────────────┘
+```
+
+- Tauri/Rust 负责桌面窗口、系统集成和 standalone 发行。
+- React + TypeScript + Vite 负责界面，不需要 Node.js 服务器。
+- Python + Pydantic 负责 YAML 解析、交叉引用、时间计算和 material。
+- 同一个 `weft` 可执行文件用 `weft mcp` 向本地 Agent 提供工具。
+- 应用不启动 HTTP API，也不发行 Python wheel。
+
 ## 快速开始
 
 ```bash
 # 安装依赖
 uv sync
 
-# 启动（后端 + 前端）
+# 启动 Tauri 桌面应用
 cargo tauri dev -- tests/guojing.yml
-
 ```
 
----
+连接 AI Agent 见 [AI 与 MCP](mcp.md)。
 
 ## 项目结构
 
@@ -68,6 +83,7 @@ cargo tauri dev -- tests/guojing.yml
 weft/
 ├── weft_backend/     # Python 领域层与 PyTauri commands
 │   ├── commands.py   # Tauri IPC commands
+│   ├── mcp_server.py # 面向 Code Agent 的 stdio MCP server
 │   ├── dao.py        # 数据模型与 YAML 解析
 │   ├── aqueduct.py   # 时间运算引擎
 │   ├── material.py   # 派生属性计算（如星座）
@@ -75,5 +91,6 @@ weft/
 │   ├── app/          # React 页面
 │   └── components/   # 组件
 ├── src-tauri/        # Rust/Tauri 桌面壳
+│   └── icons/         # 各平台应用图标
 └── tests/            # 测试数据与端到端测试
 ```

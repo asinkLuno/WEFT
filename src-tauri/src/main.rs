@@ -33,8 +33,11 @@ fn main() -> Result<Infallible, Box<dyn Error>> {
         PythonInterpreterEnv::Standalone(resource_dir.into())
     };
 
-    // Equivalent to `python -m weft_backend.tauri_app` -> `__main__.py` -> `main()`.
-    let py_script = PythonScript::Module("weft_backend.tauri_app".into());
+    let module = match std::env::args().nth(1).as_deref() {
+        Some("mcp") => "weft_backend.mcp_server",
+        _ => "weft_backend.tauri_app",
+    };
+    let py_script = PythonScript::Module(module.into());
 
     // `ext_mod` is exported from memory (no .pyd/.so on disk in standalone).
     let builder =
