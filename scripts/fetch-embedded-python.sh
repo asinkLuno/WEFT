@@ -35,7 +35,12 @@ mv "$TEMP/python" "$DEST"
 rm -rf "$TEMP"
 
 echo "==> embedded python at $DEST"
-"$DEST/bin/python3" --version
+if [ -x "$DEST/python.exe" ]; then
+  PYTHON="$DEST/python.exe"
+else
+  PYTHON="$DEST/bin/python3"
+fi
+"$PYTHON" --version
 
 echo "==> installing WEFT and runtime dependencies into embedded python"
-uv pip install --python "$DEST/bin/python3" "$ROOT"
+uv pip install --python "$PYTHON" "$ROOT"
