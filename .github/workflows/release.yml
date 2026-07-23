@@ -16,7 +16,7 @@ jobs:
         include:
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            args: ""
+            args: "--bundles deb,rpm"
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             args: ""
@@ -79,4 +79,4 @@ jobs:
           releaseBody: "See the assets below to download and install WEFT."
           releaseDraft: true
           prerelease: false
-          args: --profile bundle-release --config src-tauri/tauri.bundle.json ${{ matrix.args }}
+          args: --config src-tauri/tauri.bundle.json ${{ matrix.args }} -- --profile bundle-release
