@@ -1,0 +1,27 @@
+{
+  "name": "weft-yaml",
+  "version": "0.1.0",
+  "description": "Create, edit, and validate WEFT story timeline files.",
+  "author": {
+    "name": "asinkLuno",
+    "url": "https://github.com/asinkLuno"
+  },
+  "homepage": "https://github.com/asinkLuno/WEFT",
+  "repository": "https://github.com/asinkLuno/WEFT",
+  "keywords": ["weft", "story", "timeline", "yaml", "worldbuilding"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "WEFT YAML",
+    "shortDescription": "Build and validate WEFT story timelines.",
+    "longDescription": "Create and safely edit WEFT world-building files with entities, relationships, events, relative dates, and point-of-view narratives.",
+    "developerName": "asinkLuno",
+    "category": "Productivity",
+    "capabilities": ["Write"],
+    "websiteURL": "https://github.com/asinkLuno/WEFT",
+    "defaultPrompt": [
+      "Create a WEFT story timeline from my outline.",
+      "Add these characters and events to my WEFT file.",
+      "Validate and repair this WEFT story timeline."
+    ]
+  }
+}

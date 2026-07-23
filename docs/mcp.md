@@ -205,8 +205,30 @@ copilot mcp list
 确认所有绝对时间和实体偏移符合预期。
 ```
 
-`.claude/skills/weft-yaml` 负责告诉 Claude 如何编写高质量 WEFT YAML；MCP
+`weft-yaml` 插件负责告诉 Code Agent 如何编写高质量 WEFT 文件；MCP
 负责用真实代码验证结果。两者是互补关系。
+
+## 安装 WEFT YAML 插件
+
+插件同时支持 Claude Code 与 Codex。公开仓库作为 marketplace 使用，先添加
+marketplace，再安装插件：
+
+### Claude Code
+
+```bash
+claude plugin marketplace add asinkLuno/WEFT
+claude plugin install weft-yaml@weft
+```
+
+### Codex
+
+```bash
+codex plugin marketplace add asinkLuno/WEFT
+codex plugin add weft-yaml@weft
+```
+
+安装或更新后新开会话，让 Agent 加载最新的 skill。插件提供写作流程，仍需按上文
+配置 WEFT MCP server，才能调用真实模型完成 schema 查询、校验和时间线解析。
 
 ## 故障排查
 
