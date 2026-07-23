@@ -1,16 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 
-// Listens to the backend's /events SSE; on YAML change the backend reloads
-// its DAO and emits "reload", which we turn into a server-component refresh.
-export function HotReload({ backend }: { backend: string }) {
-  const router = useRouter();
+// The backend emits "weft-reload" (watchfiles) when the story file changes.
+// Simplest correct reload for a desktop app: reload the page, which re-runs each
+// page's fetch effect on mount.
+export function HotReload() {
   useEffect(() => {
-    const es = new EventSource(`${backend}/events`);
-    es.onmessage = () => router.refresh();
-    return () => es.close();
-  }, [backend, router]);
+    let unlisten: UnlistenFn | undefined;
+    listen("weft-reload", () => window.location.reload()).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, []);
   return null;
 }

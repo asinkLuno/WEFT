@@ -1,13 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { fetchJson, type LinkGraph, type MoaiMap } from "@/lib/api";
 import { MoaiLinkGraph } from "./graph";
 
-export default async function MoaiLinkPage() {
-  const [data, moais] = await Promise.all([
-    fetchJson<LinkGraph>("/moai-link"),
-    fetchJson<MoaiMap>("/moai"),
-  ]);
+export default function MoaiLinkPage() {
+  const [state, setState] = useState<{
+    graph: LinkGraph;
+    moais: MoaiMap;
+  } | null>(null);
 
-  if (data.nodes.length === 0) {
+  useEffect(() => {
+    Promise.all([
+      fetchJson<LinkGraph>("/moai-link"),
+      fetchJson<MoaiMap>("/moai"),
+    ])
+      .then(([graph, moais]) => setState({ graph, moais }))
+      .catch((e) => console.error("failed to load moai-link", e));
+  }, []);
+
+  if (!state) {
+    return <div className="flex flex-1 items-center justify-center" />;
+  }
+
+  if (state.graph.nodes.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
         <p>No moai links found.</p>
@@ -15,5 +31,5 @@ export default async function MoaiLinkPage() {
     );
   }
 
-  return <MoaiLinkGraph data={data} moais={moais} />;
+  return <MoaiLinkGraph data={state.graph} moais={state.moais} />;
 }

@@ -10,7 +10,7 @@ import yaml
 from pydantic import BaseModel, Field, computed_field
 
 from weft_backend.aqueduct import Aqueduct, Phase, gregorian_aqueduct
-from weft_backend.material import MATERIALS
+from weft_backend.material import MATERIALS, load_user_materials
 
 AQUEDUCTS: dict[str, Aqueduct] = {"gregorian": gregorian_aqueduct}
 
@@ -373,4 +373,6 @@ def load_dao(path: str | Path) -> Dao:
         raise ValueError(f"不支持的文件格式: {suffix}")
     if not isinstance(raw, Mapping):
         raise ValueError("故事文件的顶层必须是映射")
+    # 加载用户 material 插件必须在 Dao.from_dict 之前：moai 解析时会立即 apply_material。
+    load_user_materials(raw.get("material", {}), source.parent)
     return Dao.from_dict(raw)

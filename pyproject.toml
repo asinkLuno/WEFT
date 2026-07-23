@@ -9,11 +9,13 @@ description = "WEFT (World-building, Era, and Fantasy Timeline) backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi[standard]>=0.138.1",
     "pyyaml>=6.0.3",
     "pydantic>=2.10.0",
     "loguru>=0.7.3",
-    "click>=8.4.2",
+    "watchfiles>=1.2.0",
+    "pytauri==0.8.*",
+    "pytauri-wheel==0.8.*",
+    "anyio==4.*",
 ]
 
 [[tool.uv.index]]
@@ -34,8 +36,12 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["weft_backend*"]
 
-[project.scripts]
-weft = "weft_backend.main:cli"
+[tool.setuptools.package-data]
+# Ship the Tauri app's non-Python assets (config, icons, built frontend) in the wheel.
+"weft_backend.tauri_app" = ["Tauri.toml", "capabilities/*.toml", "icons/*", "frontend/**/*"]
+
+[project.gui-scripts]
+weft = "weft_backend.tauri_app:main"
 
 [tool.ruff]
 lint.select = ["I", "F", "E4", "E7", "E9", "UP", "B", "SIM"]

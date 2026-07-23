@@ -1,12 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { fetchJson, type MoaiMap, type NarrativeMap } from "@/lib/api";
 import { compareDriftTime, DriftGantt, GanttLegend } from "../drift/gantt";
 
-export default async function NarrativePage() {
-  const [narratives, moais] = await Promise.all([
-    fetchJson<NarrativeMap>("/narrative"),
-    fetchJson<MoaiMap>("/moai"),
-  ]);
+export default function NarrativePage() {
+  const [data, setData] = useState<{
+    narratives: NarrativeMap;
+    moais: MoaiMap;
+  } | null>(null);
 
+  useEffect(() => {
+    Promise.all([
+      fetchJson<NarrativeMap>("/narrative"),
+      fetchJson<MoaiMap>("/moai"),
+    ])
+      .then(([narratives, moais]) => setData({ narratives, moais }))
+      .catch((e) => console.error("failed to load narrative", e));
+  }, []);
+
+  if (!data) {
+    return <main className="flex-1 px-4 py-8 sm:px-6" />;
+  }
+
+  const { narratives, moais } = data;
   const entries = Object.entries(narratives)
     .map(([name, narrative]) => ({
       name,

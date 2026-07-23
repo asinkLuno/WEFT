@@ -3,147 +3,62 @@
  * Do not make direct changes to the file.
  */
 
-export interface paths {
-    "/moai": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Moai */
-        get: operations["get_moai_moai_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/moai/{moai_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Moai By Id */
-        get: operations["get_moai_by_id_moai__moai_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/moai-link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Moai Link */
-        get: operations["get_moai_link_moai_link_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/drift": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Drift */
-        get: operations["get_drift_drift_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/drift/{season}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Drift By Season */
-        get: operations["get_drift_by_season_drift__season__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/narrative": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Narrative */
-        get: operations["get_narrative_narrative_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/story": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Story */
-        get: operations["get_story_story_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Events */
-        get: operations["events_events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-}
+export type paths = Record<string, never>;
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Story */
+        Story: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default null
+             */
+            description: string | null;
+            /**
+             * Date Mode
+             * @constant
+             */
+            date_mode: "gregorian";
+        };
+        /** Phase */
+        Phase: {
+            /** Base Time */
+            base_time: number[];
+            /**
+             * Ref Time
+             * @default null
+             */
+            ref_time: number[] | components["schemas"]["Phase"] | null;
+        };
+        /** Moai */
+        Moai: {
+            /** Name */
+            name: string;
+            /** @default null */
+            base_time: components["schemas"]["Phase"] | null;
+            /** Description */
+            description: string;
+            /** Materials */
+            materials?: string[];
+            /**
+             * Extra Props
+             * @default null
+             */
+            extra_props: {
+                [key: string]: unknown;
+            } | null;
+            /** Journal */
+            journal?: {
+                [key: string]: [
+                    string,
+                    string | null
+                ];
+            };
+            /** Base Time Display */
+            readonly base_time_display: string | null;
+        };
         /** Drift */
         Drift: {
             /** Id */
@@ -151,11 +66,18 @@ export interface components {
             /** Title */
             title: string;
             start_time: components["schemas"]["Phase"];
-            end_time?: components["schemas"]["Phase"] | null;
-            /** Description */
-            description?: string | null;
-            /** Moais */
-            moais?: string[] | null;
+            /** @default null */
+            end_time: components["schemas"]["Phase"] | null;
+            /**
+             * Description
+             * @default null
+             */
+            description: string | null;
+            /**
+             * Moais
+             * @default null
+             */
+            moais: string[] | null;
             /** Flat Start */
             readonly flat_start: number[];
             /** Flat End */
@@ -168,6 +90,18 @@ export interface components {
             readonly start_time_display: string;
             /** End Time Display */
             readonly end_time_display: string | null;
+        };
+        /**
+         * Narrative
+         * @description A chapter outline selecting drift groups or individual events.
+         */
+        Narrative: {
+            /** Subject */
+            subject: string[];
+            /** Observer */
+            observer: string;
+            /** Drifts */
+            drifts: components["schemas"]["Drift"][];
         };
         /** GraphLink */
         GraphLink: {
@@ -189,84 +123,12 @@ export interface components {
             /** Name */
             name: string;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /** LinkGraph */
         LinkGraph: {
             /** Nodes */
             nodes: components["schemas"]["GraphNode"][];
             /** Links */
             links: components["schemas"]["GraphLink"][];
-        };
-        /** Moai */
-        Moai: {
-            /** Name */
-            name: string;
-            base_time?: components["schemas"]["Phase"] | null;
-            /** Description */
-            description: string;
-            /** Materials */
-            materials?: string[];
-            /** Extra Props */
-            extra_props?: {
-                [key: string]: unknown;
-            } | null;
-            /** Journal */
-            journal?: {
-                [key: string]: [
-                    string,
-                    string | null
-                ];
-            };
-            /** Base Time Display */
-            readonly base_time_display: string | null;
-        };
-        /**
-         * Narrative
-         * @description A chapter outline selecting drift groups or individual events.
-         */
-        Narrative: {
-            /** Subject */
-            subject: string[];
-            /** Observer */
-            observer: string;
-            /** Drifts */
-            drifts: components["schemas"]["Drift"][];
-        };
-        /** Phase */
-        Phase: {
-            /** Base Time */
-            base_time: number[];
-            /** Ref Time */
-            ref_time?: number[] | components["schemas"]["Phase"] | null;
-        };
-        /** Story */
-        Story: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Date Mode
-             * @constant
-             */
-            date_mode: "gregorian";
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -276,193 +138,4 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export interface operations {
-    get_moai_moai_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["Moai"];
-                    };
-                };
-            };
-        };
-    };
-    get_moai_by_id_moai__moai_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                moai_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Moai"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_moai_link_moai_link_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LinkGraph"];
-                };
-            };
-        };
-    };
-    get_drift_drift_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["Drift"][];
-                    };
-                };
-            };
-        };
-    };
-    get_drift_by_season_drift__season__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                season: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Drift"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_narrative_narrative_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["Narrative"];
-                    };
-                };
-            };
-        };
-    };
-    get_story_story_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Story"];
-                };
-            };
-        };
-    };
-    events_events_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-}
+export type operations = Record<string, never>;

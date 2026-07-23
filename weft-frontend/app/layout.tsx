@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/navigation-menu";
 import { HotReload } from "./hot-reload";
 import "./globals.css";
-import { BACKEND } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "WEFT",
@@ -32,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <HotReload backend={BACKEND} />
+        <HotReload />
         <header className="flex items-center gap-6 border-b border-border px-6 py-3">
           <Link
             href="/"

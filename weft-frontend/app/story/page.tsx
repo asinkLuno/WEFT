@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -7,8 +10,18 @@ import {
 } from "@/components/ui/card";
 import { fetchJson, type Story } from "@/lib/api";
 
-export default async function StoryPage() {
-  const story = await fetchJson<Story>("/story");
+export default function StoryPage() {
+  const [story, setStory] = useState<Story | null>(null);
+
+  useEffect(() => {
+    fetchJson<Story>("/story")
+      .then(setStory)
+      .catch((e) => console.error("failed to load story", e));
+  }, []);
+
+  if (!story) {
+    return <main className="flex-1 px-6 py-8" />;
+  }
 
   return (
     <main className="flex-1 px-6 py-8">

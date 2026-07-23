@@ -1,0 +1,35 @@
+[package]
+name = "weft"
+version = "0.1.0"
+description = "WEFT — World-building, Era, and Fantasy Timeline"
+edition = "2021"
+
+[lib]
+# `cdylib` is harmless here (used by the wheel path); the standalone binary
+# loads `ext_mod` in memory via `wrap_pymodule!`.
+name = "weft_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "weft"
+path = "src/main.rs"
+# The standalone feature is turned on by `tauri.conf.json` (`build.features`),
+# i.e. via `tauri dev` / `tauri build`.
+required-features = ["pytauri/standalone"]
+
+[build-dependencies]
+tauri-build = { version = "2.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.8", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pyo3 = "0.25"
+pytauri = { version = "0.8", features = ["plugin-dialog"] }
+tauri-plugin-pytauri = "0.8"
+tauri-plugin-dialog = "2"
+
+# Keeps the bundled embedded-python out of `target/release` so `tauri dev` is
+# unaffected. Build with `--profile bundle-release`.
+[profile.bundle-release]
+inherits = "release"
