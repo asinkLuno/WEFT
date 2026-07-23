@@ -22,3 +22,7 @@ src-tauri/pyembed/
 
 # Docs build
 site/
+
+# Private test stories
+tests/*.yaml
+tests/*.yml
