@@ -52,7 +52,10 @@ async def dev_ack(body: DevAck) -> str:
 async def open_story(app_handle: AppHandle) -> str | None:
     """Native file dialog → load the picked story → return its title (or None)."""
 
-    picked = DialogExt.file(app_handle).blocking_pick_file()
+    picked = DialogExt.file(app_handle).blocking_pick_file(
+        add_filter=("YAML story", ("yaml", "yml")),
+        set_title="Open WEFT story",
+    )
     if picked is None:
         return None
     path = picked.decode() if isinstance(picked, (bytes, bytearray)) else str(picked)

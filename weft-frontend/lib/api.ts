@@ -18,6 +18,6 @@ export type NarrativeMap = Record<string, Narrative>;
 export const getStory = () => pyInvoke<Story>("get_story");
 export const getMoais = () => pyInvoke<MoaiMap>("get_moai");
 export const getDrifts = () => pyInvoke<DriftMap>("get_drift");
-export const getNarratives = () =>
-  pyInvoke<NarrativeMap>("get_narrative");
+export const getNarratives = () => pyInvoke<NarrativeMap>("get_narrative");
 export const getMoaiLinks = () => pyInvoke<LinkGraph>("get_moai_link");
+export const openStory = () => pyInvoke<string | null>("open_story");
