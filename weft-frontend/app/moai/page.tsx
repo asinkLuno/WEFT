@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchJson, type DriftMap, type MoaiMap } from "@/lib/api";
+import { getDrifts, getMoais, type DriftMap, type MoaiMap } from "@/lib/api";
 import { compareDriftTime } from "../drift/gantt";
 import { MoaiGantts } from "./moai-gantts";
 
@@ -12,7 +12,7 @@ export default function MoaiPage() {
   } | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchJson<MoaiMap>("/moai"), fetchJson<DriftMap>("/drift")])
+    Promise.all([getMoais(), getDrifts()])
       .then(([moais, drifts]) => setData({ moais, drifts }))
       .catch((e) => console.error("failed to load moai", e));
   }, []);

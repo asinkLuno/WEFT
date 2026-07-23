@@ -8,8 +8,8 @@ pub fn tauri_generate_context() -> tauri::Context {
 /// The pyo3 module pytauri injects into the embedded interpreter as
 /// `sys.modules["__pytauri_ext_mod__"]`. Its `pymodule_export` registers
 /// `pytauri.context_factory` / `pytauri.builder_factory` (Rust closures) that the
-/// Python `main()` calls — same API as the wheel path, no Rust commands needed
-/// (all WEFT commands live in Python).
+/// Python `main()` calls. No Rust commands are needed because WEFT commands
+/// live in Python.
 #[pymodule(gil_used = false)]
 #[pyo3(name = "ext_mod")]
 pub mod ext_mod {

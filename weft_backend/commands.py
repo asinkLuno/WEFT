@@ -1,9 +1,4 @@
-"""pytauri command layer (Path C) — serves the frontend via pyInvoke commands.
-
-Each command returns the same pydantic model shape the old HTTP endpoints did,
-so the frontend's data shape is unchanged. Commands read from the module-level
-:data:`~weft_backend.state.STATE`.
-"""
+"""PyTauri commands exposed to the desktop frontend."""
 
 from __future__ import annotations
 

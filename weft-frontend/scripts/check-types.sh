@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate frontend TS types from the backend OpenAPI schema and fail if the
+# Regenerate frontend TS types from the backend model schema and fail if the
 # committed lib/schema.ts would change. Invoked by the pre-commit `gen-types`
 # hook whenever a weft_backend/*.py file is staged.
 set -euo pipefail

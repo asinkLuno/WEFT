@@ -14,7 +14,6 @@ dependencies = [
     "loguru>=0.7.3",
     "watchfiles>=1.2.0",
     "pytauri==0.8.*",
-    "pytauri-wheel==0.8.*",
     "anyio==4.*",
 ]
 
@@ -36,12 +35,11 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["weft_backend*"]
 
-[tool.setuptools.package-data]
-# Ship the Tauri app's non-Python assets (config, icons, built frontend) in the wheel.
-"weft_backend.tauri_app" = ["Tauri.toml", "capabilities/*.toml", "icons/*", "frontend/**/*"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
-[project.gui-scripts]
-weft = "weft_backend.tauri_app:main"
+[project.scripts]
+weft-check = "weft_backend.check:main"
 
 [tool.ruff]
 lint.select = ["I", "F", "E4", "E7", "E9", "UP", "B", "SIM"]

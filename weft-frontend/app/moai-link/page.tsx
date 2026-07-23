@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchJson, type LinkGraph, type MoaiMap } from "@/lib/api";
+import {
+  getMoaiLinks,
+  getMoais,
+  type LinkGraph,
+  type MoaiMap,
+} from "@/lib/api";
 import { MoaiLinkGraph } from "./graph";
 
 export default function MoaiLinkPage() {
@@ -12,8 +17,8 @@ export default function MoaiLinkPage() {
 
   useEffect(() => {
     Promise.all([
-      fetchJson<LinkGraph>("/moai-link"),
-      fetchJson<MoaiMap>("/moai"),
+      getMoaiLinks(),
+      getMoais(),
     ])
       .then(([graph, moais]) => setState({ graph, moais }))
       .catch((e) => console.error("failed to load moai-link", e));

@@ -8,13 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { fetchJson, type Story } from "@/lib/api";
+import { getStory, type Story } from "@/lib/api";
 
 export default function StoryPage() {
   const [story, setStory] = useState<Story | null>(null);
 
   useEffect(() => {
-    fetchJson<Story>("/story")
+    getStory()
       .then(setStory)
       .catch((e) => console.error("failed to load story", e));
   }, []);

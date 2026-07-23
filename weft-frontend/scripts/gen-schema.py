@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Dump a JSON schema of the backend pydantic models for TS type generation.
+"""Generate frontend TypeScript types from the backend Pydantic models.
 
-Replaces the old FastAPI OpenAPI dump (FastAPI has been removed). Wraps each
-model's ``model_json_schema`` into an OpenAPI-shaped ``components.schemas`` so
-``openapi-typescript`` can consume it unchanged.
+The intermediate document uses OpenAPI's ``components.schemas`` container
+because ``openapi-typescript`` consumes that format.
 """
 
 import json

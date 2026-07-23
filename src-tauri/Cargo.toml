@@ -5,10 +5,9 @@ description = "WEFT — World-building, Era, and Fantasy Timeline"
 edition = "2021"
 
 [lib]
-# `cdylib` is harmless here (used by the wheel path); the standalone binary
-# loads `ext_mod` in memory via `wrap_pymodule!`.
+# The standalone binary loads `ext_mod` in memory via `wrap_pymodule!`.
 name = "weft_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [[bin]]
 name = "weft"

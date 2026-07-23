@@ -1,8 +1,4 @@
-"""Module-level app state for the pytauri command layer (Path C).
-
-Holds the loaded DAO + derived link graph. Commands read from ``STATE``; story
-load/reload mutates it (mirrors the old FastAPI ``app.state.dao``).
-"""
+"""Shared application state used by the PyTauri command layer."""
 
 from __future__ import annotations
 

@@ -56,7 +56,7 @@
 uv sync
 
 # 启动（后端 + 前端）
-uv run weft serve tests/guojing.yml
+cargo tauri dev -- tests/guojing.yml
 
 ```
 
@@ -66,13 +66,14 @@ uv run weft serve tests/guojing.yml
 
 ```
 weft/
-├── weft_backend/     # FastAPI 后端
-│   ├── app.py        # 应用入口、API 路由
+├── weft_backend/     # Python 领域层与 PyTauri commands
+│   ├── commands.py   # Tauri IPC commands
 │   ├── dao.py        # 数据模型与 YAML 解析
 │   ├── aqueduct.py   # 时间运算引擎
 │   ├── material.py   # 派生属性计算（如星座）
-├── weft-frontend/    # Next.js 前端
-│   ├── app/          # 页面
+├── weft-frontend/    # Tauri React + Vite 前端
+│   ├── app/          # React 页面
 │   └── components/   # 组件
+├── src-tauri/        # Rust/Tauri 桌面壳
 └── tests/            # 测试数据与端到端测试
 ```
