@@ -192,7 +192,7 @@ copilot mcp list
 | `get_narrative(path, name)` | 返回指定 narrative 的观察者与解析后事件顺序 |
 
 所有接受 `path` 的 tools 都读取本机文件。让 Agent 使用绝对路径最可靠；在仓库
-会话中也可以使用相对于项目根目录的路径，例如 `tests/guojing.yml`。
+会话中也可以使用相对于项目根目录的路径，例如 `examples/红楼梦.yml`。
 
 ## 推荐的 Agent 工作流
 

@@ -72,7 +72,7 @@ Code Agent ───────stdio MCP─────────────
 uv sync
 
 # 启动 Tauri 桌面应用
-cargo tauri dev -- tests/guojing.yml
+cargo tauri dev -- examples/红楼梦.yml
 ```
 
 连接 AI Agent 见 [AI 与 MCP](mcp.md)。
