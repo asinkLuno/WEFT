@@ -56,9 +56,13 @@ POINTER_WIDTH="$("$PYTHON" -c 'import struct; print(struct.calcsize("P") * 8)')"
 if [[ "$ARCH" == *-pc-windows-* ]]; then
   LIB_NAME="python${PY_MAJOR_MINOR/./}"
   LIB_DIR="$DEST/libs"
+  PYTHON_CONFIG_PATH="$(cygpath -w "$PYTHON")"
+  LIB_DIR_CONFIG_PATH="$(cygpath -w "$LIB_DIR")"
 else
   LIB_NAME="python$PY_MAJOR_MINOR"
   LIB_DIR="$DEST/lib"
+  PYTHON_CONFIG_PATH="$PYTHON"
+  LIB_DIR_CONFIG_PATH="$LIB_DIR"
 fi
 
 # python-build-standalone keeps its build-time /install prefix in sysconfig.
@@ -71,16 +75,21 @@ PYO3_CONFIG="$PYEMBED/pyo3-config.txt"
   printf 'shared=true\n'
   printf 'abi3=false\n'
   printf 'lib_name=%s\n' "$LIB_NAME"
-  printf 'lib_dir=%s\n' "$LIB_DIR"
-  printf 'executable=%s\n' "$PYTHON"
+  printf 'lib_dir=%s\n' "$LIB_DIR_CONFIG_PATH"
+  printf 'executable=%s\n' "$PYTHON_CONFIG_PATH"
   printf 'pointer_width=%s\n' "$POINTER_WIDTH"
   printf 'build_flags=\n'
   printf 'suppress_build_script_link_lines=false\n'
 } > "$PYO3_CONFIG"
 
 if [ -n "${GITHUB_ENV:-}" ]; then
-  printf 'PYO3_PYTHON=%s\n' "$PYTHON" >> "$GITHUB_ENV"
-  printf 'PYO3_CONFIG_FILE=%s\n' "$PYO3_CONFIG" >> "$GITHUB_ENV"
+  if [[ "$ARCH" == *-pc-windows-* ]]; then
+    PYO3_CONFIG_ENV_PATH="$(cygpath -w "$PYO3_CONFIG")"
+  else
+    PYO3_CONFIG_ENV_PATH="$PYO3_CONFIG"
+  fi
+  printf 'PYO3_PYTHON=%s\n' "$PYTHON_CONFIG_PATH" >> "$GITHUB_ENV"
+  printf 'PYO3_CONFIG_FILE=%s\n' "$PYO3_CONFIG_ENV_PATH" >> "$GITHUB_ENV"
   if [[ "$ARCH" == *-unknown-linux-* ]]; then
     printf 'LD_LIBRARY_PATH=%s%s\n' \
       "$LIB_DIR" "${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
