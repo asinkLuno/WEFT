@@ -4,7 +4,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from anyio import create_task_group
+from anyio import create_task_group, sleep
 from anyio.from_thread import start_blocking_portal
 from loguru import logger
 from pydantic import BaseModel
@@ -70,26 +70,45 @@ class Reload(BaseModel):
 
 
 async def watch_story(app_handle: AppHandle) -> None:
-    """Background watcher: reload STATE on story-file change and notify the UI."""
+    """Reload the current story on change and follow newly opened story paths."""
 
-    if STATE.story_path is None:
-        return
-    path = str(STATE.story_path)
-    async for _ in awatch(path):
-        try:
-            STATE.load(path)
-        except Exception as exc:  # parse error etc — keep old state, log and continue
-            logger.error("reload of {} failed: {}", path, exc)
+    while True:
+        if STATE.story_path is None:
+            await sleep(0.1)
             continue
-        if STATE.dao is None:  # STATE.load either succeeds fully or raises.
-            continue
-        story_title = STATE.dao.story.title
-        logger.warning("reloaded story: {}", path)
-        # dev marker for headless validation
-        Path(tempfile.gettempdir(), "weft_reload.txt").write_text(
-            story_title, encoding="utf-8"
-        )
-        Emitter.emit(app_handle, "weft-reload", Reload(story_title=story_title))
+
+        watched_path = STATE.story_path.resolve()
+        async for changes in awatch(
+            watched_path.parent,
+            recursive=False,
+            rust_timeout=500,
+            yield_on_timeout=True,
+        ):
+            current_path = STATE.story_path
+            if current_path is None or current_path.resolve() != watched_path:
+                break
+            if not any(Path(changed_path).resolve() == watched_path
+                       for _, changed_path in changes):
+                continue
+
+            try:
+                STATE.load(watched_path)
+            except Exception as exc:  # parse error etc — keep old state
+                logger.error("reload of {} failed: {}", watched_path, exc)
+                continue
+            if STATE.dao is None:  # STATE.load either succeeds fully or raises.
+                continue
+            story_title = STATE.dao.story.title
+            logger.warning("reloaded story: {}", watched_path)
+            # dev marker for headless validation
+            Path(tempfile.gettempdir(), "weft_reload.txt").write_text(
+                story_title, encoding="utf-8"
+            )
+            Emitter.emit(
+                app_handle,
+                "weft-reload",
+                Reload(story_title=story_title),
+            )
 
 
 def main() -> int:
@@ -104,6 +123,5 @@ def main() -> int:
             context=context,
             invoke_handler=commands.generate_handler(portal),
         )
-        if STATE.loaded:
-            portal.start_task_soon(watch_story, app.handle())
+        portal.start_task_soon(watch_story, app.handle())
         return app.run_return()

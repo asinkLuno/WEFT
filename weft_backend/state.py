@@ -16,9 +16,16 @@ class AppState:
     story_path: Path | None = None
 
     def load(self, path: str | Path) -> None:
-        self.story_path = Path(path)
-        self.dao = load_dao(path)
-        self.link_graph = build_link_graph(self.dao)
+        story_path = Path(path)
+        dao = load_dao(story_path)
+        link_graph = build_link_graph(dao)
+
+        # Publish a new snapshot only after it has loaded successfully. This
+        # keeps the current story and its watcher intact when a replacement
+        # file is invalid.
+        self.story_path = story_path
+        self.dao = dao
+        self.link_graph = link_graph
 
     @property
     def loaded(self) -> bool:
