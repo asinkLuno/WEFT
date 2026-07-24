@@ -22,14 +22,19 @@ export default function MoaiPage() {
   }
 
   const { moais, drifts } = data;
-  const allEvents = Object.values(drifts).flat();
+  const eventsByMoai = new Map<string, (typeof drifts)[string]>();
+  for (const event of Object.values(drifts).flat()) {
+    for (const moaiName of event.moais ?? []) {
+      const events = eventsByMoai.get(moaiName);
+      if (events) events.push(event);
+      else eventsByMoai.set(moaiName, [event]);
+    }
+  }
   const entries = Object.entries(moais)
     .map(([key, moai]) => ({
       key,
       moai,
-      events: allEvents
-        .filter((event) => event.moais?.includes(key))
-        .toSorted(compareDriftTime),
+      events: (eventsByMoai.get(key) ?? []).toSorted(compareDriftTime),
     }))
     .filter(({ events }) => events.length > 0);
 

@@ -15,9 +15,24 @@ export type MoaiMap = Record<string, Moai>;
 export type DriftMap = Record<string, Drift[]>;
 export type NarrativeMap = Record<string, Narrative>;
 
-export const getStory = () => pyInvoke<Story>("get_story");
-export const getMoais = () => pyInvoke<MoaiMap>("get_moai");
-export const getDrifts = () => pyInvoke<DriftMap>("get_drift");
-export const getNarratives = () => pyInvoke<NarrativeMap>("get_narrative");
-export const getMoaiLinks = () => pyInvoke<LinkGraph>("get_moai_link");
+const queryCache = new Map<string, Promise<unknown>>();
+
+function cachedInvoke<T>(command: string): Promise<T> {
+  const cached = queryCache.get(command);
+  if (cached) return cached as Promise<T>;
+
+  const request = pyInvoke<T>(command).catch((error) => {
+    queryCache.delete(command);
+    throw error;
+  });
+  queryCache.set(command, request);
+  return request;
+}
+
+export const getStory = () => cachedInvoke<Story>("get_story");
+export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
+export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
+export const getNarratives = () =>
+  cachedInvoke<NarrativeMap>("get_narrative");
+export const getMoaiLinks = () => cachedInvoke<LinkGraph>("get_moai_link");
 export const openStory = () => pyInvoke<string | null>("open_story");

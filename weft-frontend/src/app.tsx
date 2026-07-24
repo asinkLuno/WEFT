@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { FileText, FolderOpen } from "lucide-react";
 import {
   NavigationMenu,
@@ -7,13 +7,14 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import DriftPage from "@/app/drift/page";
 import { HotReload } from "@/app/hot-reload";
-import MoaiLinkPage from "@/app/moai-link/page";
-import MoaiPage from "@/app/moai/page";
-import NarrativePage from "@/app/narrative/page";
-import StoryPage from "@/app/story/page";
 import { getStory, openStory } from "@/lib/api";
+
+const StoryPage = lazy(() => import("@/app/story/page"));
+const MoaiPage = lazy(() => import("@/app/moai/page"));
+const MoaiLinkPage = lazy(() => import("@/app/moai-link/page"));
+const DriftPage = lazy(() => import("@/app/drift/page"));
+const NarrativePage = lazy(() => import("@/app/narrative/page"));
 
 const NAV_ITEMS = [
   { label: "story", path: "/story" },
@@ -160,7 +161,9 @@ export function App() {
           </Button>
         </div>
       </header>
-      <Page />
+      <Suspense fallback={<main className="flex-1 px-6 py-8" />}>
+        <Page />
+      </Suspense>
     </div>
   );
 }
