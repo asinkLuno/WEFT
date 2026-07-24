@@ -10,6 +10,11 @@
     ·
     <a href="https://asinkluno.github.io/WEFT/dao/">Design</a>
   </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/tauri-%2324C8DB.svg?style=for-the-badge&logo=tauri&logoColor=%23FFFFFF" alt="Tauri" />
+    <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+  </p>
 </div>
 
 WEFT lets writers build structured fictional worlds without requiring them to
