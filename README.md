@@ -1,5 +1,7 @@
 # WEFT
 
+[Online documentation](https://asinkluno.github.io/WEFT/)
+
 WEFT is an AI-native world-building and story timeline tool. The timeline UI is
 only one part of the product: the primary workflow is to let an AI agent manage
 the structured story file for you.

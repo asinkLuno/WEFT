@@ -1,0 +1,192 @@
+/*
+ * WEFT documentation theme.
+ *
+ * These values mirror the design tokens in weft-frontend/app/globals.css.
+ * Material for MkDocs keeps responsibility for layout, navigation, search,
+ * and accessibility; this layer gives those components the WEFT identity.
+ */
+
+:root {
+  --weft-radius: 0.375rem;
+}
+
+[data-md-color-scheme="default"] {
+  --weft-background: oklch(0.97 0.018 85);
+  --weft-foreground: oklch(0.25 0.025 55);
+  --weft-card: oklch(0.985 0.012 85);
+  --weft-primary: oklch(0.48 0.1 35);
+  --weft-primary-foreground: oklch(0.98 0.012 85);
+  --weft-muted: oklch(0.93 0.025 82);
+  --weft-muted-foreground: oklch(0.52 0.035 58);
+  --weft-accent: oklch(0.89 0.045 73);
+  --weft-border: oklch(0.84 0.035 75);
+  --weft-sidebar: oklch(0.95 0.022 82);
+  --weft-code: oklch(0.94 0.02 82);
+
+  --md-default-bg-color: var(--weft-background);
+  --md-default-fg-color: var(--weft-foreground);
+  --md-default-fg-color--light: var(--weft-muted-foreground);
+  --md-default-fg-color--lighter: color-mix(
+    in oklab,
+    var(--weft-muted-foreground) 70%,
+    transparent
+  );
+  --md-primary-fg-color: var(--weft-primary);
+  --md-primary-bg-color: var(--weft-primary-foreground);
+  --md-accent-fg-color: var(--weft-primary);
+  --md-code-bg-color: var(--weft-code);
+  --md-code-fg-color: var(--weft-foreground);
+  --md-typeset-a-color: var(--weft-primary);
+}
+
+[data-md-color-scheme="slate"] {
+  --weft-background: oklch(0.2 0.018 55);
+  --weft-foreground: oklch(0.91 0.025 83);
+  --weft-card: oklch(0.235 0.02 55);
+  --weft-primary: oklch(0.72 0.11 45);
+  --weft-primary-foreground: oklch(0.18 0.025 48);
+  --weft-muted: oklch(0.29 0.025 55);
+  --weft-muted-foreground: oklch(0.72 0.025 76);
+  --weft-accent: oklch(0.33 0.04 50);
+  --weft-border: oklch(0.38 0.03 58);
+  --weft-sidebar: oklch(0.225 0.02 55);
+  --weft-code: oklch(0.245 0.022 55);
+
+  --md-default-bg-color: var(--weft-background);
+  --md-default-fg-color: var(--weft-foreground);
+  --md-default-fg-color--light: var(--weft-muted-foreground);
+  --md-default-fg-color--lighter: color-mix(
+    in oklab,
+    var(--weft-muted-foreground) 70%,
+    transparent
+  );
+  --md-primary-fg-color: var(--weft-card);
+  --md-primary-bg-color: var(--weft-foreground);
+  --md-accent-fg-color: var(--weft-primary);
+  --md-code-bg-color: var(--weft-code);
+  --md-code-fg-color: var(--weft-foreground);
+  --md-typeset-a-color: var(--weft-primary);
+}
+
+body {
+  background: var(--weft-background);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--weft-primary) 22%, transparent);
+}
+
+.md-header {
+  background: color-mix(in oklab, var(--weft-card) 94%, transparent);
+  border-bottom: 1px solid var(--weft-border);
+  color: var(--weft-foreground);
+  backdrop-filter: blur(12px);
+}
+
+.md-tabs {
+  background: var(--weft-card);
+  color: var(--weft-foreground);
+}
+
+.md-sidebar__scrollwrap {
+  background: var(--weft-sidebar);
+  border: 1px solid var(--weft-border);
+  border-radius: calc(var(--weft-radius) * 2);
+}
+
+.md-nav__link--active,
+.md-nav__link:is(:focus, :hover) {
+  color: var(--weft-primary);
+}
+
+.md-search__form {
+  background: var(--weft-muted);
+  border: 1px solid var(--weft-border);
+  border-radius: var(--weft-radius);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  color: var(--weft-foreground);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.md-typeset a {
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--weft-primary) 45%,
+    transparent
+  );
+  text-underline-offset: 0.16em;
+}
+
+.md-typeset a:hover {
+  text-decoration: underline;
+}
+
+.md-typeset code,
+.md-typeset pre > code {
+  border-radius: var(--weft-radius);
+}
+
+.md-typeset .highlight,
+.md-typeset table:not([class]) {
+  border: 1px solid var(--weft-border);
+  border-radius: calc(var(--weft-radius) * 1.5);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--weft-muted);
+  color: var(--weft-foreground);
+}
+
+.md-typeset table:not([class]) td {
+  border-top-color: var(--weft-border);
+}
+
+.md-typeset blockquote {
+  background: var(--weft-card);
+  border-left-color: var(--weft-primary);
+  border-radius: 0 var(--weft-radius) var(--weft-radius) 0;
+  padding-bottom: 0.6rem;
+  padding-top: 0.6rem;
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  background: var(--weft-card);
+  border-color: var(--weft-border);
+  border-radius: calc(var(--weft-radius) * 1.5);
+  box-shadow: none;
+}
+
+.md-footer {
+  background: var(--weft-card);
+  border-top: 1px solid var(--weft-border);
+}
+
+.md-header__button.md-logo {
+  color: var(--weft-foreground);
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.65rem;
+  width: 1.65rem;
+}
+
+[data-md-color-scheme="slate"] .md-header__button.md-logo img {
+  filter: invert(0.9) sepia(0.08);
+}
+
+@media screen and (max-width: 76.234375em) {
+  .md-sidebar__scrollwrap {
+    border: 0;
+    border-radius: 0;
+  }
+}
