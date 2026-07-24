@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tomllib
 from collections.abc import Mapping
+from functools import cached_property
 from pathlib import Path
 from typing import Any, cast
 
@@ -16,6 +17,11 @@ from weft_backend.material import MATERIALS, load_user_materials
 
 
 RawMapping = Mapping[str, Any]
+
+try:
+    _YamlSafeLoader = yaml.CSafeLoader
+except AttributeError:  # PyYAML installations built without LibYAML
+    _YamlSafeLoader = yaml.SafeLoader
 
 
 def _phase(data: object, aqueduct: Aqueduct) -> Phase:
@@ -70,7 +76,7 @@ class Moai(BaseModel):
         return fn(self)
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def base_time_display(self) -> str | None:
         if self.base_time is None:
             return None
@@ -145,32 +151,32 @@ class Drift(BaseModel):
     aqueduct: Aqueduct = Field(exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def flat_start(self) -> list[int]:
         return self.aqueduct.de_recursive(self.start_time)
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def flat_end(self) -> list[int] | None:
         return self.aqueduct.de_recursive(self.end_time) if self.end_time else None
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def start_tick(self) -> int:
         return self.aqueduct.to_tick(self.flat_start)
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def end_tick(self) -> int | None:
         return self.aqueduct.to_tick(self.flat_end) if self.flat_end else None
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def start_time_display(self) -> str:
         return self.aqueduct.humanize(self.flat_start)
 
     @computed_field  # type: ignore[prop-decorator]
-    @property
+    @cached_property
     def end_time_display(self) -> str | None:
         return self.aqueduct.humanize(self.flat_end) if self.flat_end else None
 
@@ -258,15 +264,19 @@ class Narrative(BaseModel):
         return cls(subject=subject, observer=observer, drifts=narrative_drifts)
 
 
-def _record_moai_drift_time(moai: Moai, drift: Drift, aqueduct: Aqueduct) -> None:
+def _record_moai_drift_time(
+    moai: Moai,
+    drift: Drift,
+    aqueduct: Aqueduct,
+    moai_base: list[int],
+    drift_start: list[int],
+    drift_end: list[int] | None,
+) -> None:
     """Store a drift's start/end offsets from a moai's base time."""
-    if moai.base_time is None:
-        return
-    base = aqueduct.de_recursive(moai.base_time)
-    start = aqueduct.normalize(aqueduct.minus(drift.flat_start, base))
+    start = aqueduct.normalize(aqueduct.minus(drift_start, moai_base))
     end = (
-        aqueduct.normalize(aqueduct.minus(drift.flat_end, base))
-        if drift.flat_end is not None
+        aqueduct.normalize(aqueduct.minus(drift_end, moai_base))
+        if drift_end is not None
         else None
     )
     moai.journal[drift.id] = (
@@ -281,10 +291,27 @@ def _populate_journals(
     aqueduct: Aqueduct,
 ) -> None:
     """Populate journals after all models and references have been resolved."""
+    moai_bases = {
+        name: aqueduct.de_recursive(moai.base_time)
+        for name, moai in moais.items()
+        if moai.base_time is not None
+    }
     for events in drifts.values():
         for drift in events:
+            drift_start = drift.flat_start
+            drift_end = drift.flat_end
             for moai_name in drift.moais or ():
-                _record_moai_drift_time(moais[moai_name], drift, aqueduct)
+                moai_base = moai_bases.get(moai_name)
+                if moai_base is None:
+                    continue
+                _record_moai_drift_time(
+                    moais[moai_name],
+                    drift,
+                    aqueduct,
+                    moai_base,
+                    drift_start,
+                    drift_end,
+                )
 
 
 class Dao(BaseModel):
@@ -363,7 +390,7 @@ def load_dao(path: str | Path) -> Dao:
             raw = tomllib.load(fh)
     elif suffix in {".yaml", ".yml"}:
         with source.open(encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh)
+            raw = yaml.load(fh, Loader=_YamlSafeLoader)
     elif suffix == ".json":
         with source.open(encoding="utf-8") as fh:
             raw = json.load(fh)
