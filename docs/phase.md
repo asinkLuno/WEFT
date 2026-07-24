@@ -115,6 +115,20 @@ def normalize(self, values: list[int]) -> list[int]:
 
 ## 内置历法：格里高利历
 
+WEFT 内置两个共用相同公历计算规则的类型：
+
+- `gregorian`：中文时间单位，例如 `2024年1月15日`
+- `gregorian_en`：英文时间单位，例如
+  `2024 years, 1 month, 15 days`
+
+在故事中通过 `story.date_mode` 选择：
+
+```yaml
+story:
+  title: An English Story
+  date_mode: gregorian_en
+```
+
 ```python
 gregorian_aqueduct = Aqueduct([
     Brick("年", get_limit=lambda ctx: maxsize),     # 无上限
@@ -132,7 +146,8 @@ gregorian_aqueduct = Aqueduct([
 
 ## 自定义历法
 
-定义一个历法就是定义一组 Brick。以下是一个极端简化的例子：
+定义一个历法就是定义一组 Brick，并在插件模块中导出名为
+`aqueduct` 的 `Aqueduct` 实例。以下是一个极端简化的例子：
 
 ### 示例：10 天一周、3 周一月、4 月一年的幻想历
 
@@ -145,7 +160,7 @@ def days_in_month(ctx: dict) -> int:
     # ctx 包含 {"年": ..., "月": ..., "日": ...}，可以做更复杂的逻辑
     return 30
 
-fantasy_aqueduct = Aqueduct([
+aqueduct = Aqueduct([
     Brick("年", get_limit=lambda ctx: maxsize),   # 年不设上限
     Brick("月", get_limit=lambda ctx: 4),          # 4 月 = 1 年
     Brick("旬", get_limit=lambda ctx: 3),          # 3 旬 = 1 月
@@ -153,21 +168,35 @@ fantasy_aqueduct = Aqueduct([
 ])
 ```
 
-使用方式与格里高利历完全相同：
+在故事文件中注册插件。相对路径以故事文件所在目录为基准：
+
+```yaml
+aqueduct:
+  fantasy: ./calendars/fantasy.py
+
+story:
+  title: 幻想故事
+  date_mode: fantasy
+```
+
+注册名可以覆盖内置历法。每次加载故事前，注册表都会恢复为内置基线，
+因此上一个故事加载的插件不会泄漏到下一个故事。
+
+在 Python 中直接使用时，方式与格里高利历完全相同：
 
 ```python
 # 规范化
-fantasy_aqueduct.normalize([1, 5, 2, 45, 0, 0])
+aqueduct.normalize([1, 5, 2, 45, 0, 0])
 # → [1, 6, 1, 15, 0, 0]  （5月→进位1年+1月，2旬，45日→进位1旬+15日）
 
 # 人类可读
-fantasy_aqueduct.humanize([3, 2, 1, 15, 0, 0])
+aqueduct.humanize([3, 2, 1, 15, 0, 0])
 # → "3年2月1旬15日0分0秒"
 
 # 时间运算
 a = [3, 1, 0, 10, 0, 0]
 b = [0, 0, 2, 20, 0, 0]
-fantasy_aqueduct.normalize(fantasy_aqueduct.plus(a, b))
+aqueduct.normalize(aqueduct.plus(a, b))
 # → [3, 2, 0, 0, 0, 0]
 ```
 
@@ -194,7 +223,12 @@ Brick("month", get_limit=lambda ctx: 12),
 Brick("day", get_limit=lambda ctx: 30),
 ```
 
-名字只影响 `humanize()` 的输出格式（`f"{v}{name}"`）。如果你用英文名字，输出会是 `"2024year1month15day"`——你可以覆盖 `humanize` 或自己写格式化逻辑。
+名字默认影响 `humanize()` 的输出格式（`f"{v}{name}"`）。如果需要
+单复数、分隔符或其他展示规则，可以在构造 `Aqueduct` 时传入
+`humanizer(values, bricks)`。
+
+用于完整时间轴展示的历法还应通过 `to_tick` 参数提供绝对时间到最小单位坐标
+的转换；甘特图定位和时间距离依赖这个坐标。
 
 ### `get_limit` 的威力
 
@@ -212,8 +246,8 @@ Brick("day", get_limit=lambda ctx: 30),
 
 | 限制 | 说明 |
 |------|------|
-| 后端硬编码 `gregorian_aqueduct` | YAML 用户尚不能通过 `date_mode` 切换历法——`dao.py` 中 `date_mode` 固定为 `"gregorian"` |
-| 砖块数量固定为 6 | Phase 和所有时间列表假定 6 个分量，自定义历法若分量数不同则需要调整解析层 |
-| `humanize` 格式固定 | 输出始终为 `{value}{name}` 拼接，不区分单复数或分隔符 |
+| 插件代码可信度 | 历法是 Python 代码，会以 WEFT 进程权限执行，只应加载可信文件 |
+| `to_tick` 可选 | 不提供时仍可解析和格式化，但需要 tick 的甘特图与距离计算不可用 |
 
-这些是引擎能力已就绪但 YAML 层尚未暴露的部分。如需在故事中使用自定义历法，目前需要直接在 Python 层调用 Aqueduct API。
+时间列表会按照所选历法的 Brick 数量自动补零和校验，因此自定义历法不要求
+固定为六个分量。

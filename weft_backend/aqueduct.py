@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from sys import maxsize
 
 from pydantic import BaseModel
@@ -18,9 +20,11 @@ class Aqueduct:
         self,
         bricks: list[Brick],
         to_tick: Callable[[list[int]], int] | None = None,
+        humanizer: Callable[[Sequence[int], Sequence[Brick]], str] | None = None,
     ):
         self.bricks = bricks
         self._to_tick = to_tick
+        self._humanizer = humanizer
 
     def validate_time_unit(self, value: object) -> None:
         """检查是否为合法的 time_unit，不合法则抛出 ValueError。"""
@@ -59,6 +63,8 @@ class Aqueduct:
     def humanize(self, values: Sequence[int]) -> str:
         """转为人类可读的字符串。"""
         self.validate_time_unit(values)
+        if self._humanizer is not None:
+            return self._humanizer(values, self.bricks)
         if not any(values):
             return "0年0月0日"
         return "".join(
@@ -168,6 +174,105 @@ gregorian_aqueduct = Aqueduct(
     ],
     to_tick=gregorian_to_tick,
 )
+
+
+_ENGLISH_UNITS = {
+    "年": ("year", "years"),
+    "月": ("month", "months"),
+    "日": ("day", "days"),
+    "时": ("hour", "hours"),
+    "分": ("minute", "minutes"),
+    "秒": ("second", "seconds"),
+}
+
+
+def humanize_english_gregorian(
+    values: Sequence[int], bricks: Sequence[Brick]
+) -> str:
+    """Render Gregorian components using English unit names."""
+
+    if not any(values):
+        return "0 years, 0 months, 0 days"
+    parts = []
+    for brick, value in zip(bricks, values, strict=True):
+        if value:
+            singular, plural = _ENGLISH_UNITS[brick.name]
+            parts.append(f"{value} {singular if abs(value) == 1 else plural}")
+    return ", ".join(parts)
+
+
+gregorian_en_aqueduct = Aqueduct(
+    gregorian_aqueduct.bricks,
+    to_tick=gregorian_to_tick,
+    humanizer=humanize_english_gregorian,
+)
+
+
+# Registry name -> calendar implementation. User plugins may override built-ins.
+AQUEDUCTS: dict[str, Aqueduct] = {
+    "gregorian": gregorian_aqueduct,
+    "gregorian_en": gregorian_en_aqueduct,
+}
+_BUILTIN_AQUEDUCTS: dict[str, Aqueduct] = dict(AQUEDUCTS)
+
+
+def load_user_aqueducts(spec: object, base_dir: Path) -> None:
+    """Load top-level ``aqueduct`` plugins declared as name -> Python path.
+
+    Each module must export an :class:`Aqueduct` instance named ``aqueduct``.
+    Registrations are reset to the built-in baseline before every story load.
+    """
+
+    AQUEDUCTS.clear()
+    AQUEDUCTS.update(_BUILTIN_AQUEDUCTS)
+
+    if spec is None:
+        return
+    if not isinstance(spec, Mapping):
+        raise ValueError("顶层 aqueduct 必须是「注册名: 文件路径」的映射")
+
+    for name, raw_path in spec.items():
+        if not isinstance(name, str):
+            raise ValueError(
+                f"aqueduct 注册名必须是字符串, 得到 {type(name).__name__}"
+            )
+        if not isinstance(raw_path, str):
+            raise ValueError(
+                f"aqueduct 插件 {name!r} 的路径必须是字符串, "
+                f"得到 {type(raw_path).__name__}"
+            )
+
+        path = Path(raw_path)
+        if not path.is_absolute():
+            path = base_dir / path
+        if not path.is_file():
+            raise ValueError(
+                f"aqueduct 插件文件不存在: {raw_path!r} (解析为 {path})"
+            )
+
+        try:
+            module = _load_aqueduct_plugin_module(path, name)
+        except Exception as exc:
+            raise ValueError(
+                f"aqueduct 插件 {name!r} ({path}) 加载失败: {exc}"
+            ) from exc
+
+        plugin = getattr(module, "aqueduct", None)
+        if not isinstance(plugin, Aqueduct):
+            raise ValueError(
+                f"aqueduct 插件 {name!r} ({path}) "
+                "必须导出 Aqueduct 实例 aqueduct"
+            )
+        AQUEDUCTS[name] = plugin
+
+
+def _load_aqueduct_plugin_module(path: Path, name: str) -> object:
+    module_name = f"_weft_user_aqueduct__{name}"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class Phase(BaseModel):

@@ -4,15 +4,13 @@ import json
 import tomllib
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 import yaml
 from pydantic import BaseModel, Field, computed_field
 
-from weft_backend.aqueduct import Aqueduct, Phase, gregorian_aqueduct
+from weft_backend.aqueduct import AQUEDUCTS, Aqueduct, Phase, load_user_aqueducts
 from weft_backend.material import MATERIALS, load_user_materials
-
-AQUEDUCTS: dict[str, Aqueduct] = {"gregorian": gregorian_aqueduct}
 
 # ── Phase: YAML time-list → Phase ───────────────────────────────────
 
@@ -121,7 +119,7 @@ class MoaiLink(BaseModel):
 class Story(BaseModel):
     title: str
     description: str | None = None
-    date_mode: Literal["gregorian"]
+    date_mode: str
 
     @classmethod
     def from_dict(cls, data: RawMapping) -> Story:
@@ -131,7 +129,7 @@ class Story(BaseModel):
         return cls(
             title=title,
             description=data.get("description"),
-            date_mode="gregorian",
+            date_mode=data.get("date_mode", "gregorian"),
         )
 
 
@@ -373,6 +371,8 @@ def load_dao(path: str | Path) -> Dao:
         raise ValueError(f"不支持的文件格式: {suffix}")
     if not isinstance(raw, Mapping):
         raise ValueError("故事文件的顶层必须是映射")
-    # 加载用户 material 插件必须在 Dao.from_dict 之前：moai 解析时会立即 apply_material。
+    # Plugins must be loaded before Dao.from_dict: parsing immediately resolves
+    # the selected calendar and computes materials.
+    load_user_aqueducts(raw.get("aqueduct", {}), source.parent)
     load_user_materials(raw.get("material", {}), source.parent)
     return Dao.from_dict(raw)

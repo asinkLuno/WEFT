@@ -25,7 +25,7 @@ Build structurally valid WEFT stories while preserving author intent and referen
 
 ## Editing Rules
 
-- Keep the top-level shape explicit: `story`, optional `material`, `moai`, `moai_link`, `drift`, and `narrative`.
+- Keep the top-level shape explicit: `story`, optional `aqueduct`, optional `material`, `moai`, `moai_link`, `drift`, and `narrative`.
 - Use unique, stable entity and event names. Event IDs are derived as `group/event`.
 - Represent Gregorian time as one to six integers ordered year, month, day, hour, minute, second.
 - Represent a relative time by appending another time list or YAML alias as the last element, for example `[0, 0, 3, *arrival]`.

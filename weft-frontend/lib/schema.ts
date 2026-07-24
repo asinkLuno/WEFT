@@ -16,11 +16,8 @@ export interface components {
              * @default null
              */
             description: string | null;
-            /**
-             * Date Mode
-             * @constant
-             */
-            date_mode: "gregorian";
+            /** Date Mode */
+            date_mode: string;
         };
         /** Phase */
         Phase: {

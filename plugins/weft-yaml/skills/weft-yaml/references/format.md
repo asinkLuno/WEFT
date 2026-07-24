@@ -37,7 +37,8 @@ narrative:
 
 ## Top-level fields
 
-- `story`: required mapping. `title` must be a string; `description` is optional. The supported `date_mode` is `gregorian`.
+- `story`: required mapping. `title` must be a string; `description` is optional. `date_mode` selects a registered aqueduct and defaults to `gregorian`; built-ins are `gregorian` and `gregorian_en`.
+- `aqueduct`: optional mapping from calendar registration names to trusted Python plugin paths. Each module must export an `Aqueduct` instance named `aqueduct`.
 - `material`: optional mapping from material registration names to Python file paths. Material code is executed when loading a story; use only trusted files.
 - `moai`: entity mapping keyed by unique entity name.
 - `moai_link`: relationship groups, each containing link objects.
