@@ -66,6 +66,8 @@ jobs:
 
       - name: Prepare embedded Python
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: scripts/fetch-embedded-python.sh 3.13 "${{ matrix.target }}"
 
       - name: Build and publish Tauri bundles

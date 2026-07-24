@@ -17,7 +17,16 @@ echo "==> finding cpython $PYVER ($ARCH) in latest $REPO release"
 TEMP="$(mktemp -d)"
 trap 'rm -rf "$TEMP"' EXIT
 RELEASE_JSON="$TEMP/release.json"
-curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" -o "$RELEASE_JSON"
+API_CURL_ARGS=()
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  API_CURL_ARGS=(
+    -H "Authorization: Bearer $GITHUB_TOKEN"
+    -H "X-GitHub-Api-Version: 2022-11-28"
+  )
+fi
+curl -fsSL "${API_CURL_ARGS[@]}" \
+  "https://api.github.com/repos/$REPO/releases/latest" \
+  -o "$RELEASE_JSON"
 
 # Match the regular GIL build exactly. Avoid a long curl/grep/head pipeline:
 # with pipefail, an early-closing head can surface as SIGPIPE on macOS runners.
