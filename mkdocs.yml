@@ -1,29 +1,12 @@
 site_name: Weft
 site_description: WEFT — World-building, Era, and Fantasy Timeline
 theme:
-  name: material
-  language: zh
+  name: terminal
   logo: assets/logo-icon.svg
   favicon: assets/logo-icon.svg
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      toggle:
-        icon: material/weather-night
-        name: 切换到深色模式
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      toggle:
-        icon: material/weather-sunny
-        name: 切换到浅色模式
+  palette: default
   features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.sections
-    - content.code.copy
-
-extra_css:
-  - stylesheets/weft.css
+    - footer.prev_next
 
 markdown_extensions:
   - pymdownx.highlight:
