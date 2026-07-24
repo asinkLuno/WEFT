@@ -1,86 +1,89 @@
-# WEFT
+<div align="center">
+  <img src="./logo.svg" alt="WEFT" width="420">
 
-[Online documentation](https://asinkluno.github.io/WEFT/)
+  <p><strong>AI-native, boundaryless world-building and story timelines.</strong></p>
 
-WEFT is an AI-native world-building and story timeline tool. The timeline UI is
-only one part of the product: the primary workflow is to let an AI agent manage
-the structured story file for you.
+  <p>
+    <a href="https://asinkluno.github.io/WEFT/">Documentation</a>
+    ·
+    <a href="https://asinkluno.github.io/WEFT/mcp/">AI &amp; MCP</a>
+    ·
+    <a href="https://asinkluno.github.io/WEFT/dao/">Design</a>
+  </p>
+</div>
 
-After installing the `weft-yaml` skill and connecting the WEFT MCP server, a
-writer can give the agent direct, natural-language instructions:
+WEFT lets writers build structured fictional worlds without requiring them to
+write structured data by hand. Install the `weft-yaml` skill, connect the WEFT
+MCP server, and tell an AI agent what should change:
 
 > Add an event in Chapter 3 where Alice meets Bob at the station, two days
 > after the hearing.
 
-The agent understands the WEFT format, edits the appropriate entities, events,
-relationships, and relative dates, then validates the result with the real
-WEFT backend. Writers do not need to learn or manually maintain YAML.
+The agent finds the relevant entities and time anchors, edits the story, and
+uses the real WEFT backend to validate references and resolve the timeline.
+YAML remains a transparent, Git-friendly interchange format—not the interface
+writers are expected to operate.
 
-The two AI integrations have complementary roles:
+The desktop application then makes the resulting timeline, entity
+relationships, and point-of-view narratives visible.
 
-- **`weft-yaml` skill** teaches the agent how to author and revise WEFT stories.
-- **WEFT MCP server** exposes the live schema, validation, story inspection,
-  and timeline resolution backed by the same Python model as the desktop app.
+## Design
 
-The desktop application remains useful for visually inspecting the resulting
-timeline, entity relationships, and point-of-view narratives.
-
-## Two design principles
+WEFT follows two equally important principles.
 
 ### AI-native
 
-Writers describe their intent in natural language. Skills teach the agent how
-to edit a WEFT story, MCP validates the result with the real backend, and the
-desktop app makes the resulting structure visible.
+The writer expresses creative intent in natural language; the agent maintains
+the precise story structure.
+
+- The **`weft-yaml` skill** teaches agents WEFT's concepts, format, and editing
+  workflow.
+- The **WEFT MCP server** exposes the live schema, validation, story
+  inspection, and timeline resolution backed by the same Python model as the
+  desktop application.
+- The **desktop application** lets writers visually inspect the result.
 
 ### Boundaryless
 
-WEFT deliberately avoids imposing a fixed ontology on a fictional world. Its
-two core primitives are:
+WEFT avoids imposing a fixed ontology on a fictional world. Its two core
+primitives are deliberately broad:
 
-- **Moai** — anything that exists in or is observed through time: a person, a
-  city, a dynasty, a sword, a storm, or an idea.
+- **Moai** — anything that exists in or is observed through time: a person,
+  city, dynasty, sword, storm, or idea.
 - **Drift** — anything that happens to or around those entities.
 
-A Moai can carry author-defined properties, and materials can derive new
-properties from them. WEFT does not prescribe concepts such as character
-classes, locations, factions, ages, or magic systems; authors and their agents
-model those concepts as their story requires.
+A Moai can carry author-defined properties, while materials can derive new
+properties from them. WEFT does not prescribe character classes, factions,
+location types, power systems, or other world-specific categories.
 
-Time is equally open. Gregorian dates are built in, but an Aqueduct plugin can
+Time is open too. Gregorian dates are built in, but an **Aqueduct** plugin can
 define a fictional calendar's units, carry rules, formatting, and timeline
-coordinates. The data model supplies structure without deciding what a world
-is allowed to contain or how that world measures time.
+coordinates.
 
-Narrative is intentionally stricter than world-building. It prepares selected
-events for the eventual novel, where a stable point of view is a basic writing
-discipline. Every Narrative names one observer, and that observer must be
-present in every selected event. WEFT leaves the world open while making the
-chosen telling of that world explicit and internally consistent.
+**Narrative is intentionally stricter.** World-building is boundaryless, but a
+novel needs a stable point of view. Each Narrative names one observer, and that
+observer must be present in every selected event. A change of viewpoint is
+represented explicitly with another Narrative.
 
-### The river metaphor
+## The river metaphor
 
-WEFT's domain names belong to one metaphor rather than being arbitrary jargon.
-`Dao` is the Chinese **道**: the way through which the whole story is assembled.
-Its image of time comes from Confucius watching a river: “What passes is like
-this, never ceasing day or night.” A `Drift` is an event carried along by that
-unceasing flow.
+WEFT's domain names describe one image: time as flowing water.
 
-A `Moai` is a stone standing in the water while events flow past it. The name
-comes from the monumental statues of Easter Island; `stone` expressed the idea
-but was too ordinary for a central story concept. An `Aqueduct` channels the
-water and determines how it moves, just as a calendar determines the units,
-carry rules, representation, and direction of story time.
+- **Dao（道）** assembles the complete path of a story.
+- **Drift** comes from Confucius watching a river: “What passes is like this,
+  never ceasing day or night.” Events are carried by that flow.
+- **Moai** is the stone standing in the water while events pass it. `stone`
+  captured the idea but was too ordinary, so WEFT uses the monumental statues
+  of Easter Island as its central entity metaphor.
+- **Aqueduct** channels the water, just as a calendar determines how story time
+  is divided, carried, displayed, and directed.
 
-## Install the WEFT skill from GitHub
+## Install the AI skill
 
-The skill is distributed as the `weft-yaml` plugin from the
-[`release`](https://github.com/asinkLuno/WEFT/tree/release) branch of this
-repository.
+The `weft-yaml` skill is distributed from the
+[`release`](https://github.com/asinkLuno/WEFT/tree/release) branch.
 
 ### Codex
-
-Add the GitHub repository as a plugin marketplace, then install the plugin:
 
 ```bash
 codex plugin marketplace add asinkLuno/WEFT --ref release
@@ -89,26 +92,31 @@ codex plugin add weft-yaml@weft
 
 ### Claude Code
 
-Add the GitHub repository as a plugin marketplace, then install the plugin:
-
 ```bash
 claude plugin marketplace add asinkLuno/WEFT@release
 claude plugin install weft-yaml@weft
 ```
 
-Start a new agent session after installing or updating the plugin so the
-latest skill is loaded.
-
-The skill is enough to teach an agent the authoring workflow. To let it query
-the live schema, validate its edits, and resolve timelines with WEFT itself,
-also configure the WEFT MCP server as described in
-[AI and MCP](https://github.com/asinkLuno/WEFT/blob/release/docs/mcp.md).
+Start a new agent session after installing or updating the plugin. The skill
+teaches the authoring workflow; connecting the MCP server additionally gives
+the agent live schema access, validation, and timeline resolution. See
+[AI & MCP](https://asinkluno.github.io/WEFT/mcp/) for client configuration.
 
 ## Development
+
+Requirements: Python 3.13+, `uv`, Rust, and the Tauri prerequisites for your
+platform.
 
 ```bash
 uv sync
 cargo tauri dev -- examples/红楼梦.yml
 ```
 
-The full project documentation is available in [`docs/`](docs/index.md).
+Build and validate the documentation locally:
+
+```bash
+uv run mkdocs build --strict
+```
+
+Read the full [online documentation](https://asinkluno.github.io/WEFT/) or
+browse its [Markdown sources](docs/index.md).
