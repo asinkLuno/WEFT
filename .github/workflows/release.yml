@@ -12,6 +12,9 @@ jobs:
   build:
     strategy:
       fail-fast: false
+      # tauri-action creates the draft release on the first platform and
+      # appends assets on later platforms. Serializing avoids duplicate drafts.
+      max-parallel: 1
       matrix:
         include:
           - platform: ubuntu-22.04
