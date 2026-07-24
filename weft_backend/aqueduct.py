@@ -8,6 +8,8 @@ from sys import maxsize
 
 from pydantic import BaseModel
 
+from weft_backend.errors import PluginError
+
 
 @dataclass(frozen=True, slots=True)
 class Brick:
@@ -229,39 +231,60 @@ def load_user_aqueducts(spec: object, base_dir: Path) -> None:
     if spec is None:
         return
     if not isinstance(spec, Mapping):
-        raise ValueError("顶层 aqueduct 必须是「注册名: 文件路径」的映射")
+        raise PluginError(
+            "AQUEDUCT_CONFIG_INVALID",
+            "顶层 aqueduct 必须是「注册名: 文件路径」的映射",
+            path=("aqueduct",),
+        )
 
     for name, raw_path in spec.items():
         if not isinstance(name, str):
-            raise ValueError(
-                f"aqueduct 注册名必须是字符串, 得到 {type(name).__name__}"
+            raise PluginError(
+                "AQUEDUCT_NAME_INVALID",
+                f"aqueduct 注册名必须是字符串, 得到 {type(name).__name__}",
+                path=("aqueduct",),
             )
         if not isinstance(raw_path, str):
-            raise ValueError(
+            raise PluginError(
+                "AQUEDUCT_PATH_INVALID",
                 f"aqueduct 插件 {name!r} 的路径必须是字符串, "
-                f"得到 {type(raw_path).__name__}"
+                f"得到 {type(raw_path).__name__}",
+                path=("aqueduct", name),
             )
 
         path = Path(raw_path)
         if not path.is_absolute():
             path = base_dir / path
         if not path.is_file():
-            raise ValueError(
-                f"aqueduct 插件文件不存在: {raw_path!r} (解析为 {path})"
+            raise PluginError(
+                "AQUEDUCT_FILE_NOT_FOUND",
+                f"aqueduct 插件文件不存在: {raw_path!r} (解析为 {path})",
+                path=("aqueduct", name),
+                details={"plugin_path": str(path)},
             )
 
         try:
             module = _load_aqueduct_plugin_module(path, name)
         except Exception as exc:
-            raise ValueError(
-                f"aqueduct 插件 {name!r} ({path}) 加载失败: {exc}"
+            raise PluginError(
+                "AQUEDUCT_LOAD_FAILED",
+                f"aqueduct 插件 {name!r} ({path}) 加载失败: {exc}",
+                path=("aqueduct", name),
+                details={
+                    "plugin_path": str(path),
+                    "exception_type": type(exc).__name__,
+                    "reason": str(exc),
+                },
             ) from exc
 
         plugin = getattr(module, "aqueduct", None)
         if not isinstance(plugin, Aqueduct):
-            raise ValueError(
+            raise PluginError(
+                "AQUEDUCT_EXPORT_INVALID",
                 f"aqueduct 插件 {name!r} ({path}) "
-                "必须导出 Aqueduct 实例 aqueduct"
+                "必须导出 Aqueduct 实例 aqueduct",
+                path=("aqueduct", name),
+                details={"plugin_path": str(path)},
             )
         AQUEDUCTS[name] = plugin
 

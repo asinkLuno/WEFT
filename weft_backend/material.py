@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from weft_backend.aqueduct import Aqueduct, Phase
+from weft_backend.errors import PluginError
 
 
 class MaterialTarget(Protocol):
@@ -60,7 +61,7 @@ def load_user_materials(spec: object, base_dir: Path) -> None:
 
     每个插件文件须暴露固定入口 ``def material(moai)``，只用标准库。注册名即
     moai ``materials`` 引用的名字，可覆盖内置 material。路径相对 *base_dir*
-    解析（也支持绝对路径）。失败时抛 ``ValueError``，让 ``load_dao`` 中止。
+    解析（也支持绝对路径）。失败时抛 ``PluginError``，让 ``load_dao`` 中止。
     """
 
     # 先重置到内置基线，原地 mutate（不重新赋值）以保 dao.py 的 import 引用有效。
@@ -70,37 +71,60 @@ def load_user_materials(spec: object, base_dir: Path) -> None:
     if spec is None:
         return
     if not isinstance(spec, Mapping):
-        raise ValueError("顶层 material 必须是「注册名: 文件路径」的映射")
+        raise PluginError(
+            "MATERIAL_CONFIG_INVALID",
+            "顶层 material 必须是「注册名: 文件路径」的映射",
+            path=("material",),
+        )
 
     for name, raw_path in spec.items():
         if not isinstance(name, str):
-            raise ValueError(
-                f"material 注册名必须是字符串, 得到 {type(name).__name__}"
+            raise PluginError(
+                "MATERIAL_NAME_INVALID",
+                f"material 注册名必须是字符串, 得到 {type(name).__name__}",
+                path=("material",),
             )
         if not isinstance(raw_path, str):
-            raise ValueError(
-                f"material 插件 {name!r} 的路径必须是字符串, 得到 {type(raw_path).__name__}"
+            raise PluginError(
+                "MATERIAL_PATH_INVALID",
+                f"material 插件 {name!r} 的路径必须是字符串, "
+                f"得到 {type(raw_path).__name__}",
+                path=("material", name),
             )
 
         path = Path(raw_path)
         if not path.is_absolute():
             path = base_dir / path
         if not path.is_file():
-            raise ValueError(
-                f"material 插件文件不存在: {raw_path!r} (解析为 {path})"
+            raise PluginError(
+                "MATERIAL_FILE_NOT_FOUND",
+                f"material 插件文件不存在: {raw_path!r} (解析为 {path})",
+                path=("material", name),
+                details={"plugin_path": str(path)},
             )
 
         try:
             module = _load_plugin_module(path, name)
         except Exception as exc:  # 包装任意用户脚本异常 (SyntaxError / 运行时)
-            raise ValueError(
-                f"material 插件 {name!r} ({path}) 加载失败: {exc}"
+            raise PluginError(
+                "MATERIAL_LOAD_FAILED",
+                f"material 插件 {name!r} ({path}) 加载失败: {exc}",
+                path=("material", name),
+                details={
+                    "plugin_path": str(path),
+                    "exception_type": type(exc).__name__,
+                    "reason": str(exc),
+                },
             ) from exc
 
         fn = getattr(module, "material", None)
         if not callable(fn):
-            raise ValueError(
-                f"material 插件 {name!r} ({path}) 缺少固定入口函数 material(moai)"
+            raise PluginError(
+                "MATERIAL_ENTRYPOINT_MISSING",
+                f"material 插件 {name!r} ({path}) "
+                "缺少固定入口函数 material(moai)",
+                path=("material", name),
+                details={"plugin_path": str(path)},
             )
         MATERIALS[name] = fn
 

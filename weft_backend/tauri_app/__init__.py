@@ -13,6 +13,7 @@ from pytauri_plugins.dialog import DialogExt
 from watchfiles import awatch
 
 from weft_backend.commands import commands
+from weft_backend.errors import normalize_error
 from weft_backend.state import STATE
 
 
@@ -27,7 +28,10 @@ def load_story_from_argv(argv: list[str] | None = None) -> None:
         STATE.load(path)
         logger.warning("loaded story: {}", STATE.story_path)
     except Exception as exc:  # log and continue — the window still opens
-        logger.error("failed to load story {}: {}", path, exc)
+        error = normalize_error(exc, path)
+        logger.bind(weft_error=error.to_dict()).error(
+            "failed to load story {}: {}", path, error
+        )
 
 
 class DevAck(BaseModel):
@@ -94,7 +98,10 @@ async def watch_story(app_handle: AppHandle) -> None:
             try:
                 STATE.load(watched_path)
             except Exception as exc:  # parse error etc — keep old state
-                logger.error("reload of {} failed: {}", watched_path, exc)
+                error = normalize_error(exc, watched_path)
+                logger.bind(weft_error=error.to_dict()).error(
+                    "reload of {} failed: {}", watched_path, error
+                )
                 continue
             if STATE.dao is None:  # STATE.load either succeeds fully or raises.
                 continue

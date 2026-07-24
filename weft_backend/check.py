@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from weft_backend.dao import load_dao
+from weft_backend.errors import normalize_error
 
 
 def inspect_story(path: str | Path) -> dict[str, object]:
@@ -26,9 +27,12 @@ def validate_story(path: str | Path) -> dict[str, object]:
     try:
         return inspect_story(path)
     except Exception as exc:
+        error = normalize_error(exc, path)
         return {
             "valid": False,
             "path": str(Path(path)),
-            "error": str(exc),
-            "error_type": type(exc).__name__,
+            # Keep the original text fields for older MCP clients.
+            "error": str(error),
+            "error_type": type(error).__name__,
+            "errors": [error.to_dict()],
         }

@@ -218,6 +218,9 @@ copilot mcp list
 所有接受 `path` 的 tools 都读取本机文件。让 Agent 使用绝对路径最可靠；在仓库
 会话中也可以使用相对于项目根目录的路径，例如 `examples/红楼梦.yml`。
 
+`validate_story` 失败时返回稳定错误码、处理阶段、字段路径，以及能够确定时的
+YAML 行列。新客户端应读取 `errors` 列表；完整约定见[错误体系](errors.md)。
+
 ## 推荐的 Agent 工作流
 
 用户可以直接描述内容修改，不需要指定 YAML 字段。若需要为 Agent 设置固定工作

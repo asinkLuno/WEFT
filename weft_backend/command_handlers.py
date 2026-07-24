@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from weft_backend.dao import Drift, Moai, Narrative, Story
+from weft_backend.errors import StateError
 from weft_backend.graph import LinkGraph
 from weft_backend.state import STATE
 
 
 def _require_dao():
     if STATE.dao is None or STATE.link_graph is None:
-        raise RuntimeError("no story loaded")
+        raise StateError(
+            "STORY_NOT_LOADED",
+            "尚未加载故事",
+            hint="先在桌面应用中打开一个 WEFT 故事文件",
+        )
     return STATE.dao, STATE.link_graph
 
 
