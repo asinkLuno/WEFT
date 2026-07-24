@@ -7,6 +7,7 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
+import { PageErrorBoundary, PageLoading } from "@/components/page-state";
 import { HotReload } from "@/app/hot-reload";
 import { getStory, openStory } from "@/lib/api";
 
@@ -161,9 +162,11 @@ export function App() {
           </Button>
         </div>
       </header>
-      <Suspense fallback={<main className="flex-1 px-6 py-8" />}>
-        <Page />
-      </Suspense>
+      <PageErrorBoundary key={path}>
+        <Suspense fallback={<PageLoading />}>
+          <Page />
+        </Suspense>
+      </PageErrorBoundary>
     </div>
   );
 }

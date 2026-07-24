@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageError, PageLoading } from "@/components/page-state";
 import {
   getMoais,
   getNarratives,
@@ -14,19 +15,18 @@ export default function NarrativePage() {
     narratives: NarrativeMap;
     moais: MoaiMap;
   } | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([
-      getNarratives(),
-      getMoais(),
-    ])
+    Promise.all([getNarratives(), getMoais()])
       .then(([narratives, moais]) => setData({ narratives, moais }))
-      .catch((e) => console.error("failed to load narrative", e));
+      .catch(setError);
   }, []);
 
-  if (!data) {
-    return <main className="flex-1 px-4 py-8 sm:px-6" />;
+  if (error) {
+    return <PageError title="Failed to load narrative" error={error} />;
   }
+  if (!data) return <PageLoading />;
 
   const { narratives, moais } = data;
   const entries = Object.entries(narratives)

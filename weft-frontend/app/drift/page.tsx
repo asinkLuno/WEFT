@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageError, PageLoading } from "@/components/page-state";
 import { getDrifts, getMoais, type DriftMap, type MoaiMap } from "@/lib/api";
 import { compareDriftTime, DriftGantt, GanttLegend } from "./gantt";
 
@@ -9,16 +10,16 @@ export default function DriftPage() {
     driftsRaw: DriftMap;
     moais: MoaiMap;
   } | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     Promise.all([getDrifts(), getMoais()])
       .then(([driftsRaw, moais]) => setData({ driftsRaw, moais }))
-      .catch((e) => console.error("failed to load drift", e));
+      .catch(setError);
   }, []);
 
-  if (!data) {
-    return <main className="flex-1 px-4 py-8 sm:px-6" />;
-  }
+  if (error) return <PageError title="Failed to load drift" error={error} />;
+  if (!data) return <PageLoading />;
 
   const { driftsRaw, moais } = data;
   const entries = Object.entries(driftsRaw)

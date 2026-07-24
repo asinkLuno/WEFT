@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { GraphChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
@@ -159,22 +159,39 @@ function graphOption(graph: SubGraph, moais: MoaiMap): EChartsOption {
 
 function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldRender(true);
+        observer.disconnect();
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !shouldRender) return;
+
     const chart = echarts.init(container);
     chart.setOption(graphOption(graph, moais));
 
-    const observer = new ResizeObserver(() => chart.resize());
-    observer.observe(container);
+    const resizeObserver = new ResizeObserver(() => chart.resize());
+    resizeObserver.observe(container);
 
     return () => {
-      observer.disconnect();
+      resizeObserver.disconnect();
       chart.dispose();
     };
-  }, [graph, moais]);
+  }, [graph, moais, shouldRender]);
 
   return (
     <section>

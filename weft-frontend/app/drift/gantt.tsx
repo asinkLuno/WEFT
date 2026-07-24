@@ -37,7 +37,7 @@ export function DriftGantt({
   const endDisplay = lastEvent.end_time_display ?? lastEvent.start_time_display;
 
   return (
-    <section aria-labelledby={`gantt-${driftKey}`}>
+    <section aria-labelledby={`gantt-${driftKey}`} className="render-lazily">
       <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id={`gantt-${driftKey}`} className="text-lg font-semibold">
           {driftKey}

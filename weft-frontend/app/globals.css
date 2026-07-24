@@ -137,3 +137,10 @@
     background: color-mix(in oklab, var(--primary) 22%, transparent);
   }
 }
+
+@layer utilities {
+  .render-lazily {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+}

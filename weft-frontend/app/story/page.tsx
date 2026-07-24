@@ -8,20 +8,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageError, PageLoading } from "@/components/page-state";
 import { getStory, type Story } from "@/lib/api";
 
 export default function StoryPage() {
   const [story, setStory] = useState<Story | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    getStory()
-      .then(setStory)
-      .catch((e) => console.error("failed to load story", e));
+    getStory().then(setStory).catch(setError);
   }, []);
 
-  if (!story) {
-    return <main className="flex-1 px-6 py-8" />;
-  }
+  if (error) return <PageError title="Failed to load story" error={error} />;
+  if (!story) return <PageLoading />;
 
   return (
     <main className="flex-1 px-6 py-8">

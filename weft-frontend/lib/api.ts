@@ -32,7 +32,6 @@ function cachedInvoke<T>(command: string): Promise<T> {
 export const getStory = () => cachedInvoke<Story>("get_story");
 export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
 export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
-export const getNarratives = () =>
-  cachedInvoke<NarrativeMap>("get_narrative");
+export const getNarratives = () => cachedInvoke<NarrativeMap>("get_narrative");
 export const getMoaiLinks = () => cachedInvoke<LinkGraph>("get_moai_link");
 export const openStory = () => pyInvoke<string | null>("open_story");

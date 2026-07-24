@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageError, PageLoading } from "@/components/page-state";
 import { getDrifts, getMoais, type DriftMap, type MoaiMap } from "@/lib/api";
 import { compareDriftTime } from "../drift/gantt";
 import { MoaiGantts } from "./moai-gantts";
@@ -10,16 +11,16 @@ export default function MoaiPage() {
     moais: MoaiMap;
     drifts: DriftMap;
   } | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     Promise.all([getMoais(), getDrifts()])
       .then(([moais, drifts]) => setData({ moais, drifts }))
-      .catch((e) => console.error("failed to load moai", e));
+      .catch(setError);
   }, []);
 
-  if (!data) {
-    return <main className="flex-1 px-4 py-8 sm:px-6" />;
-  }
+  if (error) return <PageError title="Failed to load moai" error={error} />;
+  if (!data) return <PageLoading />;
 
   const { moais, drifts } = data;
   const eventsByMoai = new Map<string, (typeof drifts)[string]>();

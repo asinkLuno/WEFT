@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageError, PageLoading } from "@/components/page-state";
 import {
   getMoaiLinks,
   getMoais,
@@ -14,19 +15,18 @@ export default function MoaiLinkPage() {
     graph: LinkGraph;
     moais: MoaiMap;
   } | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([
-      getMoaiLinks(),
-      getMoais(),
-    ])
+    Promise.all([getMoaiLinks(), getMoais()])
       .then(([graph, moais]) => setState({ graph, moais }))
-      .catch((e) => console.error("failed to load moai-link", e));
+      .catch(setError);
   }, []);
 
-  if (!state) {
-    return <div className="flex flex-1 items-center justify-center" />;
+  if (error) {
+    return <PageError title="Failed to load moai links" error={error} />;
   }
+  if (!state) return <PageLoading />;
 
   if (state.graph.nodes.length === 0) {
     return (
