@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
+import { Focus, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { GraphLink, GraphNode, LinkGraph, MoaiMap } from "@/lib/api";
 
 interface SubGraph {
@@ -18,6 +20,14 @@ interface SimulationNode extends d3.SimulationNodeDatum {
 interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
   relations: string;
   bidirectional: boolean;
+}
+
+interface GraphActions {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  fit: () => void;
+  reset: () => void;
+  focusNode: (id: string) => void;
 }
 
 const NODE_RADIUS = 20;
@@ -71,11 +81,14 @@ function linkPath(link: SimulationLink): string {
 function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const actionsRef = useRef<GraphActions | null>(null);
   const markerIdRef = useRef(
     `relation-arrow-${Math.random().toString(36).slice(2)}`,
   );
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [shouldRender, setShouldRender] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const updateDimensions = useCallback(() => {
     const container = containerRef.current;
@@ -142,8 +155,13 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.25, 4])
+      .filter((event) => {
+        if (event.type === "wheel") return event.ctrlKey || event.metaKey;
+        return !event.button;
+      })
       .on("zoom", (event) => canvas.attr("transform", event.transform));
     svg.call(zoom);
+    svg.on("dblclick.zoom", null);
 
     const markerId = markerIdRef.current;
     svg
@@ -197,6 +215,9 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
       .data(nodes)
       .join("g")
       .attr("class", "node")
+      .attr("tabindex", 0)
+      .attr("role", "button")
+      .attr("aria-label", (node) => `查看 ${node.name}`)
       .style("cursor", "grab");
 
     nodeGroups
@@ -223,6 +244,18 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
         .filter(Boolean)
         .join("\n");
     });
+
+    nodeGroups
+      .on("click", (event, node) => {
+        event.stopPropagation();
+        setSelectedNodeId(node.id);
+      })
+      .on("keydown", (event, node) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        setSelectedNodeId(node.id);
+      });
+    svg.on("click.select", () => setSelectedNodeId(null));
 
     const simulation = d3
       .forceSimulation(nodes)
@@ -277,31 +310,190 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
       );
     });
 
-    svg.call(
-      zoom.transform,
-      d3.zoomIdentity.translate(width * 0.1, height * 0.1).scale(0.8),
-    );
+    const initialTransform = d3.zoomIdentity
+      .translate(width * 0.1, height * 0.1)
+      .scale(0.8);
+    const transition = () => svg.transition().duration(220);
+    const fit = () => {
+      const bounds = canvas.node()?.getBBox();
+      if (!bounds || bounds.width === 0 || bounds.height === 0) return;
+      const padding = 48;
+      const scale = Math.min(
+        2,
+        Math.max(
+          0.25,
+          Math.min(
+            (width - padding * 2) / bounds.width,
+            (height - padding * 2) / bounds.height,
+          ),
+        ),
+      );
+      const transform = d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(scale)
+        .translate(
+          -(bounds.x + bounds.width / 2),
+          -(bounds.y + bounds.height / 2),
+        );
+      transition().call(zoom.transform, transform);
+    };
+    actionsRef.current = {
+      zoomIn: () => transition().call(zoom.scaleBy, 1.3),
+      zoomOut: () => transition().call(zoom.scaleBy, 1 / 1.3),
+      fit,
+      reset: () => transition().call(zoom.transform, initialTransform),
+      focusNode: (id) => {
+        const node = nodes.find((item) => item.id === id);
+        if (node?.x === undefined || node.y === undefined) return;
+        const transform = d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(1.5)
+          .translate(-node.x, -node.y);
+        transition().call(zoom.transform, transform);
+      },
+    };
+    svg.call(zoom.transform, initialTransform);
 
     return () => {
       simulation.stop();
+      actionsRef.current = null;
       svg.on(".zoom", null);
+      svg.on(".select", null);
     };
   }, [dimensions, graph, moais, shouldRender]);
 
+  const selectedMoai = selectedNodeId ? moais[selectedNodeId] : null;
+
+  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (!normalizedQuery) return;
+    const node =
+      graph.nodes.find(
+        (item) => item.name.toLocaleLowerCase() === normalizedQuery,
+      ) ??
+      graph.nodes.find((item) =>
+        item.name.toLocaleLowerCase().includes(normalizedQuery),
+      );
+    if (!node) return;
+    setQuery(node.name);
+    setSelectedNodeId(node.id);
+    actionsRef.current?.focusNode(node.id);
+  }
+
   return (
-    <section>
-      <h2 className="mb-2 px-2 text-lg font-semibold">{graph.label}</h2>
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold">{graph.label}</h2>
+          <p className="text-xs text-muted-foreground">
+            {graph.nodes.length} 个节点 · {graph.links.length} 条关系
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <form className="relative" onSubmit={handleSearch}>
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="查找节点"
+              aria-label="查找关系图节点"
+              list={`nodes-${markerIdRef.current}`}
+              className="h-8 w-40 rounded-lg border border-input bg-background pr-2 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+            />
+            <datalist id={`nodes-${markerIdRef.current}`}>
+              {graph.nodes.map((node) => (
+                <option key={node.id} value={node.name} />
+              ))}
+            </datalist>
+          </form>
+          <div
+            className="flex items-center rounded-lg border bg-background p-0.5"
+            aria-label="关系图缩放控制"
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => actionsRef.current?.zoomOut()}
+              aria-label="缩小"
+              title="缩小"
+            >
+              <Minus />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => actionsRef.current?.zoomIn()}
+              aria-label="放大"
+              title="放大"
+            >
+              <Plus />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => actionsRef.current?.fit()}
+              aria-label="适应视图"
+              title="适应视图"
+            >
+              <Focus />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => actionsRef.current?.reset()}
+              aria-label="重置视图"
+              title="重置视图"
+            >
+              <LocateFixed />
+            </Button>
+          </div>
+        </div>
+      </div>
       <div
         ref={containerRef}
-        className="h-[50vh] overflow-hidden rounded-lg border border-border bg-muted/30"
+        className="relative h-[min(65vh,42rem)] min-h-96 overflow-hidden rounded-lg border border-border bg-muted/30"
       >
         <svg
           ref={svgRef}
-          className="block size-full touch-none"
+          className="block size-full touch-pan-y"
           role="img"
           aria-label={`${graph.label} relationship graph`}
         />
+        <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-md bg-background/90 px-2 py-1 text-[11px] whitespace-nowrap text-muted-foreground shadow-sm ring-1 ring-border">
+          拖动画布 · Ctrl/⌘ + 滚轮缩放
+        </div>
       </div>
+      {selectedMoai && (
+        <aside className="relative rounded-lg border bg-card p-4 text-sm">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="absolute top-2 right-2"
+            onClick={() => setSelectedNodeId(null)}
+            aria-label="关闭节点详情"
+          >
+            <X />
+          </Button>
+          <h3 className="pr-8 text-base font-semibold">{selectedMoai.name}</h3>
+          {selectedMoai.base_time_display && (
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
+              {selectedMoai.base_time_display}
+            </p>
+          )}
+          {selectedMoai.description && (
+            <p className="mt-3 max-w-3xl whitespace-pre-wrap text-muted-foreground">
+              {selectedMoai.description}
+            </p>
+          )}
+        </aside>
+      )}
     </section>
   );
 }
@@ -314,14 +506,57 @@ export function MoaiLinkGraph({
   moais: MoaiMap;
 }) {
   const subGraphs = useMemo(() => groupByLabel(data), [data]);
+  const [activeLabel, setActiveLabel] = useState(subGraphs[0]?.label ?? "");
+  const activeGraph =
+    subGraphs.find((graph) => graph.label === activeLabel) ?? subGraphs[0];
 
-  if (data.nodes.length === 0) return null;
+  if (!activeGraph) return null;
 
   return (
-    <main className="flex flex-1 flex-col gap-8 px-4 py-4">
-      {subGraphs.map((graph) => (
-        <GraphSection key={graph.label} graph={graph} moais={moais} />
-      ))}
+    <main className="flex flex-1 flex-col px-4 py-6 sm:px-6">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-5">
+          <h1 className="text-2xl font-semibold tracking-tight">关系</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            选择关系类型，查看并探索墨埃之间的连接
+          </p>
+        </div>
+        {subGraphs.length > 1 && (
+          <div
+            className="mb-5 flex gap-1 overflow-x-auto border-b pb-px"
+            role="tablist"
+            aria-label="关系类型"
+          >
+            {subGraphs.map((graph) => {
+              const active = graph.label === activeGraph.label;
+              return (
+                <button
+                  key={graph.label}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveLabel(graph.label)}
+                  className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? "border-foreground text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {graph.label}
+                  <span className="ml-1.5 text-xs opacity-60">
+                    {graph.links.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <GraphSection
+          key={activeGraph.label}
+          graph={activeGraph}
+          moais={moais}
+        />
+      </div>
     </main>
   );
 }
