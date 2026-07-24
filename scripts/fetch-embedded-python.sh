@@ -107,3 +107,38 @@ fi
 
 echo "==> installing WEFT and runtime dependencies into embedded python"
 uv pip install --python "$PYTHON" "$ROOT"
+
+echo "==> pruning build-only files from embedded python"
+# PyTauri embeds libpython directly. The interpreter executable is needed above
+# while installing dependencies, but Linux bundles do not execute it at runtime.
+# Keeping the standard library and site-packages intact avoids fragile module
+# allowlists while still dropping the largest duplicate binary.
+if [[ "$ARCH" != *-pc-windows-* ]]; then
+  if [[ "$ARCH" == *-unknown-linux-* ]]; then
+    rm -rf "$DEST/bin"
+  fi
+
+  # Headers, package-management tools, documentation, and Tk are not used by
+  # the packaged WEFT application. They remain available in the development
+  # venv.
+  rm -rf \
+    "$DEST/include" \
+    "$DEST/share" \
+    "$DEST/lib/pkgconfig" \
+    "$DEST/lib/tcl9" \
+    "$DEST/lib/tcl9.0" \
+    "$DEST/lib/tk9.0" \
+    "$DEST/lib/itcl4.3.5" \
+    "$DEST/lib/thread3.0.4" \
+    "$DEST/lib/python${PY_MAJOR_MINOR}/ensurepip" \
+    "$DEST/lib/python${PY_MAJOR_MINOR}/idlelib" \
+    "$DEST/lib/python${PY_MAJOR_MINOR}/tkinter" \
+    "$DEST/lib/python${PY_MAJOR_MINOR}/turtledemo" \
+    "$DEST/lib/python${PY_MAJOR_MINOR}/site-packages/pip"
+
+  find "$DEST/lib/python${PY_MAJOR_MINOR}/site-packages" \
+    -maxdepth 1 -type d -name 'pip-*.dist-info' -exec rm -rf {} +
+  find "$DEST/lib" -maxdepth 1 -type f -name '*.a' -delete
+fi
+
+echo "==> pruned embedded python size: $(du -sh "$DEST" | cut -f1)"
