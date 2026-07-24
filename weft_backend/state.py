@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from weft_backend.dao import Dao, load_dao
+from weft_backend.errors import WeftError, normalize_error
 from weft_backend.graph import LinkGraph, build_link_graph
 
 
@@ -14,11 +15,19 @@ class AppState:
     dao: Dao | None = None
     link_graph: LinkGraph | None = None
     story_path: Path | None = None
+    last_error: WeftError | None = None
 
     def load(self, path: str | Path) -> None:
         story_path = Path(path)
-        dao = load_dao(story_path)
-        link_graph = build_link_graph(dao)
+        try:
+            dao = load_dao(story_path)
+            link_graph = build_link_graph(dao)
+        except Exception as exc:
+            error = normalize_error(exc, story_path)
+            self.last_error = error
+            if error is exc:
+                raise
+            raise error from exc
 
         # Publish a new snapshot only after it has loaded successfully. This
         # keeps the current story and its watcher intact when a replacement
@@ -26,6 +35,7 @@ class AppState:
         self.story_path = story_path
         self.dao = dao
         self.link_graph = link_graph
+        self.last_error = None
 
     @property
     def loaded(self) -> bool:

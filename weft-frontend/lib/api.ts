@@ -15,6 +15,19 @@ export type MoaiMap = Record<string, Moai>;
 export type DriftMap = Record<string, Drift[]>;
 export type NarrativeMap = Record<string, Narrative>;
 
+export interface WeftError {
+  code: string;
+  stage: string;
+  message: string;
+  source?: string;
+  path?: Array<string | number>;
+  path_display?: string;
+  line?: number;
+  column?: number;
+  hint?: string;
+  details?: Record<string, unknown>;
+}
+
 const queryCache = new Map<string, Promise<unknown>>();
 
 function cachedInvoke<T>(command: string): Promise<T> {
@@ -34,4 +47,5 @@ export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
 export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
 export const getNarratives = () => cachedInvoke<NarrativeMap>("get_narrative");
 export const getMoaiLinks = () => cachedInvoke<LinkGraph>("get_moai_link");
+export const getLoadError = () => pyInvoke<WeftError | null>("get_load_error");
 export const openStory = () => pyInvoke<string | null>("open_story");

@@ -73,6 +73,10 @@ class Reload(BaseModel):
     story_title: str
 
 
+class StoryLoadError(BaseModel):
+    error: dict[str, object]
+
+
 async def watch_story(app_handle: AppHandle) -> None:
     """Reload the current story on change and follow newly opened story paths."""
 
@@ -101,6 +105,11 @@ async def watch_story(app_handle: AppHandle) -> None:
                 error = normalize_error(exc, watched_path)
                 logger.bind(weft_error=error.to_dict()).error(
                     "reload of {} failed: {}", watched_path, error
+                )
+                Emitter.emit(
+                    app_handle,
+                    "weft-error",
+                    StoryLoadError(error=error.to_dict()),
                 )
                 continue
             if STATE.dao is None:  # STATE.load either succeeds fully or raises.

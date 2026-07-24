@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageErrorBoundary, PageLoading } from "@/components/page-state";
 import { HotReload } from "@/app/hot-reload";
-import { getStory, openStory } from "@/lib/api";
+import { getLoadError, getStory, openStory } from "@/lib/api";
 
 const StoryPage = lazy(() => import("@/app/story/page"));
 const MoaiPage = lazy(() => import("@/app/moai/page"));
@@ -46,7 +46,18 @@ export function App() {
   useEffect(() => {
     getStory()
       .then(() => setHasStory(true))
-      .catch(() => setHasStory(false));
+      .catch(() => {
+        setHasStory(false);
+        getLoadError()
+          .then((error) => {
+            if (!error) return;
+            const location = error.line
+              ? ` (${error.line}${error.column ? `:${error.column}` : ""})`
+              : "";
+            setOpenError(`${error.message}${location} [${error.code}]`);
+          })
+          .catch(() => undefined);
+      });
 
     if (!window.location.hash) {
       window.location.replace("#/story");

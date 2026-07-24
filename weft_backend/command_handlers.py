@@ -41,3 +41,9 @@ async def get_narrative() -> dict[str, Narrative]:
 async def get_moai_link() -> LinkGraph:
     _, link_graph = _require_dao()
     return link_graph
+
+
+async def get_load_error() -> dict[str, object] | None:
+    """Return the most recent story load error for the desktop UI."""
+
+    return STATE.last_error.to_dict() if STATE.last_error is not None else None

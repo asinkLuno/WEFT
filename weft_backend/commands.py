@@ -4,6 +4,7 @@ from pytauri import Commands
 
 from weft_backend.command_handlers import (
     get_drift,
+    get_load_error,
     get_moai,
     get_moai_link,
     get_narrative,
@@ -11,5 +12,12 @@ from weft_backend.command_handlers import (
 )
 
 commands = Commands()
-for handler in (get_story, get_moai, get_drift, get_narrative, get_moai_link):
+for handler in (
+    get_story,
+    get_moai,
+    get_drift,
+    get_narrative,
+    get_moai_link,
+    get_load_error,
+):
     commands.command()(handler)
