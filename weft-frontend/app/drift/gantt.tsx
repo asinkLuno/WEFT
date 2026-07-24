@@ -15,11 +15,13 @@ export function DriftGantt({
   events,
   moais,
   description,
+  showHeader = true,
 }: {
   driftKey: string;
   events: Drift[];
   moais: MoaiMap;
   description?: string;
+  showHeader?: boolean;
 }) {
   const minTick = Math.min(...events.map((event) => event.start_tick));
   const maxTick = Math.max(
@@ -38,14 +40,20 @@ export function DriftGantt({
 
   return (
     <section aria-labelledby={`gantt-${driftKey}`} className="render-lazily">
-      <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id={`gantt-${driftKey}`} className="text-lg font-semibold">
-          {driftKey}
-        </h2>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
+      {showHeader ? (
+        <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 id={`gantt-${driftKey}`} className="text-lg font-semibold">
+            {driftKey}
+          </h2>
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
+      ) : (
+        <h3 id={`gantt-${driftKey}`} className="sr-only">
+          {driftKey} timeline
+        </h3>
+      )}
       <div className="overflow-x-auto rounded-lg border bg-background">
         <div className="min-w-[900px]">
           <div className="grid grid-cols-[240px_1fr] border-b bg-muted/50">

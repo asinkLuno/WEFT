@@ -31,18 +31,16 @@ export default function MoaiPage() {
       else eventsByMoai.set(moaiName, [event]);
     }
   }
-  const entries = Object.entries(moais)
-    .map(([key, moai]) => ({
-      key,
-      moai,
-      events: (eventsByMoai.get(key) ?? []).toSorted(compareDriftTime),
-    }))
-    .filter(({ events }) => events.length > 0);
+  const entries = Object.entries(moais).map(([key, moai]) => ({
+    key,
+    moai,
+    events: (eventsByMoai.get(key) ?? []).toSorted(compareDriftTime),
+  }));
 
   if (entries.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center text-muted-foreground">
-        <p>No moai drift events found.</p>
+        <p>No moai found.</p>
       </main>
     );
   }
