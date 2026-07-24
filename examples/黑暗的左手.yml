@@ -1,0 +1,69 @@
+aqueduct:
+  gethen: ./calendars/gethen.py
+
+story:
+  title: 黑暗的左手：格森历法样例
+  description: >-
+    以金利·艾与埃斯特拉文穿越戈布林冰原的行程，演示拥有十四个月、
+    二十六个命名日和“第一年”纪年法的格森历。日期坐标中的 1 表示
+    Year One，0 表示 one year ago，2 表示 one year to come。
+  date_mode: gethen
+
+moai:
+  金利·艾:
+    description: 伊库盟派往格森的第一特使，也是冰原行程的记录者。
+  瑟伦·埃斯特拉文:
+    description: 卡尔海德流亡者；营救金利·艾，并与他共同穿越戈布林冰原。
+  戈布林冰原:
+    description: 两人从奥格雷恩返回卡尔海德时横越的巨大冰原。
+  埃舍霍斯岩峰:
+    description: 穿越第六十一日，两人在白茫天气中辨认出的冰上岩峰。
+  库尔库拉斯特领:
+    description: 两人在穿越第八十一日抵达并请求款待的卡尔海德领地。
+
+moai_link:
+  冰原同行者:
+    - moais: [金利·艾, 瑟伦·埃斯特拉文]
+      relations: 在逃亡与冰原穿越中从互不信任转为彼此理解
+  行程地点:
+    - moais: [戈布林冰原, 埃舍霍斯岩峰]
+      relations: 岩峰耸立于冰原行程之中
+    - moais: [戈布林冰原, 库尔库拉斯特领]
+      relations: 库尔库拉斯特领位于冰原穿越的卡尔海德一端
+
+drift:
+  戈布林冰原穿越:
+    离开普勒芬:
+      start_time: &ice_departure [1, 1, 13]
+      moais: [金利·艾, 瑟伦·埃斯特拉文, 戈布林冰原]
+      description: >-
+        两人开始向卡尔海德跋涉。Tormenbod Thern 是根据抵达日
+        Odsordny Anner 为行程第八十一日倒推得到的演示日期。
+    白茫中见岩峰:
+      start_time: [0, 2, 8, *ice_departure]
+      moais: [金利·艾, 瑟伦·埃斯特拉文, 戈布林冰原, 埃舍霍斯岩峰]
+      description: >-
+        行程第六十一日，Odorny Nimmer 约正午，白茫天气短暂变化，
+        两人辨认出埃舍霍斯岩峰。
+    跨越冰隙:
+      start_time: [1, 3, 24]
+      moais: [金利·艾, 瑟伦·埃斯特拉文, 戈布林冰原]
+      description: >-
+        Odyrny Nimmer，阳光照亮冰隙；两人随后在转坏的白茫天气中遇险。
+    走下冰原:
+      start_time: [1, 4, 9]
+      moais: [金利·艾, 瑟伦·埃斯特拉文, 戈布林冰原]
+      description: >-
+        行程第七十五日，Harhahad Anner，两人走下戈布林冰原，
+        来到古森湾海冰。
+    抵达库尔库拉斯特:
+      start_time: [1, 4, 15]
+      moais: [金利·艾, 瑟伦·埃斯特拉文, 库尔库拉斯特领]
+      description: >-
+        行程第八十一日，Odsordny Anner，两人抵达库尔库拉斯特领，
+        结束横越无人冰原的旅程。
+
+narrative:
+  金利的冰原记录:
+    subject: [戈布林冰原穿越]
+    observer: 金利·艾

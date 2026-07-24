@@ -2,7 +2,10 @@
 
 Weft 的时间系统由两层组成：**Phase**（相位）负责表达时间点，**Aqueduct**（引水渠）负责进位与格式化。
 
-命名的隐喻来自项目核心概念——**drift** 是事件，是流动的水；**Aqueduct** 是引水渠，把事件之水引导到时间线上正确的位置。水流入渠，渠规范水。
+命名的隐喻来自项目核心概念。子在川上曰：“逝者如斯夫，不舍昼夜。”
+**Drift** 是随时间之水流逝的事件；**Moai** 是水流中稳定的石头；
+**Aqueduct** 是引水渠，规定时间之水有哪些单位、怎样进位、如何显示以及向
+时间轴的什么位置流动。水流入渠，渠规范水，因此它很适合作为历法引擎的名字。
 
 两者都不绑定特定历法——格里高利历只是内置的参考实现，你可以定义自己的历法系统。
 
@@ -107,7 +110,7 @@ def normalize(self, values: list[int]) -> list[int]:
 
 这些是 `normalize` 之上的便捷方法：
 
-- **`humanize(values)`** → `"2024年1月15日12时30分0秒"`
+- **`humanize(values)`** → `"2024年1月15日12时30分"`（省略值为零的单位）
 - **`plus(a, b)`** → 逐分量相加（不自动进位，由 normalize 另行处理）
 - **`minus(a, b)`** → 逐分量相减
 
@@ -149,22 +152,17 @@ gregorian_aqueduct = Aqueduct([
 定义一个历法就是定义一组 Brick，并在插件模块中导出名为
 `aqueduct` 的 `Aqueduct` 实例。以下是一个极端简化的例子：
 
-### 示例：10 天一周、3 周一月、4 月一年的幻想历
+### 示例：10 天一旬、3 旬一月、4 月一年的幻想历
 
 ```python
 from weft_backend.aqueduct import Aqueduct, Brick
 from sys import maxsize
 
-def days_in_month(ctx: dict) -> int:
-    """每月固定 30 天。"""
-    # ctx 包含 {"年": ..., "月": ..., "日": ...}，可以做更复杂的逻辑
-    return 30
-
 aqueduct = Aqueduct([
     Brick("年", get_limit=lambda ctx: maxsize),   # 年不设上限
     Brick("月", get_limit=lambda ctx: 4),          # 4 月 = 1 年
     Brick("旬", get_limit=lambda ctx: 3),          # 3 旬 = 1 月
-    Brick("日", get_limit=days_in_month),          # 30 日 = 1 旬
+    Brick("日", get_limit=lambda ctx: 10),         # 10 日 = 1 旬
 ])
 ```
 
@@ -186,18 +184,19 @@ story:
 
 ```python
 # 规范化
-aqueduct.normalize([1, 5, 2, 45, 0, 0])
-# → [1, 6, 1, 15, 0, 0]  （5月→进位1年+1月，2旬，45日→进位1旬+15日）
+aqueduct.normalize([1, 5, 2, 15])
+# → [2, 2, 0, 5]
+# 5月进位为1年1月；15日进位为1旬5日；合计3旬再进位为1月
 
 # 人类可读
-aqueduct.humanize([3, 2, 1, 15, 0, 0])
-# → "3年2月1旬15日0分0秒"
+aqueduct.humanize([3, 2, 1, 5])
+# → "3年2月1旬5日"
 
 # 时间运算
-a = [3, 1, 0, 10, 0, 0]
-b = [0, 0, 2, 20, 0, 0]
+a = [3, 1, 0, 5]
+b = [0, 0, 2, 5]
 aqueduct.normalize(aqueduct.plus(a, b))
-# → [3, 2, 0, 0, 0, 0]
+# → [3, 2, 0, 0]
 ```
 
 ### 示例：修改格里高利历（固定 30 天/月）
@@ -247,7 +246,10 @@ Brick("day", get_limit=lambda ctx: 30),
 | 限制 | 说明 |
 |------|------|
 | 插件代码可信度 | 历法是 Python 代码，会以 WEFT 进程权限执行，只应加载可信文件 |
-| `to_tick` 可选 | 不提供时仍可解析和格式化，但需要 tick 的甘特图与距离计算不可用 |
+| `to_tick` 实际要求 | `Aqueduct` 构造参数允许省略它，但当前 Drift 加载会计算 tick；故事包含 Drift 时，自定义历法必须提供 `to_tick` |
 
 时间列表会按照所选历法的 Brick 数量自动补零和校验，因此自定义历法不要求
 固定为六个分量。
+
+仓库中的 `examples/calendars/gethen.py` 是一个完整示例：它定义了四个 Brick、
+自定义英文格式化和 `to_tick`，并由 `examples/黑暗的左手.yml` 注册使用。

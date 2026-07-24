@@ -88,4 +88,6 @@ YAML aliases expand to the referenced list before WEFT parses the time. Validate
 - `observer`: required existing entity name.
 - The observer must occur in every selected event's `moais`.
 
-Use a group reference for a whole arc and an event ID for precise selection. WEFT resolves event order from the timeline.
+Use a group reference for a whole arc and an event ID for precise selection.
+Group references expand in the event order written in the story file; WEFT does
+not currently re-sort a narrative by resolved time.

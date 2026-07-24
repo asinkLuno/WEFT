@@ -4,6 +4,30 @@ WEFT 把真实的 Python 领域模型作为本地 MCP tools 提供给 Code Agent
 可以读取 schema、校验故事、解析时间线，而不必启动桌面窗口，也不需要访问
 HTTP 服务。
 
+## 为什么同时提供 Skill 和 MCP
+
+WEFT 的目标不是让用户先学会 YAML，再让 AI 帮忙检查语法。理想用法是用户只描述
+创作意图，例如：
+
+```text
+在“冰原穿越”里增加一个发现废弃营地的事件，发生在离开普勒芬第十二天。
+金利和埃斯特拉文都在场，并把它加入金利的冰原记录。
+```
+
+Agent 应完成整个结构化编辑过程：查找已有时间锚点和实体、添加 Drift、维护
+Narrative，然后校验引用和解析后的绝对时间。
+
+Skill 和 MCP 分工如下：
+
+| 能力 | 作用 |
+|------|------|
+| `weft-yaml` skill | 教 Agent 理解 WEFT 概念、文件格式以及如何安全地编辑故事 |
+| WEFT MCP | 用当前安装版本的真实代码提供 schema、校验、检查和时间线解析 |
+| 桌面应用 | 让作者直观检查最终时间轴、实体关系和叙事视角 |
+
+Skill 提供编辑知识，MCP 提供事实和执行反馈。两者配合后，YAML 成为 Agent 维护、
+适合 Git 追踪的底层格式，而不是作者必须亲手操作的界面。
+
 ```text
 Claude Code / Codex / Copilot / Cursor
                   │
@@ -196,17 +220,20 @@ copilot mcp list
 
 ## 推荐的 Agent 工作流
 
-给 Agent 的任务可以这样写：
+用户可以直接描述内容修改，不需要指定 YAML 字段。若需要为 Agent 设置固定工作
+约束，可以这样写：
 
 ```text
-先调用 WEFT 的 get_story_schema 理解当前格式。
-编辑 story.yml 后必须调用 validate_story。
+按照我的自然语言要求维护 WEFT 故事。先读取现有故事并在需要时调用
+get_story_schema，不要要求我手写 YAML。
+编辑后必须调用 validate_story。
 如果修改了 base_time、start_time 或 end_time，再调用 resolve_timeline，
 确认所有绝对时间和实体偏移符合预期。
 ```
 
 `weft-yaml` 插件负责告诉 Code Agent 如何编写高质量 WEFT 文件；MCP
-负责用真实代码验证结果。两者是互补关系。
+负责用真实代码验证结果。用户只需审核故事内容和时间关系，无需关心字段排列、
+引用格式或时间列表的具体写法。
 
 ## 安装 WEFT YAML 插件
 
