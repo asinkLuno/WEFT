@@ -28,6 +28,11 @@ export interface WeftError {
   details?: Record<string, unknown>;
 }
 
+export interface OpenedStory {
+  title: string;
+  path: string;
+}
+
 const queryCache = new Map<string, Promise<unknown>>();
 
 function cachedInvoke<T>(command: string): Promise<T> {
@@ -48,4 +53,6 @@ export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
 export const getNarratives = () => cachedInvoke<NarrativeMap>("get_narrative");
 export const getMoaiLinks = () => cachedInvoke<LinkGraph>("get_moai_link");
 export const getLoadError = () => pyInvoke<WeftError | null>("get_load_error");
-export const openStory = () => pyInvoke<string | null>("open_story");
+export const openStory = () => pyInvoke<OpenedStory | null>("open_story");
+export const openRecentStory = (path: string) =>
+  pyInvoke<OpenedStory>("open_recent_story", { path });

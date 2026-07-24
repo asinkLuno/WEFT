@@ -41,6 +41,13 @@ class DevAck(BaseModel):
     moai_count: int
 
 
+class OpenedStory(BaseModel):
+    """A successfully opened story returned to the desktop UI."""
+
+    title: str
+    path: str
+
+
 @commands.command()
 async def dev_ack(body: DevAck) -> str:
     """Dev-only marker: proves the real commands reach pyInvoke with loaded data."""
@@ -53,8 +60,8 @@ async def dev_ack(body: DevAck) -> str:
 
 
 @commands.command()
-async def open_story(app_handle: AppHandle) -> str | None:
-    """Native file dialog → load the picked story → return its title (or None)."""
+async def open_story(app_handle: AppHandle) -> OpenedStory | None:
+    """Native file dialog → load the picked story → return its metadata."""
 
     picked = DialogExt.file(app_handle).blocking_pick_file(
         add_filter=("YAML story", ("yaml", "yml")),
@@ -66,7 +73,17 @@ async def open_story(app_handle: AppHandle) -> str | None:
     STATE.load(path)
     if STATE.dao is None:  # STATE.load either succeeds fully or raises.
         raise RuntimeError("story did not load")
-    return STATE.dao.story.title
+    return OpenedStory(title=STATE.dao.story.title, path=str(STATE.story_path))
+
+
+@commands.command()
+async def open_recent_story(path: str) -> OpenedStory:
+    """Load a story selected from the desktop UI's recent-file list."""
+
+    STATE.load(path)
+    if STATE.dao is None or STATE.story_path is None:
+        raise RuntimeError("story did not load")
+    return OpenedStory(title=STATE.dao.story.title, path=str(STATE.story_path))
 
 
 class Reload(BaseModel):
