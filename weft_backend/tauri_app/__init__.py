@@ -4,7 +4,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from anyio import create_task_group, sleep
+from anyio import sleep
 from anyio.from_thread import start_blocking_portal
 from loguru import logger
 from pydantic import BaseModel
@@ -154,13 +154,13 @@ def main() -> int:
     load_story_from_argv()
     context = context_factory()
 
-    with start_blocking_portal("asyncio") as portal, \
-            portal.wrap_async_context_manager(
-                portal.call(create_task_group)
-            ) as _task_group:
+    with start_blocking_portal("asyncio") as portal:
         app = builder_factory().build(
             context=context,
             invoke_handler=commands.generate_handler(portal),
         )
-        portal.start_task_soon(watch_story, app.handle())
-        return app.run_return()
+        watch_task = portal.start_task_soon(watch_story, app.handle())
+        try:
+            return app.run_return()
+        finally:
+            watch_task.cancel()
