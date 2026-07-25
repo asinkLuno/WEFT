@@ -53,7 +53,9 @@ class Aqueduct:
             # intentionally unbounded (negative years are valid).
             if v < 0 and limit == maxsize and brick.name == "日":
                 limit = 31
-            if limit != maxsize:
+            # v == limit 是合法边界（12 月、1 月 31 日、24 时、60 分/秒），
+            # 不应进位——否则 humanize 会丢月份/日份。只在严格越界时进/借位。
+            if limit != maxsize and (v > limit or v < 0):
                 c = v // limit
                 v = v % limit
             else:
