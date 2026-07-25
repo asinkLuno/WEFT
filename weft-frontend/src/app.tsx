@@ -11,7 +11,7 @@ import { PageErrorBoundary, PageLoading } from "@/components/page-state";
 import { HotReload } from "@/app/hot-reload";
 import {
   getLoadError,
-  getStory,
+  hasLoadedStory,
   openRecentStory,
   openStory,
   type OpenedStory,
@@ -111,19 +111,24 @@ export function App() {
   const copy = COPY[language];
 
   useEffect(() => {
-    getStory()
-      .then(() => setHasStory(true))
-      .catch(() => {
+    hasLoadedStory()
+      .then((loaded) => {
+        setHasStory(loaded);
+        if (!loaded) {
+          getLoadError()
+            .then((error) => {
+              if (!error) return;
+              const location = error.line
+                ? ` (${error.line}${error.column ? `:${error.column}` : ""})`
+                : "";
+              setOpenError(`${error.message}${location} [${error.code}]`);
+            })
+            .catch(() => undefined);
+        }
+      })
+      .catch((error) => {
         setHasStory(false);
-        getLoadError()
-          .then((error) => {
-            if (!error) return;
-            const location = error.line
-              ? ` (${error.line}${error.column ? `:${error.column}` : ""})`
-              : "";
-            setOpenError(`${error.message}${location} [${error.code}]`);
-          })
-          .catch(() => undefined);
+        setOpenError(error instanceof Error ? error.message : String(error));
       });
 
     if (!window.location.hash) {

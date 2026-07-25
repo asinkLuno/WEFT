@@ -18,6 +18,12 @@ def _require_dao():
     return STATE.dao, STATE.link_graph
 
 
+async def has_story() -> bool:
+    """Return whether a complete story snapshot is ready for queries."""
+
+    return STATE.dao is not None and STATE.link_graph is not None
+
+
 async def get_story() -> Story:
     dao, _ = _require_dao()
     return dao.story

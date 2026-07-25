@@ -9,10 +9,12 @@ from weft_backend.command_handlers import (
     get_moai_link,
     get_narrative,
     get_story,
+    has_story,
 )
 
 commands = Commands()
 for handler in (
+    has_story,
     get_story,
     get_moai,
     get_drift,

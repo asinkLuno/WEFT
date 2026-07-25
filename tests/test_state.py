@@ -2,8 +2,24 @@ from pathlib import Path
 
 import pytest
 
+from weft_backend.command_handlers import has_story
 from weft_backend.errors import ParseError
-from weft_backend.state import AppState
+from weft_backend.state import STATE, AppState
+
+
+@pytest.mark.anyio
+async def test_has_story_reports_empty_and_complete_state(monkeypatch) -> None:
+    sentinel = object()
+
+    monkeypatch.setattr(STATE, "dao", None)
+    monkeypatch.setattr(STATE, "link_graph", None)
+    assert await has_story() is False
+
+    monkeypatch.setattr(STATE, "dao", sentinel)
+    assert await has_story() is False
+
+    monkeypatch.setattr(STATE, "link_graph", sentinel)
+    assert await has_story() is True
 
 
 def test_failed_reload_keeps_snapshot_and_exposes_structured_error(
