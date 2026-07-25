@@ -223,7 +223,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
     nodeGroups
       .append("circle")
       .attr("r", NODE_RADIUS)
-      .attr("fill", "#1d4ed8")
+      .style("fill", "var(--primary)")
       .attr("stroke", "#fafafa")
       .attr("stroke-width", 1.5);
 
@@ -538,7 +538,7 @@ export function MoaiLinkGraph({
                   onClick={() => setActiveLabel(graph.label)}
                   className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? "border-foreground text-foreground"
+                      ? "border-primary text-foreground"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
