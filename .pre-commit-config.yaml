@@ -22,6 +22,13 @@ repos:
         language: system
         types: [python]
 
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        files: ^(weft_backend/|tests/backend/|pyproject\.toml$|uv\.lock$)
+        pass_filenames: false
+
       - id: gen-types
         name: gen-types (OpenAPI → TS)
         entry: bash weft-frontend/scripts/check-types.sh
