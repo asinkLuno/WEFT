@@ -5,6 +5,7 @@ import { PageError, PageLoading } from "@/components/page-state";
 import {
   getMoaiLinks,
   getMoais,
+  onRefetch,
   type LinkGraph,
   type MoaiMap,
 } from "@/lib/api";
@@ -18,9 +19,18 @@ export default function MoaiLinkPage() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([getMoaiLinks(), getMoais()])
-      .then(([graph, moais]) => setState({ graph, moais }))
-      .catch(setError);
+    let cancelled = false;
+    const load = () => {
+      Promise.all([getMoaiLinks(), getMoais()])
+        .then(([graph, moais]) => !cancelled && setState({ graph, moais }))
+        .catch((err) => !cancelled && setError(err));
+    };
+    load();
+    const off = onRefetch(load);
+    return () => {
+      cancelled = true;
+      off();
+    };
   }, []);
 
   if (error) {

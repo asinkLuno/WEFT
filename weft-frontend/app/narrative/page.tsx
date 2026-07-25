@@ -5,6 +5,7 @@ import { PageError, PageLoading } from "@/components/page-state";
 import {
   getMoais,
   getNarratives,
+  onRefetch,
   type MoaiMap,
   type NarrativeMap,
 } from "@/lib/api";
@@ -18,9 +19,20 @@ export default function NarrativePage() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([getNarratives(), getMoais()])
-      .then(([narratives, moais]) => setData({ narratives, moais }))
-      .catch(setError);
+    let cancelled = false;
+    const load = () => {
+      Promise.all([getNarratives(), getMoais()])
+        .then(
+          ([narratives, moais]) => !cancelled && setData({ narratives, moais }),
+        )
+        .catch((err) => !cancelled && setError(err));
+    };
+    load();
+    const off = onRefetch(load);
+    return () => {
+      cancelled = true;
+      off();
+    };
   }, []);
 
   if (error) {

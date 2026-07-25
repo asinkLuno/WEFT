@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { PageError, PageLoading } from "@/components/page-state";
-import { getDrifts, getMoais, type DriftMap, type MoaiMap } from "@/lib/api";
+import {
+  getDrifts,
+  getMoais,
+  onRefetch,
+  type DriftMap,
+  type MoaiMap,
+} from "@/lib/api";
 import { compareDriftTime, DriftGantt, GanttLegend } from "./gantt";
 
 export default function DriftPage() {
@@ -13,9 +19,20 @@ export default function DriftPage() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([getDrifts(), getMoais()])
-      .then(([driftsRaw, moais]) => setData({ driftsRaw, moais }))
-      .catch(setError);
+    let cancelled = false;
+    const load = () => {
+      Promise.all([getDrifts(), getMoais()])
+        .then(
+          ([driftsRaw, moais]) => !cancelled && setData({ driftsRaw, moais }),
+        )
+        .catch((err) => !cancelled && setError(err));
+    };
+    load();
+    const off = onRefetch(load);
+    return () => {
+      cancelled = true;
+      off();
+    };
   }, []);
 
   if (error) return <PageError title="Failed to load drift" error={error} />;

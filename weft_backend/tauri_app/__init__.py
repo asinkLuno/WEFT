@@ -100,8 +100,18 @@ class StoryLoadError(BaseModel):
     error: dict[str, object]
 
 
+class FileLost(BaseModel):
+    """Payload for `weft-file-lost`: the watched story file is gone."""
+
+    path: str
+
+
 async def watch_story(app_handle: AppHandle) -> None:
-    """Reload the current story on change and follow newly opened story paths."""
+    """Reload the current story on change and follow newly opened story paths.
+
+    Idles when there is no story or when the file has disappeared (the latter
+    emits `weft-file-lost`).
+    """
 
     while True:
         if STATE.story_path is None:
@@ -109,6 +119,17 @@ async def watch_story(app_handle: AppHandle) -> None:
             continue
 
         watched_path = STATE.story_path.resolve()
+
+        if not watched_path.exists():
+            # The file vanished between sessions or while we were idle.
+            Emitter.emit(
+                app_handle,
+                "weft-file-lost",
+                FileLost(path=str(watched_path)),
+            )
+            await _wait_until_story_changes(watched_path)
+            continue
+
         async for changes in awatch(
             watched_path.parent,
             recursive=False,
@@ -121,6 +142,15 @@ async def watch_story(app_handle: AppHandle) -> None:
             if not any(Path(changed_path).resolve() == watched_path
                        for _, changed_path in changes):
                 continue
+
+            if not watched_path.exists():
+                Emitter.emit(
+                    app_handle,
+                    "weft-file-lost",
+                    FileLost(path=str(watched_path)),
+                )
+                await _wait_until_story_changes(watched_path)
+                break
 
             try:
                 STATE.load(watched_path)
@@ -145,9 +175,21 @@ async def watch_story(app_handle: AppHandle) -> None:
             )
             Emitter.emit(
                 app_handle,
-                "weft-reload",
+                "weft-reloaded",
                 Reload(story_title=story_title),
             )
+
+
+async def _wait_until_story_changes(watched_path: Path) -> None:
+    """Block until the user closes/reopens the story or the file reappears."""
+
+    while True:
+        await sleep(0.1)
+        current = STATE.story_path
+        if current is None or current.resolve() != watched_path:
+            return
+        if watched_path.exists():
+            return
 
 
 def main() -> int:

@@ -33,7 +33,19 @@ export interface OpenedStory {
   path: string;
 }
 
+export interface AppStateInfo {
+  story_path: string | null;
+  story_title: string | null;
+  last_reload_at: string | null;
+}
+
+export interface ReloadResult {
+  story_title: string | null;
+  last_reload_at: string | null;
+}
+
 const queryCache = new Map<string, Promise<unknown>>();
+const refetchListeners = new Set<() => void>();
 
 function cachedInvoke<T>(command: string): Promise<T> {
   const cached = queryCache.get(command);
@@ -47,6 +59,18 @@ function cachedInvoke<T>(command: string): Promise<T> {
   return request;
 }
 
+/** Subscribe to data-invalidation ticks. Returns an unsubscribe function. */
+export function onRefetch(listener: () => void): () => void {
+  refetchListeners.add(listener);
+  return () => refetchListeners.delete(listener);
+}
+
+/** Drop the response cache and notify every subscriber to reload. */
+export function triggerRefetch(): void {
+  queryCache.clear();
+  for (const listener of refetchListeners) listener();
+}
+
 export const getStory = () => cachedInvoke<Story>("get_story");
 export const hasLoadedStory = () => pyInvoke<boolean>("has_story");
 export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
@@ -57,3 +81,6 @@ export const getLoadError = () => pyInvoke<WeftError | null>("get_load_error");
 export const openStory = () => pyInvoke<OpenedStory | null>("open_story");
 export const openRecentStory = (path: string) =>
   pyInvoke<OpenedStory>("open_recent_story", { path });
+export const closeStory = () => pyInvoke<void>("close_story");
+export const reloadStory = () => pyInvoke<ReloadResult>("reload_story");
+export const getAppState = () => pyInvoke<AppStateInfo>("get_app_state");

@@ -9,14 +9,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PageError, PageLoading } from "@/components/page-state";
-import { getStory, type Story } from "@/lib/api";
+import { getStory, onRefetch, type Story } from "@/lib/api";
 
 export default function StoryPage() {
   const [story, setStory] = useState<Story | null>(null);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    getStory().then(setStory).catch(setError);
+    let cancelled = false;
+    const load = () => {
+      getStory()
+        .then((data) => !cancelled && setStory(data))
+        .catch((err) => !cancelled && setError(err));
+    };
+    load();
+    const off = onRefetch(load);
+    return () => {
+      cancelled = true;
+      off();
+    };
   }, []);
 
   if (error) return <PageError title="Failed to load story" error={error} />;

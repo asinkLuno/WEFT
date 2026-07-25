@@ -3,6 +3,8 @@
 from pytauri import Commands
 
 from weft_backend.command_handlers import (
+    close_story,
+    get_app_state,
     get_drift,
     get_load_error,
     get_moai,
@@ -10,6 +12,7 @@ from weft_backend.command_handlers import (
     get_narrative,
     get_story,
     has_story,
+    reload_story,
 )
 
 commands = Commands()
@@ -21,5 +24,8 @@ for handler in (
     get_narrative,
     get_moai_link,
     get_load_error,
+    close_story,
+    reload_story,
+    get_app_state,
 ):
     commands.command()(handler)

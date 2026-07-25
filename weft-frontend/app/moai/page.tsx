@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { PageError, PageLoading } from "@/components/page-state";
-import { getDrifts, getMoais, type DriftMap, type MoaiMap } from "@/lib/api";
+import {
+  getDrifts,
+  getMoais,
+  onRefetch,
+  type DriftMap,
+  type MoaiMap,
+} from "@/lib/api";
 import { compareDriftTime } from "../drift/gantt";
 import { MoaiGantts } from "./moai-gantts";
 
@@ -14,9 +20,18 @@ export default function MoaiPage() {
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
-    Promise.all([getMoais(), getDrifts()])
-      .then(([moais, drifts]) => setData({ moais, drifts }))
-      .catch(setError);
+    let cancelled = false;
+    const load = () => {
+      Promise.all([getMoais(), getDrifts()])
+        .then(([moais, drifts]) => !cancelled && setData({ moais, drifts }))
+        .catch((err) => !cancelled && setError(err));
+    };
+    load();
+    const off = onRefetch(load);
+    return () => {
+      cancelled = true;
+      off();
+    };
   }, []);
 
   if (error) return <PageError title="Failed to load moai" error={error} />;
