@@ -48,6 +48,12 @@ class OpenedStory(BaseModel):
     path: str
 
 
+class OpenRecentStoryRequest(BaseModel):
+    """A recent story path received from the desktop UI."""
+
+    path: str
+
+
 @commands.command()
 async def dev_ack(body: DevAck) -> str:
     """Dev-only marker: proves the real commands reach pyInvoke with loaded data."""
@@ -77,10 +83,10 @@ async def open_story(app_handle: AppHandle) -> OpenedStory | None:
 
 
 @commands.command()
-async def open_recent_story(path: str) -> OpenedStory:
+async def open_recent_story(body: OpenRecentStoryRequest) -> OpenedStory:
     """Load a story selected from the desktop UI's recent-file list."""
 
-    STATE.load(path)
+    STATE.load(body.path)
     if STATE.dao is None or STATE.story_path is None:
         raise RuntimeError("story did not load")
     return OpenedStory(title=STATE.dao.story.title, path=str(STATE.story_path))
