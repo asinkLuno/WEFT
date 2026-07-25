@@ -1,7 +1,8 @@
 use pyo3::prelude::*;
+use serde::Deserialize;
 use std::path::PathBuf;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{DragDropEvent, Emitter, WindowEvent};
+use tauri::{DragDropEvent, Emitter, Listener, WindowEvent};
 
 /// Bakes `tauri.conf.json` (+ capabilities/icons) into the binary at compile time.
 pub fn tauri_generate_context() -> tauri::Context {
@@ -19,9 +20,10 @@ fn build_weft_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Resul
         &[
             &MenuItem::with_id(app, "open", "Open Story…", true, Some("CmdOrCtrl+O"))?,
             &MenuItem::with_id(app, "open_recent", "Open Recent…", true, Some("CmdOrCtrl+P"))?,
-            &MenuItem::with_id(app, "close", "Close Story", true, Some("CmdOrCtrl+W"))?,
+            // Start disabled — the frontend flips these on once a story is loaded.
+            &MenuItem::with_id(app, "close", "Close Story", false, Some("CmdOrCtrl+W"))?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "reload", "Reload Story", true, Some("CmdOrCtrl+R"))?,
+            &MenuItem::with_id(app, "reload", "Reload Story", false, Some("CmdOrCtrl+R"))?,
         ],
     )?;
     let settings = Submenu::with_items(
@@ -80,6 +82,35 @@ fn drag_payload(path: &PathBuf) -> String {
     path.to_string_lossy().into_owned()
 }
 
+/// Frontend's view of which story-scoped menu items should be clickable right now.
+#[derive(Deserialize)]
+struct MenuState {
+    close: bool,
+    reload: bool,
+}
+
+/// Listens for `weft-menu-state` from the frontend and toggles the File menu's
+/// story-scoped items (Close / Reload). They start disabled at startup so the
+/// user can't trigger them before any story is loaded.
+fn register_menu_state_listener<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
+    let handle = app_handle.clone();
+    app_handle.listen("weft-menu-state", move |event| {
+        let payload: MenuState = match serde_json::from_str(event.payload()) {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        let Some(menu) = handle.menu() else {
+            return;
+        };
+        if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("close") {
+            let _ = item.set_enabled(payload.close);
+        }
+        if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("reload") {
+            let _ = item.set_enabled(payload.reload);
+        }
+    });
+}
+
 /// The pyo3 module pytauri injects into the embedded interpreter as
 /// `sys.modules["__pytauri_ext_mod__"]`. Its `pymodule_export` registers
 /// `pytauri.context_factory` / `pytauri.builder_factory` (Rust closures) that the
@@ -109,6 +140,7 @@ pub mod ext_mod {
                     })
                     .setup(|app| {
                         build_weft_menu(app.handle())?;
+                        register_menu_state_listener(app.handle());
                         Ok(())
                     })
                     .on_menu_event(|app, event| {

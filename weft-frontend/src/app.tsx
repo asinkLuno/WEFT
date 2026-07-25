@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { Clock3, FileText, FileX, FolderOpen } from "lucide-react";
 import {
   NavigationMenu,
@@ -339,6 +339,14 @@ export function App() {
   const onFileLost = useCallback((lostPath: string) => {
     setFileLostPath(lostPath);
   }, []);
+
+  useEffect(() => {
+    if (hasStory === null) return;
+    void emit("weft-menu-state", {
+      close: hasStory,
+      reload: hasStory && !fileLostPath,
+    });
+  }, [hasStory, fileLostPath]);
 
   if (hasStory === null) {
     return <div className="min-h-screen bg-background" />;
