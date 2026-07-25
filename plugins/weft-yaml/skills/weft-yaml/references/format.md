@@ -8,6 +8,7 @@ Use this bundled reference for the stable file shape. Prefer the installed WEFT 
 story:
   title: Example
   description: A small timeline
+  date_mode: gregorian
 
 moai:
   Alice:
@@ -71,16 +72,57 @@ Each event accepts:
 
 An event ID is `group/event`. Keep the event title at 20 characters or fewer.
 
+## Calendar selection and plugins
+
+`story.date_mode` selects one calendar for every entity and event in the story.
+It defaults to `gregorian`. The built-ins are:
+
+- `gregorian`: Gregorian rules with Chinese unit labels.
+- `gregorian_en`: the same Gregorian rules with English display text.
+
+A custom calendar is executable Python, so only load trusted modules. Register it
+at top level, using a path relative to the story file, and select its registration
+name in `story.date_mode`:
+
+```yaml
+aqueduct:
+  gethen: ./calendars/gethen.py
+
+story:
+  title: A Gethenian story
+  date_mode: gethen
+```
+
+The module must export `aqueduct`, an instance of
+`weft_backend.aqueduct.Aqueduct`. Its ordered `Brick` definitions determine the
+meaning and maximum component count of every time list. Its `humanizer` controls
+display text. If events have `end_time`, it must also provide `to_tick` so WEFT
+can compare endpoints. Registration names may override built-ins, and WEFT resets
+the registry to its built-in baseline before each story load.
+
 ## Time lists
 
-Gregorian positions are `[year, month, day, hour, minute, second]`. Short lists are padded with zeros. A trailing nested list makes the preceding integers an offset from that reference:
+For the built-in Gregorian calendars, positions are
+`[year, month, day, hour, minute, second]`. For a custom calendar, positions are
+the module's Brick order instead; do not assume Gregorian units or six
+components.
+
+A list may omit trailing units and WEFT zero-pads it to the active calendar's
+Brick count. It cannot contain more integer components than that count. Values
+must be integers (not booleans or floats).
+
+A trailing nested list makes the preceding integers an offset from that
+reference:
 
 ```yaml
 start_time: &arrival [2025, 4, 2, 10]
 end_time: [0, 0, 0, 2, *arrival] # two hours after arrival
 ```
 
-YAML aliases expand to the referenced list before WEFT parses the time. Validate every relative-time edit with the real timeline resolver.
+YAML aliases expand to the referenced list before WEFT parses the time. Absolute
+times, offsets, and their references all use the story's selected calendar.
+Validate every calendar or relative-time edit with the real timeline resolver,
+then inspect its `date_mode` and formatted results.
 
 ## Narratives
 
