@@ -1,6 +1,6 @@
 {
   "name": "weft-yaml",
-  "version": "0.1.0+codex.20260725080107",
+  "version": "0.1.1+codex.20260725080724",
   "description": "Create, edit, and validate WEFT story timeline files.",
   "author": {
     "name": "asinkLuno",
