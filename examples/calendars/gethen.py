@@ -7,7 +7,7 @@
 from collections.abc import Sequence
 from sys import maxsize
 
-from weft_backend.aqueduct import Aqueduct, Brick
+from weft_backend.aqueduct import Aqueduct, AqueductMetadata, Brick
 
 MONTHS = (
     "瑟恩",
@@ -97,4 +97,11 @@ aqueduct = Aqueduct(
     ],
     to_tick=_to_tick,
     humanizer=_humanize,
+    metadata=AqueductMetadata(
+        title="卡尔海德历法",
+        description=(
+            "格辛星卡尔海德使用的历法，以永远作为“元年”的相对年份、"
+            "十四个月、二十六日和十个时辰组织时间。"
+        ),
+    ),
 )

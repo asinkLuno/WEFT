@@ -9,11 +9,13 @@ import json
 import sys
 from pathlib import Path
 
+from weft_backend.aqueduct import CalendarMetadata
 from weft_backend.dao import Drift, Moai, Narrative, Story
 from weft_backend.graph import GraphLink, GraphNode, LinkGraph
 
 MODELS = {
     "Story": Story,
+    "CalendarMetadata": CalendarMetadata,
     "Moai": Moai,
     "Drift": Drift,
     "Narrative": Narrative,

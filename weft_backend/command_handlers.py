@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from weft_backend.aqueduct import CalendarMetadata, calendar_metadata_for
 from weft_backend.dao import Drift, Moai, Narrative, Story
 from weft_backend.errors import StateError
 from weft_backend.graph import LinkGraph
@@ -29,6 +30,11 @@ async def has_story() -> bool:
 async def get_story() -> Story:
     dao, _ = _require_dao()
     return dao.story
+
+
+async def get_calendar_metadata() -> CalendarMetadata:
+    dao, _ = _require_dao()
+    return calendar_metadata_for(dao.story.date_mode)
 
 
 async def get_moai() -> dict[str, Moai]:

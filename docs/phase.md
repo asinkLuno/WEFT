@@ -132,6 +132,26 @@ story:
   date_mode: gregorian_en
 ```
 
+### 历法 metadata
+
+桌面端会在 Story 页面展示当前历法的名称、简介、时间单位和来源。历法可以通过
+可选的 `metadata` 参数提供显示名称和简介：
+
+```python
+from weft_backend.aqueduct import Aqueduct, AqueductMetadata, Brick
+
+aqueduct = Aqueduct(
+    [Brick("年", ...), Brick("月", ...), Brick("日", ...)],
+    metadata=AqueductMetadata(
+        title="幻想历",
+        description="王国采用的官方历法。",
+    ),
+)
+```
+
+时间单位直接从 `bricks` 推导。未提供 metadata 的旧插件仍可正常加载，界面会
+以注册名作为标题，并继续展示其时间单位。
+
 ```python
 gregorian_aqueduct = Aqueduct([
     Brick("年", get_limit=lambda ctx: maxsize),     # 无上限

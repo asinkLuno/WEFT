@@ -5,6 +5,7 @@ from pytauri import Commands
 from weft_backend.command_handlers import (
     close_story,
     get_app_state,
+    get_calendar_metadata,
     get_drift,
     get_load_error,
     get_moai,
@@ -19,6 +20,7 @@ commands = Commands()
 for handler in (
     has_story,
     get_story,
+    get_calendar_metadata,
     get_moai,
     get_drift,
     get_narrative,

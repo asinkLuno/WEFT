@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,18 +9,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { PageError, PageLoading } from "@/components/page-state";
-import { getStory, onRefetch, type Story } from "@/lib/api";
+import {
+  getCalendarMetadata,
+  getStory,
+  onRefetch,
+  type CalendarMetadata,
+  type Story,
+} from "@/lib/api";
 
 export default function StoryPage() {
-  const [story, setStory] = useState<Story | null>(null);
+  const [data, setData] = useState<{
+    story: Story;
+    calendar: CalendarMetadata;
+  } | null>(null);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      getStory()
-        .then((data) => !cancelled && setStory(data))
+      Promise.all([getStory(), getCalendarMetadata()])
+        .then(([story, calendar]) => !cancelled && setData({ story, calendar }))
         .catch((err) => !cancelled && setError(err));
     };
     load();
@@ -31,15 +42,16 @@ export default function StoryPage() {
   }, []);
 
   if (error) return <PageError title="Failed to load story" error={error} />;
-  if (!story) return <PageLoading />;
+  if (!data) return <PageLoading />;
+
+  const { story, calendar } = data;
 
   return (
     <main className="flex-1 px-6 py-8">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">{story.title}</CardTitle>
-            <CardDescription>timeline mode: {story.date_mode}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {story.description && (
@@ -47,6 +59,36 @@ export default function StoryPage() {
                 {story.description}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardDescription className="mb-1 flex items-center gap-2">
+                  <CalendarDays className="size-4" aria-hidden="true" />
+                  Calendar
+                </CardDescription>
+                <CardTitle>{calendar.title}</CardTitle>
+              </div>
+              <Badge variant="secondary">
+                {calendar.source === "builtin" ? "Built-in" : "Plugin"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {calendar.description && (
+              <p className="text-sm leading-6 text-muted-foreground">
+                {calendar.description}
+              </p>
+            )}
+            <dl className="grid gap-3 text-sm sm:grid-cols-[8rem_1fr]">
+              <dt className="text-muted-foreground">Mode</dt>
+              <dd className="font-mono text-xs">{calendar.name}</dd>
+              <dt className="text-muted-foreground">Units</dt>
+              <dd>{calendar.units.join(" → ")}</dd>
+            </dl>
           </CardContent>
         </Card>
       </div>

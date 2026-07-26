@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from sys import maxsize
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -17,16 +18,32 @@ class Brick:
     get_limit: Callable[[Mapping[str, int]], int]
 
 
+@dataclass(frozen=True, slots=True)
+class AqueductMetadata:
+    title: str
+    description: str = ""
+
+
+class CalendarMetadata(BaseModel):
+    name: str
+    title: str
+    description: str
+    units: list[str]
+    source: Literal["builtin", "plugin"]
+
+
 class Aqueduct:
     def __init__(
         self,
         bricks: list[Brick],
         to_tick: Callable[[list[int]], int] | None = None,
         humanizer: Callable[[Sequence[int], Sequence[Brick]], str] | None = None,
+        metadata: AqueductMetadata | None = None,
     ):
         self.bricks = bricks
         self._to_tick = to_tick
         self._humanizer = humanizer
+        self.metadata = metadata
 
     def validate_time_unit(self, value: object) -> None:
         """检查是否为合法的 time_unit，不合法则抛出 ValueError。"""
@@ -177,6 +194,10 @@ gregorian_aqueduct = Aqueduct(
         Brick("秒", get_limit=lambda ctx: 60),
     ],
     to_tick=gregorian_to_tick,
+    metadata=AqueductMetadata(
+        title="格里高利历",
+        description="采用年、月、日和时分秒表示时间，并包含公历闰年规则。",
+    ),
 )
 
 
@@ -209,6 +230,12 @@ gregorian_en_aqueduct = Aqueduct(
     gregorian_aqueduct.bricks,
     to_tick=gregorian_to_tick,
     humanizer=humanize_english_gregorian,
+    metadata=AqueductMetadata(
+        title="Gregorian Calendar",
+        description=(
+            "Represents time with years, months, days, hours, minutes, and seconds."
+        ),
+    ),
 )
 
 
@@ -218,6 +245,21 @@ AQUEDUCTS: dict[str, Aqueduct] = {
     "gregorian_en": gregorian_en_aqueduct,
 }
 _BUILTIN_AQUEDUCTS: dict[str, Aqueduct] = dict(AQUEDUCTS)
+
+
+def calendar_metadata_for(name: str) -> CalendarMetadata:
+    aqueduct = AQUEDUCTS[name]
+    metadata = aqueduct.metadata
+    source: Literal["builtin", "plugin"] = (
+        "builtin" if _BUILTIN_AQUEDUCTS.get(name) is aqueduct else "plugin"
+    )
+    return CalendarMetadata(
+        name=name,
+        title=metadata.title if metadata else name,
+        description=metadata.description if metadata else "",
+        units=[brick.name for brick in aqueduct.bricks],
+        source=source,
+    )
 
 
 def load_user_aqueducts(spec: object, base_dir: Path) -> None:

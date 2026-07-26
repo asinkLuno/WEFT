@@ -19,6 +19,22 @@ export interface components {
             /** Date Mode */
             date_mode: string;
         };
+        /** CalendarMetadata */
+        CalendarMetadata: {
+            /** Name */
+            name: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Units */
+            units: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "builtin" | "plugin";
+        };
         /** Phase */
         Phase: {
             /** Base Time */

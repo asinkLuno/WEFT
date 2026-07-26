@@ -7,6 +7,7 @@ export type Moai = Schemas["Moai"];
 export type Drift = Schemas["Drift"];
 export type Narrative = Schemas["Narrative"];
 export type Story = Schemas["Story"];
+export type CalendarMetadata = Schemas["CalendarMetadata"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphLink = Schemas["GraphLink"];
 export type LinkGraph = Schemas["LinkGraph"];
@@ -72,6 +73,8 @@ export function triggerRefetch(): void {
 }
 
 export const getStory = () => cachedInvoke<Story>("get_story");
+export const getCalendarMetadata = () =>
+  cachedInvoke<CalendarMetadata>("get_calendar_metadata");
 export const hasLoadedStory = () => pyInvoke<boolean>("has_story");
 export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
 export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
