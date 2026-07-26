@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Clock3, FileText, FileX, FolderOpen } from "lucide-react";
 import {
   NavigationMenu,
@@ -333,7 +334,7 @@ export function App() {
   }
 
   function openExternal(url: string) {
-    window.open(url, "_blank", "noopener,noreferrer");
+    void openUrl(url);
   }
 
   const onFileLost = useCallback((lostPath: string) => {

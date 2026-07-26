@@ -3,5 +3,17 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": ["main"],
-  "permissions": ["core:default", "pytauri:default", "dialog:default"]
+  "permissions": [
+    "core:default",
+    "pytauri:default",
+    "dialog:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://asinkluno.github.io/WEFT/" },
+        { "url": "https://asinkluno.github.io/WEFT/mcp/" },
+        { "url": "https://github.com/asinkLuno/WEFT/issues" }
+      ]
+    }
+  ]
 }

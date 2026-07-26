@@ -127,12 +127,13 @@ pub mod ext_mod {
             module,
             // pytauri.context_factory() — config baked into the binary.
             |_args, _kwargs| Ok(tauri_generate_context()),
-            // pytauri.builder_factory() — default builder with the dialog plugin
+            // pytauri.builder_factory() — default builder with the dialog/opener plugins
             // + native menu. Menu events are emitted as `weft-menu` with the
             // item id as payload; the frontend dispatches.
             |_args, _kwargs| {
                 let builder = tauri::Builder::default()
                     .plugin(tauri_plugin_dialog::init())
+                    .plugin(tauri_plugin_opener::init())
                     .on_window_event(|window, event| {
                         if let WindowEvent::DragDrop(drag_drop) = event {
                             forward_drag_drop(window, drag_drop);

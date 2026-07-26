@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 
@@ -80,9 +81,7 @@ export function SettingsDialog({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() =>
-              window.open(DOCS_URL, "_blank", "noopener,noreferrer")
-            }
+            onClick={() => void openUrl(DOCS_URL)}
           >
             <ExternalLink data-icon="inline-start" />
             {copy.mcpDocs}

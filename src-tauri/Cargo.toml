@@ -27,6 +27,7 @@ pyo3 = "0.25"
 pytauri = { version = "0.8", features = ["plugin-dialog"] }
 tauri-plugin-pytauri = "0.8"
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 
 # Keeps the bundled embedded-python out of `target/release` so `tauri dev` is
 # unaffected. Build with `--profile bundle-release`.
