@@ -35,11 +35,12 @@ yarn playwright install chromium
 yarn test:e2e
 ```
 
-仓库根目录的 pre-commit 配置会在 `pre-push` 阶段统一执行后端覆盖率、
+仓库根目录的 prek 配置会在 `pre-push` 阶段统一执行后端覆盖率、
 前端 Vitest 覆盖率和 Playwright 测试。首次启用时运行：
 
 ```bash
-uv run pre-commit install --install-hooks
+cargo install prek --version 0.4.11 --locked
+prek install --hook-type pre-commit --hook-type pre-push
 ```
 
 单元测试位于 `tests/unit/`，组件行为使用 React Testing Library 按用户可见结果

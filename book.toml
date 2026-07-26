@@ -1,0 +1,27 @@
+[book]
+title = "WEFT"
+description = "WEFT — World-building, Era, and Fantasy Timeline"
+authors = ["asinkLuno"]
+language = "zh"
+src = "docs"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+site-url = "/WEFT/"
+git-repository-url = "https://github.com/asinkLuno/WEFT"
+edit-url-template = "https://github.com/asinkLuno/WEFT/edit/main/docs/{path}"
+
+# Preserve the directory-style URLs published by the former MkDocs site.
+[output.html.redirect]
+"/api/index.html" = "../api.html"
+"/dao/index.html" = "../dao.html"
+"/drift/index.html" = "../drift.html"
+"/errors/index.html" = "../errors.html"
+"/mcp/index.html" = "../mcp.html"
+"/moai/index.html" = "../moai.html"
+"/phase/index.html" = "../phase.html"
+"/weft-yaml/index.html" = "../weft-yaml.html"

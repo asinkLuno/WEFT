@@ -1,14 +1,14 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
+# Build output
+book/
 build/
 dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
 Session.vim
+
+# Legacy local Python artifacts (the project no longer uses Python)
+__pycache__/
+*.py[oc]
+*.egg-info/
+site/
 
 # Frontend build
 .next/
@@ -22,13 +22,9 @@ weft-frontend/test-results/
 .coverage
 coverage/
 
-# pytauri standalone (src-tauri): build output + embedded python + generated schemas
+# Tauri build output and generated projects
 src-tauri/target/
 src-tauri/gen/
-src-tauri/pyembed/
-
-# Docs build
-site/
 
 # Private test stories
 tests/*.yaml

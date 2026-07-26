@@ -118,7 +118,8 @@ cargo tauri dev -- examples/红楼梦.yml
 Build and validate the documentation locally:
 
 ```bash
-uv run mkdocs build --strict
+cargo install mdbook --version 0.5.4 --locked
+mdbook build
 ```
 
 Read the full [online documentation](https://asinkluno.github.io/WEFT/) or
