@@ -14,6 +14,7 @@ import { QuickSwitcher } from "@/components/quick-switcher";
 import { AppEvents } from "@/app/app-events";
 import {
   closeStory,
+  formatWeftError,
   getAppState,
   getLoadError,
   hasLoadedStory,
@@ -260,7 +261,7 @@ export function App() {
       const story = await openStory();
       if (story !== null) finishOpening(story);
     } catch (error) {
-      setOpenError(error instanceof Error ? error.message : String(error));
+      setOpenError(formatWeftError(error));
     } finally {
       setOpening(false);
     }
@@ -272,7 +273,7 @@ export function App() {
     try {
       finishOpening(await openRecentStory(story.path));
     } catch (error) {
-      setOpenError(error instanceof Error ? error.message : String(error));
+      setOpenError(formatWeftError(error));
     } finally {
       setOpening(false);
     }

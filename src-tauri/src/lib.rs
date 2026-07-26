@@ -143,7 +143,7 @@ fn get_load_error(state: tauri::State<'_, AppState>) -> Option<ErrorPayload> {
 }
 
 #[tauri::command]
-fn open_story(
+async fn open_story(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<Option<OpenedStory>, ErrorPayload> {

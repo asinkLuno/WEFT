@@ -45,6 +45,19 @@ export interface ReloadResult {
   last_reload_at: string | null;
 }
 
+export function formatWeftError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return String(error);
+}
+
 const queryCache = new Map<string, Promise<unknown>>();
 const refetchListeners = new Set<() => void>();
 
