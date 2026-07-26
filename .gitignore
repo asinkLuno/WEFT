@@ -14,6 +14,13 @@ Session.vim
 .next/
 weft-frontend/node_modules/
 weft-frontend/out/
+weft-frontend/coverage/
+weft-frontend/playwright-report/
+weft-frontend/test-results/
+
+# Test reports
+.coverage
+coverage/
 
 # pytauri standalone (src-tauri): build output + embedded python + generated schemas
 src-tauri/target/

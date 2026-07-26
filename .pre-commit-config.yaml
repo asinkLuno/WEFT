@@ -1,3 +1,5 @@
+default_install_hook_types: [pre-commit, pre-push]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -24,7 +26,7 @@ repos:
 
       - id: pytest
         name: pytest
-        entry: pytest
+        entry: uv run pytest
         language: system
         files: ^(weft_backend/|tests/backend/|pyproject\.toml$|uv\.lock$)
         pass_filenames: false
@@ -56,3 +58,27 @@ repos:
         language: system
         types_or: [javascript, ts, tsx, jsx]
         pass_filenames: false
+
+      - id: backend-coverage
+        name: backend coverage (minimum 59%)
+        entry: uv run pytest --cov=weft_backend --cov-report=term-missing --cov-report=xml:coverage/backend.xml --cov-fail-under=59
+        language: system
+        files: ^(weft_backend/|tests/backend/|pyproject\.toml$|uv\.lock$)
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-coverage
+        name: frontend Vitest coverage
+        entry: yarn --cwd weft-frontend test:coverage
+        language: system
+        files: ^weft-frontend/
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-e2e
+        name: frontend Playwright
+        entry: yarn --cwd weft-frontend test:e2e
+        language: system
+        files: ^weft-frontend/
+        pass_filenames: false
+        stages: [pre-push]
