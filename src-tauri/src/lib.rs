@@ -94,6 +94,16 @@ fn require_dao<T>(
         .ok_or_else(|| WeftError::StoryNotLoaded.into())
 }
 
+fn set_story_menu_enabled<R: tauri::Runtime>(app: &tauri::AppHandle<R>, close: bool, reload: bool) {
+    let Some(menu) = app.menu() else { return };
+    if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("close") {
+        let _ = item.set_enabled(close);
+    }
+    if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("reload") {
+        let _ = item.set_enabled(reload);
+    }
+}
+
 #[tauri::command]
 fn has_story(state: tauri::State<'_, AppState>) -> bool {
     state.snapshot.read().dao.is_some()
@@ -160,6 +170,7 @@ async fn open_story(
         .into_path()
         .map_err(|error| WeftError::Read(error.to_string()).payload(None))?;
     state.load(path.clone())?;
+    set_story_menu_enabled(&app, true, true);
     let title = require_dao(&state, |dao| dao.story.title.clone())?;
     Ok(Some(OpenedStory {
         title,
@@ -176,6 +187,7 @@ struct OpenRecentStoryRequest {
 fn open_recent_story(
     body: Option<OpenRecentStoryRequest>,
     path: Option<String>,
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<OpenedStory, ErrorPayload> {
     let path = PathBuf::from(
@@ -183,6 +195,7 @@ fn open_recent_story(
             .ok_or_else(|| WeftError::Schema("缺少故事路径".into()).payload(None))?,
     );
     state.load(path.clone())?;
+    set_story_menu_enabled(&app, true, true);
     let title = require_dao(&state, |dao| dao.story.title.clone())?;
     Ok(OpenedStory {
         title,
@@ -191,8 +204,9 @@ fn open_recent_story(
 }
 
 #[tauri::command]
-fn close_story(state: tauri::State<'_, AppState>) {
+fn close_story(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
     *state.snapshot.write() = Snapshot::default();
+    set_story_menu_enabled(&app, false, false);
 }
 
 #[tauri::command]
@@ -279,13 +293,7 @@ fn register_menu_state_listener<R: tauri::Runtime>(app_handle: &tauri::AppHandle
         let Ok(payload) = serde_json::from_str::<MenuState>(event.payload()) else {
             return;
         };
-        let Some(menu) = handle.menu() else { return };
-        if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("close") {
-            let _ = item.set_enabled(payload.close);
-        }
-        if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("reload") {
-            let _ = item.set_enabled(payload.reload);
-        }
+        set_story_menu_enabled(&handle, payload.close, payload.reload);
     });
 }
 
@@ -364,6 +372,8 @@ pub fn run() {
         })
         .setup(|app| {
             build_menu(app.handle())?;
+            let has_story = app.state::<AppState>().snapshot.read().dao.is_some();
+            set_story_menu_enabled(app.handle(), has_story, has_story);
             register_menu_state_listener(app.handle());
             start_story_watcher(app.handle().clone());
             Ok(())
