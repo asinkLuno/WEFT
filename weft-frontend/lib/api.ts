@@ -1,5 +1,5 @@
-import { pyInvoke } from "tauri-plugin-pytauri-api";
 import type { components } from "./schema";
+import { invoke } from "./platform";
 
 // Domain types generated from the Pydantic models.
 type Schemas = components["schemas"];
@@ -52,7 +52,7 @@ function cachedInvoke<T>(command: string): Promise<T> {
   const cached = queryCache.get(command);
   if (cached) return cached as Promise<T>;
 
-  const request = pyInvoke<T>(command).catch((error) => {
+  const request = invoke<T>(command).catch((error) => {
     queryCache.delete(command);
     throw error;
   });
@@ -75,15 +75,15 @@ export function triggerRefetch(): void {
 export const getStory = () => cachedInvoke<Story>("get_story");
 export const getCalendarMetadata = () =>
   cachedInvoke<CalendarMetadata>("get_calendar_metadata");
-export const hasLoadedStory = () => pyInvoke<boolean>("has_story");
+export const hasLoadedStory = () => invoke<boolean>("has_story");
 export const getMoais = () => cachedInvoke<MoaiMap>("get_moai");
 export const getDrifts = () => cachedInvoke<DriftMap>("get_drift");
 export const getNarratives = () => cachedInvoke<NarrativeMap>("get_narrative");
 export const getMoaiLinks = () => cachedInvoke<LinkGraph>("get_moai_link");
-export const getLoadError = () => pyInvoke<WeftError | null>("get_load_error");
-export const openStory = () => pyInvoke<OpenedStory | null>("open_story");
+export const getLoadError = () => invoke<WeftError | null>("get_load_error");
+export const openStory = () => invoke<OpenedStory | null>("open_story");
 export const openRecentStory = (path: string) =>
-  pyInvoke<OpenedStory>("open_recent_story", { path });
-export const closeStory = () => pyInvoke<void>("close_story");
-export const reloadStory = () => pyInvoke<ReloadResult>("reload_story");
-export const getAppState = () => pyInvoke<AppStateInfo>("get_app_state");
+  invoke<OpenedStory>("open_recent_story", { path });
+export const closeStory = () => invoke<void>("close_story");
+export const reloadStory = () => invoke<ReloadResult>("reload_story");
+export const getAppState = () => invoke<AppStateInfo>("get_app_state");

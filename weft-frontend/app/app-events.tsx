@@ -1,9 +1,10 @@
 "use client";
 
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { triggerRefetch, type WeftError } from "@/lib/api";
+import { listen } from "@/lib/platform";
 
 interface StoryLoadError {
   error: WeftError;

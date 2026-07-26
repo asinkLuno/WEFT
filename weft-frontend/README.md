@@ -41,3 +41,7 @@ yarn test:e2e
 ```bash
 uv run pre-commit install --install-hooks
 ```
+
+单元测试位于 `tests/unit/`，组件行为使用 React Testing Library 按用户可见结果
+断言。所有 Tauri IPC、原生事件和外部链接调用统一经过 `lib/platform.ts`；
+测试可注入 `tests/mocks/platform.ts` 中的内存 adapter，无需启动 Tauri。

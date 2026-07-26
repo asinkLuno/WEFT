@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { Clock3, FileText, FileX, FolderOpen } from "lucide-react";
 import {
   NavigationMenu,
@@ -25,6 +24,7 @@ import {
   type AppStateInfo,
   type OpenedStory,
 } from "@/lib/api";
+import { emit, listen, openUrl } from "@/lib/platform";
 
 const StoryPage = lazy(() => import("@/app/story/page"));
 const MoaiPage = lazy(() => import("@/app/moai/page"));

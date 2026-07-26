@@ -1,9 +1,9 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { openUrl } from "@/lib/platform";
 
 type Language = "zh-CN" | "en";
 
