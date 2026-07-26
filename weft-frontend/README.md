@@ -45,3 +45,8 @@ uv run pre-commit install --install-hooks
 单元测试位于 `tests/unit/`，组件行为使用 React Testing Library 按用户可见结果
 断言。所有 Tauri IPC、原生事件和外部链接调用统一经过 `lib/platform.ts`；
 测试可注入 `tests/mocks/platform.ts` 中的内存 adapter，无需启动 Tauri。
+
+Playwright 测试位于 `tests/e2e/`。每个测试获得独立浏览器 context，并在页面脚本
+运行前注入隔离的 platform adapter 与固定故事数据；测试不会打开本机文件选择器，
+也不会依赖用户最近打开记录。失败时产物写入 `test-results/`，HTML 报告写入
+`playwright-report/`，trace 与截图只在失败时保留。

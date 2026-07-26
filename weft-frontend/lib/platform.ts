@@ -27,7 +27,13 @@ const tauriAdapter: PlatformAdapter = {
   openUrl: (url) => tauriOpenUrl(url),
 };
 
-let adapter = tauriAdapter;
+const injectedAdapter = (
+  globalThis as typeof globalThis & {
+    __WEFT_PLATFORM_ADAPTER__?: PlatformAdapter;
+  }
+).__WEFT_PLATFORM_ADAPTER__;
+
+let adapter = injectedAdapter ?? tauriAdapter;
 
 export const invoke = <T>(
   command: string,
