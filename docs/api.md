@@ -1,7 +1,7 @@
 # 桌面应用通信
 
-桌面应用由 Tauri/Rust、React 前端和 Python 领域层组成。前端通过 Tauri IPC
-调用 Python command handlers，不启动 HTTP API。
+桌面应用由 Rust/Tauri 领域内核和 React 前端组成。前端通过 Tauri IPC
+直接调用 Rust commands，不启动 HTTP API。
 
 ## IPC commands
 
@@ -28,7 +28,7 @@ cargo tauri dev -- examples/红楼梦.yml
 ```
 
 不传文件时桌面端仍会打开，并显示选择故事文件的空状态页面。当前原生文件选择器
-接受 `.yaml` 和 `.yml`；Python 加载层及 MCP 还支持 `.json` 和 `.toml`。
+接受 `.yaml` 和 `.yml`。旧后端支持的 `.json` 和 `.toml` 已移除。
 
 ## 文件热重载
 

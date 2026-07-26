@@ -140,11 +140,15 @@ Narrative 刻意比其他字段严格：`observer` 必须出现在每一个被�
 
 ## `aqueduct`：时间规则由世界决定
 
-顶层 `aqueduct` 把历法名称注册到可信的 Python 插件：
+顶层 `aqueduct` 把历法名称注册到 Rhai 插件：
 
 ```yaml
 aqueduct:
-  gethen: ./calendars/gethen.py
+  gethen:
+    runtime: rhai
+    kind: calendar
+    api: 1
+    source: ./calendars/gethen.rhai
 story:
   title: 黑暗的左手
   date_mode: gethen
@@ -156,15 +160,14 @@ Aqueduct 通过 Brick 定义时间单位和进位规则，还可以定义格式�
 
 ## `material`：让属性可扩展、可计算
 
-顶层 `material` 注册“名称 → Python 函数文件”。Moai 的 `materials` 引用这些
+顶层 `material` 注册“名称 → Rhai 脚本文件”。Moai 的 `materials` 引用这些
 名称，加载时把函数返回值写入 `extra_props`。
 
 Material 把“作者自由定义属性”进一步扩展为“作者自由定义计算规则”。例如可以
 根据生日计算星座，根据阵营和声望计算称号，或根据城市人口和资源计算等级，而
 不需要向 WEFT 核心模型增加字段。
 
-Aqueduct 和 material 都会执行 Python 代码，只应加载可信文件。每次故事加载前，
-插件注册表都会恢复到内置基线，避免不同故事互相污染。
+Aqueduct 和 material 都在受限 Rhai 运行时中执行，不默认开放文件系统和网络。
 
 ## 为什么有些字段自由、有些字段严格
 

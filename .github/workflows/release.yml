@@ -59,19 +59,8 @@ jobs:
           workspaces: src-tauri
           key: ${{ matrix.target }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-
       - name: Install frontend dependencies
         run: yarn --cwd weft-frontend install --frozen-lockfile
-
-      - name: Prepare embedded Python
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: scripts/fetch-embedded-python.sh 3.13 "${{ matrix.target }}"
 
       - name: Build and publish Tauri bundles
         uses: tauri-apps/tauri-action@v0
@@ -84,4 +73,4 @@ jobs:
           releaseBody: "See the assets below to download and install WEFT."
           releaseDraft: true
           prerelease: false
-          args: --config src-tauri/tauri.bundle.json ${{ matrix.args }} -- --profile bundle-release
+          args: ${{ matrix.args }}

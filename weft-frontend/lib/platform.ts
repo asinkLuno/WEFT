@@ -3,8 +3,8 @@ import {
   listen as tauriListen,
   type UnlistenFn,
 } from "@tauri-apps/api/event";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { openUrl as tauriOpenUrl } from "@tauri-apps/plugin-opener";
-import { pyInvoke } from "tauri-plugin-pytauri-api";
 
 export interface PlatformEvent<T> {
   payload: T;
@@ -21,7 +21,7 @@ export interface PlatformAdapter {
 }
 
 const tauriAdapter: PlatformAdapter = {
-  invoke: (command, args) => pyInvoke(command, args),
+  invoke: (command, args) => tauriInvoke(command, args),
   listen: (event, handler) => tauriListen(event, handler),
   emit: (event, payload) => tauriEmit(event, payload),
   openUrl: (url) => tauriOpenUrl(url),

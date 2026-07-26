@@ -8,7 +8,7 @@
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "yarn --cwd weft-frontend build",
     "frontendDist": "../weft-frontend/dist",
-    "features": ["pytauri/standalone"]
+    "features": []
   },
   "app": {
     "withGlobalTauri": true,

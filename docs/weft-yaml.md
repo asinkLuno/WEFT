@@ -40,8 +40,8 @@ narrative:
 | 字段 | 是否必需 | 含义 |
 |------|----------|------|
 | `story` | 是 | 标题、描述和历法选择 |
-| `aqueduct` | 否 | 自定义历法注册名到 Python 文件的映射 |
-| `material` | 否 | 自定义派生属性注册名到 Python 文件的映射 |
+| `aqueduct` | 否 | 自定义历法注册名到 Rhai 文件的映射 |
+| `material` | 否 | 自定义派生属性注册名到 Rhai 文件的映射 |
 | `moai` | 否 | 以名称为键的实体 |
 | `moai_link` | 否 | 实体关系分组 |
 | `drift` | 否 | 事件分组 |
@@ -78,7 +78,8 @@ start_time: &arrival [2025, 4, 2, 10]
 end_time: [0, 0, 0, 2, *arrival] # arrival 两小时后
 ```
 
-自定义历法的列表长度由其 Brick 数量决定。详细规则见[时间引擎](phase.md)。
+自定义历法也接收六分量列表，实际展示层级由插件 metadata 决定。详细规则见
+[时间引擎](phase.md)。
 
 ## Material
 
@@ -97,18 +98,26 @@ moai:
 
 ```yaml
 material:
-  rank: ./materials/rank.py
+  rank:
+    runtime: rhai
+    kind: material
+    api: 1
+    source: ./materials/rank.rhai
+    entry: material
 ```
 
-插件文件必须导出 `material(moai)`：
+插件文件必须导出 `material(ctx)`：
 
-```python
-def material(moai):
-    return (moai.extra_props or {}).get("score", 0) // 10
+```rhai
+fn material(ctx) {
+    ctx.moai.extra_props.score / 10
+}
 ```
 
-注册名可以覆盖内置 material。插件以 WEFT 进程权限执行，只应加载可信代码；
-每次加载故事时，注册表都会先恢复为内置状态。
+`ctx.api` 当前为 `1`，`ctx.moai` 是稳定、可序列化的对象。返回值可以是 null、
+标量、数组或嵌套 Map。脚本默认没有文件系统与网络能力。
+
+完整 material 脚本示例见 `examples/zodiac.rhai`。
 
 例如，一个故事可以为人物定义 `阵营` 和 `灵力`，另一个故事可以为城市定义
 `人口` 和 `气候`。这些都不需要 WEFT 增加新的内置模型字段：

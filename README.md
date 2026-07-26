@@ -44,7 +44,7 @@ the precise story structure.
 - The **`weft-yaml` skill** teaches agents WEFT's concepts, format, and editing
   workflow.
 - The **WEFT MCP server** exposes the live schema, validation, story
-  inspection, and timeline resolution backed by the same Python model as the
+  inspection, and timeline resolution backed by the same Rust model as the
   desktop application.
 - The **desktop application** lets writers visually inspect the result.
 
@@ -109,11 +109,9 @@ the agent live schema access, validation, and timeline resolution. See
 
 ## Development
 
-Requirements: Python 3.13+, `uv`, Rust, and the Tauri prerequisites for your
-platform.
+Requirements: Rust, Node.js, Yarn, and the Tauri prerequisites for your platform.
 
 ```bash
-uv sync
 cargo tauri dev -- examples/红楼梦.yml
 ```
 

@@ -22,7 +22,7 @@ WEFT 为 Agent 提供两个互补层次：
 
 - **`weft-yaml` skill**：告诉 Agent WEFT 的概念、文件结构、编辑原则和推荐工作流。
 - **WEFT MCP server**：提供实时 schema、文件校验、故事检查和时间线解析；它与
-  桌面应用使用同一套 Python 领域模型。
+  桌面应用使用同一套 Rust 领域模型。
 
 典型流程是：
 
@@ -126,23 +126,17 @@ WEFT 提供脚手架，但不替作者决定世界里能有什么。这就是“
 ## 架构
 
 ```text
-React + Vite ──Tauri IPC──> PyTauri commands ──> Python 领域模型
-                                         ▲
-Code Agent ───────stdio MCP──────────────┘
+React + Vite ──Tauri IPC──> Rust 领域内核 ──> Rhai 故事脚本
 ```
 
-- Tauri/Rust 负责桌面窗口、系统集成和 standalone 发行。
+- Tauri/Rust 负责桌面窗口、系统集成、领域模型和 standalone 发行。
 - React + TypeScript + Vite 负责界面，不需要 Node.js 服务器。
-- Python + Pydantic 负责 YAML 解析、交叉引用、时间计算和 material。
-- 同一个 `weft` 可执行文件用 `weft mcp` 向本地 Agent 提供工具。
-- 应用不启动 HTTP API，也不发行 Python wheel。
+- Rust 负责 YAML 解析、交叉引用和时间计算；Rhai 负责自定义历法与 material。
+- 应用不启动 HTTP API，也不携带 Python 运行时。
 
 ## 快速开始
 
 ```bash
-# 安装依赖
-uv sync
-
 # 启动 Tauri 桌面应用
 cargo tauri dev -- examples/红楼梦.yml
 ```
@@ -153,21 +147,10 @@ cargo tauri dev -- examples/红楼梦.yml
 
 ```
 weft/
-├── weft_backend/     # Python 领域层与 PyTauri commands
-│   ├── commands.py   # Tauri IPC commands
-│   ├── command_handlers.py # IPC 处理函数
-│   ├── mcp_server.py # 面向 Code Agent 的 stdio MCP server
-│   ├── dao.py        # 数据模型与 YAML 解析
-│   ├── aqueduct.py   # 时间运算引擎
-│   ├── material.py   # 派生属性计算（如星座）
-│   ├── graph.py      # Moai 关系图
-│   └── state.py      # 当前故事与热重载状态
+├── src-tauri/        # Rust 领域内核、Rhai 运行时与 Tauri IPC
 ├── weft-frontend/    # Tauri React + Vite 前端
 │   ├── app/          # React 页面
 │   └── components/   # 组件
-├── src-tauri/        # Rust/Tauri 桌面壳
-│   └── icons/        # 各平台应用图标
 ├── plugins/          # Code Agent 插件与 skill
-├── examples/         # 示例故事与自定义历法
-└── tests/            # 测试数据与端到端测试
+└── examples/         # 示例故事与 Rhai 自定义历法
 ```

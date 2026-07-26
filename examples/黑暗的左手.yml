@@ -1,5 +1,9 @@
 aqueduct:
-  gethen: ./calendars/gethen.py
+  gethen:
+    runtime: rhai
+    kind: calendar
+    api: 1
+    source: ./calendars/gethen.rhai
 
 story:
   title: 黑暗的左手

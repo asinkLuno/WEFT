@@ -12,30 +12,18 @@ repos:
 
   - repo: local
     hooks:
-      - id: ruff
-        name: ruff
-        entry: ruff check
+      - id: rust-test
+        name: Rust backend tests
+        entry: cargo test --manifest-path src-tauri/Cargo.toml
         language: system
-        types: [python]
-
-      - id: ruff-format
-        name: ruff-format
-        entry: ruff format --check
-        language: system
-        types: [python]
-
-      - id: pytest
-        name: pytest
-        entry: uv run pytest
-        language: system
-        files: ^(weft_backend/|tests/backend/|pyproject\.toml$|uv\.lock$)
+        files: ^src-tauri/
         pass_filenames: false
 
-      - id: gen-types
-        name: gen-types (OpenAPI → TS)
-        entry: bash weft-frontend/scripts/check-types.sh
+      - id: rust-fmt
+        name: Rust formatting
+        entry: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
         language: system
-        files: ^weft_backend/.*\.py$
+        files: ^src-tauri/.*\.rs$
         pass_filenames: false
 
       - id: next-lint
@@ -59,11 +47,11 @@ repos:
         types_or: [javascript, ts, tsx, jsx]
         pass_filenames: false
 
-      - id: backend-coverage
-        name: backend coverage (minimum 59%)
-        entry: uv run pytest --cov=weft_backend --cov-report=term-missing --cov-report=xml:coverage/backend.xml --cov-fail-under=59
+      - id: backend-test
+        name: Rust backend tests
+        entry: cargo test --manifest-path src-tauri/Cargo.toml
         language: system
-        files: ^(weft_backend/|tests/backend/|pyproject\.toml$|uv\.lock$)
+        files: ^src-tauri/
         pass_filenames: false
         stages: [pre-push]
 

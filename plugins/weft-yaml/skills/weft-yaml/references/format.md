@@ -80,32 +80,31 @@ It defaults to `gregorian`. The built-ins are:
 - `gregorian`: Gregorian rules with Chinese unit labels.
 - `gregorian_en`: the same Gregorian rules with English display text.
 
-A custom calendar is executable Python, so only load trusted modules. Register it
-at top level, using a path relative to the story file, and select its registration
-name in `story.date_mode`:
+A custom calendar is a restricted Rhai script. Register it at top level using a
+path relative to the story file, then select its name in `story.date_mode`:
 
 ```yaml
 aqueduct:
-  gethen: ./calendars/gethen.py
+  gethen:
+    runtime: rhai
+    kind: calendar
+    api: 1
+    source: ./calendars/gethen.rhai
 
 story:
   title: A Gethenian story
   date_mode: gethen
 ```
 
-The module must export `aqueduct`, an instance of
-`weft_backend.aqueduct.Aqueduct`. Its ordered `Brick` definitions determine the
-meaning and maximum component count of every time list. Its `humanizer` controls
-display text. If events have `end_time`, it must also provide `to_tick` so WEFT
-can compare endpoints. Registration names may override built-ins, and WEFT resets
-the registry to its built-in baseline before each story load.
+The script must export `metadata()`, `normalize(values)`, `to_tick(values)`, and
+`humanize(values)`. It receives a fixed six-component array; metadata `units`
+declares the meaningful display levels.
 
 ## Time lists
 
 For the built-in Gregorian calendars, positions are
-`[year, month, day, hour, minute, second]`. For a custom calendar, positions are
-the module's Brick order instead; do not assume Gregorian units or six
-components.
+`[year, month, day, hour, minute, second]`. Custom calendars receive the same
+six slots but may assign their own meaning to the active prefix.
 
 A list may omit trailing units and WEFT zero-pads it to the active calendar's
 Brick count. It cannot contain more integer components than that count. Values
