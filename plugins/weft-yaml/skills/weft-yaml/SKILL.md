@@ -29,7 +29,7 @@ Build structurally valid WEFT stories while preserving author intent and referen
 
 - Keep the top-level shape explicit: `story`, optional `aqueduct`, optional `material`, `moai`, `moai_link`, `drift`, and `narrative`.
 - Use unique, stable entity and event names. Event IDs are derived as `group/event`.
-- Select one calendar for the whole story with `story.date_mode`. Built-ins are `gregorian` and `gregorian_en`; both use `[year, month, day, hour, minute, second]`.
+- Select one calendar for the whole story with `story.date_mode`. Built-ins are `gregorian`, `gregorian_en`, and `gregorian_ja`; all three use `[year, month, day, hour, minute, second]` and share the same Gregorian rules with different locale display.
 - Register a custom calendar at top-level `aqueduct` with a Rhai plugin manifest, then select that same name with `story.date_mode`. Set `runtime: rhai`, `kind: calendar`, `api: 1`, and a `source` path relative to the story file.
 - Represent time using the selected calendar's ordered Brick units. A time list may omit trailing units and WEFT zero-pads it to that calendar's Brick count; it must not contain more integer components than the calendar has.
 - Represent a relative time by appending another time list or YAML alias as the last element, for example `[0, 0, 3, *arrival]`.

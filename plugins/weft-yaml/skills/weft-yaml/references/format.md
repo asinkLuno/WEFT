@@ -38,7 +38,7 @@ narrative:
 
 ## Top-level fields
 
-- `story`: required mapping. `title` must be a string; `description` is optional. `date_mode` selects a registered aqueduct and defaults to `gregorian`; built-ins are `gregorian` and `gregorian_en`.
+- `story`: required mapping. `title` must be a string; `description` is optional. `date_mode` selects a registered aqueduct and defaults to `gregorian`; built-ins are `gregorian`, `gregorian_en`, and `gregorian_ja`.
 - `aqueduct`: optional mapping from calendar registration names to Rhai plugin manifests. Each manifest uses `runtime: rhai`, `kind: calendar`, `api: 1`, and a story-relative `source`.
 - `material`: optional mapping from material registration names to Rhai plugin manifests. Each manifest uses `runtime: rhai`, `kind: material`, `api: 1`, a story-relative `source`, and an optional `entry` function name.
 - `moai`: entity mapping keyed by unique entity name.
@@ -79,6 +79,7 @@ It defaults to `gregorian`. The built-ins are:
 
 - `gregorian`: Gregorian rules with Chinese unit labels.
 - `gregorian_en`: the same Gregorian rules with English display text.
+- `gregorian_ja`: the same Gregorian rules with Japanese display text.
 
 A custom calendar is a restricted Rhai script. Register it at top level using a
 path relative to the story file, then select its name in `story.date_mode`:
@@ -97,8 +98,9 @@ story:
 ```
 
 The script must export `metadata()`, `normalize(values)`, `to_tick(values)`, and
-`humanize(values)`. It receives a fixed six-component array; metadata `units`
-declares the meaningful display levels.
+`humanize(values)`. It may also export `extra(values)` for computed metadata
+such as weekday name or holiday detection. Each function receives a fixed
+six-component array; metadata `units` declares the meaningful display levels.
 
 ## Time lists
 

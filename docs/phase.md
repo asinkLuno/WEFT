@@ -12,10 +12,49 @@ start_time: [2026, 7, 27, 12, 30, 0]
 start_time: [2, 3, [2020, 1, 1]]
 ```
 
-Rust `Phase` 沿引用链累加各层分量，得到绝对时间。内置 `gregorian` 和
-`gregorian_en` 支持格里高利历归一化、显示与 tick 转换。
+Rust `Phase` 沿引用链累加各层分量，得到绝对时间。
 
-## Rhai 历法插件
+## 内置历法
+
+内置历法共用 `gregorian_core.rhai` 中的格里高利历算法（闰年判断、归一化、tick
+转换、星期计算），各自附带独立本地化脚本：
+
+| date_mode | 本地化 | 示例 |
+|-----------|--------|------|
+| `gregorian` | 中文 | 2026年7月27日 |
+| `gregorian_en` | 英文 | Jul 27, 2026 |
+| `gregorian_ja` | 日文 | 2026年7月27日 |
+
+三者均使用 `[年, 月, 日, 时, 分, 秒]` 六分量。
+
+`gregorian` 是默认历法；未指定 `story.date_mode` 时使用。
+
+### extra() — 派生信息
+
+内置历法额外提供 `extra(values)` 函数（通过 Rust `Calendar::extra()` 调用），
+返回当前日期在历法上下文中的派生信息，包括星期和节日：
+
+```json
+{
+  "weekday": "日",
+  "weekday_number": 7,
+  "holiday": "母亲节"
+}
+```
+
+- `weekday`: 本地化星期名称
+- `weekday_number`: 1–7，1=星期一 … 7=星期日（Sakamoto 算法）
+- `holiday`: 仅当日期匹配某个计算型节日时出现
+
+各历法支持的节日：
+
+| 历法 | 节日 |
+|------|------|
+| `gregorian` | 母亲节（5月第2日曜）、父亲节（6月第3日曜） |
+| `gregorian_en` | Mother's Day（5月第2周日）、Father's Day（6月第3周日）、Thanksgiving（11月第4周四） |
+| `gregorian_ja` | 母の日（5月第2日曜）、父の日（6月第3日曜） |
+
+## 自定义 Rhai 历法
 
 顶层 `aqueduct` 将注册名映射到相对于故事文件的 `.rhai` 文件：
 
@@ -31,7 +70,9 @@ story:
   date_mode: gethen
 ```
 
-历法脚本 API v1 包含四个入口：
+### API v1
+
+Rhai 历法脚本 API v1 包含四个必需入口和一个可选入口：
 
 ```rhai
 fn metadata() {
@@ -51,12 +92,44 @@ fn to_tick(values) {
 fn humanize(values) {
     `${values[0]}年${values[1]}月${values[2]}日`
 }
+
+// 可选
+fn extra(values) {
+    #{ /* 任意派生信息 */ }
+}
 ```
 
-四个入口都接收固定六分量数组；metadata 中的 `units` 决定展示的有效层级。
-`to_tick` 必须返回单调递增的最小单位坐标，供 Drift 排序和区间检查使用。
-`normalize` 用于相对时间差的进位与借位。
+| 函数 | 参数 | 返回值 | 必需 |
+|------|------|--------|------|
+| `metadata()` | 无 | Map（包含 title, description, units） | 是 |
+| `normalize(values)` | `[i64;6]` | `[i64;6]` | 是 |
+| `to_tick(values)` | `[i64;6]` | `i64`（单调递增的最小单位坐标） | 是 |
+| `humanize(values)` | `[i64;6]` | String | 是 |
+| `extra(values)` | `[i64;6]` | Map（任意派生信息） | 否，可选 |
 
-Rhai 脚本会编译并缓存。运行时限制表达式深度、调用深度、运算次数、变量数量
-以及字符串、数组和 Map 大小，默认不开放文件系统和网络。完整示例见
-`examples/calendars/gethen.rhai`。
+所有函数都接收固定六分量数组。`metadata` 中的 `units` 声明有效展示层级，高于
+`units` 长度的分量不会被展示。
+
+`extra()` 的返回值会通过 `CalendarMetadata.extra_props` 以 JSON 形式暴露给
+前端和 MCP 调用方。
+
+### 核心 + 本地化架构
+
+内置历法使用 Rhai 脚本拼接实现共享逻辑：
+`gregorian_core.rhai`（核心算法）与各语言本地化脚本通过 Rust 编译期拼接后
+注入同一 Rhai 引擎。自定义历法可参考此模式，将通用逻辑放在一个文件中，
+再通过 `load_script` 或源码层面的拼接复用。
+
+### 运行时限制
+
+Rhai 脚本会编译并缓存。运行时限制：
+
+- 表达式深度：64
+- 调用深度：32
+- 运算次数：100,000
+- 变量数量：256
+- 数组大小：10,000
+- Map 大小：1,000
+- 字符串大小：1,000,000 字符
+
+不开放文件系统和网络。完整示例见 `examples/calendars/gethen.rhai`。
