@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,16 +26,44 @@ export function Modal({
   label,
   closeLabel = "Close",
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const focusable =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusTimer = window.setTimeout(() => {
+      const panel = panelRef.current;
+      if (panel && !panel.contains(document.activeElement)) {
+        panel.querySelector<HTMLElement>(focusable)?.focus();
+      }
+    }, 0);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = panelRef.current?.querySelectorAll<HTMLElement>(focusable);
+      if (!elements?.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKey);
+      previousFocus?.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -49,6 +77,7 @@ export function Modal({
       onClick={lockBackdrop ? undefined : onClose}
     >
       <div
+        ref={panelRef}
         className={cn(
           "relative w-full max-w-lg rounded-xl bg-background shadow-xl ring-1 ring-foreground/10",
           className,

@@ -488,7 +488,7 @@ export function App() {
     <>
       <div className="min-h-screen flex flex-col">
         <AppEvents onFileLost={onFileLost} language={language} />
-        <header className="flex items-center gap-6 border-b border-border px-6 py-3">
+        <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border px-4 py-3 sm:flex-nowrap sm:px-6">
           <a
             href="#/story"
             className="flex items-center gap-2 text-lg font-semibold tracking-wide"
@@ -496,18 +496,22 @@ export function App() {
             <img src="/logo-icon.svg" alt="WEFT" width={20} height={20} />
             WEFT
           </a>
-          <NavigationMenu>
+          <NavigationMenu className="order-last min-w-0 max-w-none basis-full justify-start overflow-x-auto sm:order-none sm:basis-auto sm:overflow-visible">
             <NavigationMenuList className="gap-1">
               {NAV_ITEMS.map((item) => (
                 <NavigationMenuItem key={item.path}>
-                  <NavigationMenuLink href={`#${item.path}`}>
+                  <NavigationMenuLink
+                    href={`#${item.path}`}
+                    active={path === item.path}
+                    aria-current={path === item.path ? "page" : undefined}
+                  >
                     {COPY[language][item.key as keyof typeof COPY[typeof language]]}
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               ))}
             </NavigationMenuList>
           </NavigationMenu>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex min-w-0 items-center gap-3">
             {openError && (
               <span
                 className="max-w-80 truncate text-sm text-destructive"
@@ -518,7 +522,7 @@ export function App() {
             )}
             {fileName && (
               <span
-                className="flex items-center gap-1.5 max-w-60 truncate text-sm text-muted-foreground"
+                className="flex max-w-32 items-center gap-1.5 truncate text-sm text-muted-foreground sm:max-w-60"
                 title={appState?.story_path ?? fileName}
               >
                 <span

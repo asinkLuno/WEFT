@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { COPY, type Language } from "@/lib/i18n";
@@ -33,15 +33,14 @@ export function QuickSwitcher({
     return () => window.clearTimeout(id);
   }, [open]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return recent;
-    return recent.filter((story) =>
-      [story.title, story.path].some((field) =>
-        field.toLowerCase().includes(q),
-      ),
-    );
-  }, [query, recent]);
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? recent.filter((story) =>
+        [story.title, story.path].some((field) =>
+          field.toLowerCase().includes(q),
+        ),
+      )
+    : recent;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import type { Drift, Moai, MoaiMap } from "@/lib/api";
 import { COPY, initialLanguage } from "@/lib/i18n";
 import {
@@ -34,7 +34,8 @@ export function MoaiGantts({
   moais: MoaiMap;
 }) {
   const [query, setQuery] = useState("");
-  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const deferredQuery = useDeferredValue(query);
+  const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
   const filteredEntries = normalizedQuery
     ? entries.filter(({ key, moai }) =>
         [

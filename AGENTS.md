@@ -1,7 +1,8 @@
 # WEFT Release Procedure
 
-Use GitHub CLI (`gh`) for all GitHub and remote Git operations. Do not invoke
-`git` commands directly. Use `gh api` for branch refs, commits, comparisons,
+Use GitHub CLI (`gh`) for all GitHub and remote Git operations. Local `git`
+commands may be used to inspect, stage, and manage the working tree, but do not
+run `git commit`. Use `gh api` for remote branch refs, commits, comparisons,
 tags, and other Git data that do not have a dedicated high-level `gh` command.
 Use `gh release`, `gh workflow`, and `gh run` for their corresponding
 operations.
