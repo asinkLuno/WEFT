@@ -34,6 +34,13 @@ export interface components {
              * @enum {string}
              */
             source: "builtin" | "plugin";
+            /**
+             * Extra Props
+             * @default null
+             */
+            extra_props: {
+                [key: string]: unknown;
+            } | null;
         };
         /** Phase */
         Phase: {

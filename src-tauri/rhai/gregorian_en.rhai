@@ -4,11 +4,36 @@ fn metadata() {
     #{
         title: "Gregorian Calendar",
         description: "Represents time with years, months, days, hours, minutes, and seconds.",
-        units: ["year", "month", "day", "hour", "minute", "second"]
+        units: ["year", "month", "day", "hour", "minute", "second"],
+        weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     }
 }
 
 const MONTHS = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+
+fn extra(values) {
+    let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    let n = weekday_number(values);
+    let result = #{ weekday: names[n - 1], weekday_number: n };
+    let y = values[0];
+    let m = values[1];
+    let d = values[2];
+    if y >= 100 && m >= 1 && m <= 12 && d >= 1 && d <= 31 {
+        let mothers_day = nth_weekday_of_month(y, 5, 7, 2);
+        if m == 5 && d == mothers_day {
+            result.holiday = "Mother's Day";
+        }
+        let fathers_day = nth_weekday_of_month(y, 6, 7, 3);
+        if m == 6 && d == fathers_day {
+            result.holiday = "Father's Day";
+        }
+        let thanksgiving = nth_weekday_of_month(y, 11, 4, 4);
+        if m == 11 && d == thanksgiving {
+            result.holiday = "Thanksgiving";
+        }
+    }
+    result
+}
 
 fn humanize(values) {
     let v = normalize(values);

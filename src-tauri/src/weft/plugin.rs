@@ -96,6 +96,17 @@ impl RhaiCalendar {
             .into_string()
             .map_err(|_| WeftError::Plugin("humanize 必须返回字符串".into()))
     }
+
+    pub fn extra(&self, values: &[i64]) -> Result<Value, WeftError> {
+        let input = values
+            .iter()
+            .copied()
+            .map(rhai::Dynamic::from_int)
+            .collect::<rhai::Array>();
+        let output = self.call("extra", (input,))?;
+        from_dynamic(&output)
+            .map_err(|error| WeftError::Plugin(format!("extra 返回值无效: {error}")))
+    }
 }
 
 impl std::fmt::Debug for RhaiRuntime {

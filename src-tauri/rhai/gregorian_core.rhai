@@ -60,3 +60,21 @@ fn to_tick(values) {
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy + day - 1 + day_carry;
     (era * 146097 + doe) * 86400 + seconds
 }
+
+/// Return 1-7 where 1=Monday … 7=Sunday (Sakamoto's algorithm).
+fn weekday_number(values) {
+    let y = values[0];
+    let m = values[1];
+    let d = values[2];
+    let t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    if m < 3 { y -= 1; }
+    let sakamoto = (y + y / 4 - y / 100 + y / 400 + t[m - 1] + d) % 7;
+    if sakamoto == 0 { 7 } else { sakamoto }
+}
+
+/// Day of month for the Nth occurrence of target_weekday (1=Mon … 7=Sun).
+fn nth_weekday_of_month(year, month, target_weekday, n) {
+    let first = weekday_number([year, month, 1]);
+    let first_target = 1 + (target_weekday - first + 7) % 7;
+    first_target + (n - 1) * 7
+}

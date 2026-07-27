@@ -4,12 +4,14 @@ use super::{
     plugin::{calendar_source, RhaiCalendar},
 };
 use serde::Serialize;
+use serde_json::{Map, Value};
 use serde_yaml::Mapping;
 use std::path::Path;
 
 const GREGORIAN_CORE: &str = include_str!("../../rhai/gregorian_core.rhai");
 const GREGORIAN_CN: &str = include_str!("../../rhai/gregorian_cn.rhai");
 const GREGORIAN_EN: &str = include_str!("../../rhai/gregorian_en.rhai");
+const GREGORIAN_JA: &str = include_str!("../../rhai/gregorian_ja.rhai");
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CalendarMetadata {
@@ -18,6 +20,8 @@ pub struct CalendarMetadata {
     pub description: String,
     pub units: Vec<String>,
     pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_props: Option<Map<String, Value>>,
 }
 
 #[derive(Debug)]
@@ -36,6 +40,10 @@ impl Calendar {
                 let script = format!("{GREGORIAN_CORE}\n{GREGORIAN_EN}");
                 RhaiCalendar::load_script(name, &script)?
             }
+            "gregorian_ja" => {
+                let script = format!("{GREGORIAN_CORE}\n{GREGORIAN_JA}");
+                RhaiCalendar::load_script(name, &script)?
+            }
             other => {
                 let source = calendar_source(spec, other)?;
                 RhaiCalendar::load(other, &base.join(source))?
@@ -48,27 +56,38 @@ impl Calendar {
 
     pub fn metadata(&self, name: &str) -> Result<CalendarMetadata, WeftError> {
         let value = self.inner.metadata()?;
+        let known: [&str; 3] = ["title", "description", "units"];
+        let extra_props = value
+            .as_object()
+            .map(|obj| {
+                obj.iter()
+                    .filter(|(k, _)| !known.contains(&k.as_str()))
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect::<Map<_, _>>()
+            })
+            .filter(|m| !m.is_empty());
         Ok(CalendarMetadata {
             name: name.into(),
             title: value
                 .get("title")
-                .and_then(serde_json::Value::as_str)
+                .and_then(Value::as_str)
                 .unwrap_or(name)
                 .into(),
             description: value
                 .get("description")
-                .and_then(serde_json::Value::as_str)
+                .and_then(Value::as_str)
                 .unwrap_or_default()
                 .into(),
             units: value
                 .get("units")
-                .and_then(serde_json::Value::as_array)
+                .and_then(Value::as_array)
                 .into_iter()
                 .flatten()
-                .filter_map(serde_json::Value::as_str)
+                .filter_map(Value::as_str)
                 .map(str::to_owned)
                 .collect(),
             source: "plugin".into(),
+            extra_props,
         })
     }
 
@@ -85,6 +104,10 @@ impl Calendar {
 
     pub fn to_tick(&self, value: [i64; PHASE_LEN]) -> Result<i64, WeftError> {
         self.inner.to_tick(&value)
+    }
+
+    pub fn extra(&self, value: [i64; PHASE_LEN]) -> Result<Value, WeftError> {
+        self.inner.extra(&value.to_vec())
     }
 }
 
