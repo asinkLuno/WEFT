@@ -1,15 +1,10 @@
 #![allow(clippy::result_large_err)] // Tauri serializes structured error payloads directly.
 
-mod calendar;
-mod error;
-mod mcp;
-mod model;
-mod phase;
-mod plugin;
+mod weft;
 
 use chrono::{DateTime, Local};
-use error::{ErrorPayload, WeftError};
-use model::{Dao, Drift, LinkGraph, Moai, Narrative, Story};
+use weft::errors::{ErrorPayload, WeftError};
+use weft::dao::{Dao, Drift, LinkGraph, Moai, Narrative, Story};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -42,7 +37,7 @@ struct Snapshot {
 
 impl AppState {
     fn load(&self, path: PathBuf) -> Result<(), ErrorPayload> {
-        match model::load(&path) {
+        match weft::dao::load(&path) {
             Ok(dao) => {
                 let modified = fs::metadata(&path).and_then(|meta| meta.modified()).ok();
                 let mut state = self.snapshot.write();
@@ -117,7 +112,7 @@ fn get_story(state: tauri::State<'_, AppState>) -> Result<Story, ErrorPayload> {
 #[tauri::command]
 fn get_calendar_metadata(
     state: tauri::State<'_, AppState>,
-) -> Result<calendar::CalendarMetadata, ErrorPayload> {
+) -> Result<weft::aqueduct::CalendarMetadata, ErrorPayload> {
     let name = require_dao(&state, |dao| dao.story.date_mode.clone())?;
     let _ = name;
     require_dao(&state, |dao| dao.calendar_metadata.clone())
@@ -401,5 +396,5 @@ pub fn run() {
 }
 
 pub fn run_mcp() -> Result<(), Box<dyn std::error::Error>> {
-    mcp::run()
+    weft::mcp::run()
 }

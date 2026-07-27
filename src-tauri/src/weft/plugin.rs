@@ -1,4 +1,4 @@
-use crate::error::WeftError;
+use super::errors::WeftError;
 use rhai::{serde::from_dynamic, serde::to_dynamic, Engine, Scope, AST};
 use serde_json::Value;
 use std::{collections::HashMap, fs, path::Path};
@@ -24,12 +24,16 @@ impl std::fmt::Debug for RhaiCalendar {
 
 impl RhaiCalendar {
     pub fn load(name: &str, path: &Path) -> Result<Self, WeftError> {
-        let engine = limited_engine();
         let script = fs::read_to_string(path).map_err(|error| {
             WeftError::Plugin(format!("读取历法 {} 失败: {error}", path.display()))
         })?;
-        let ast = engine.compile(&script).map_err(|error| {
-            WeftError::Plugin(format!("编译历法 {} 失败: {error}", path.display()))
+        Self::load_script(name, &script)
+    }
+
+    pub fn load_script(name: &str, script: &str) -> Result<Self, WeftError> {
+        let engine = limited_engine();
+        let ast = engine.compile(script).map_err(|error| {
+            WeftError::Plugin(format!("编译历法 {name} 失败: {error}"))
         })?;
         Ok(Self {
             engine,

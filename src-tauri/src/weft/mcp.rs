@@ -1,4 +1,4 @@
-use crate::model::{self, Dao};
+use super::dao::{self, Dao};
 use serde_json::{json, Value};
 use std::{
     error::Error,
@@ -103,7 +103,7 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, String> {
             .get("path")
             .and_then(Value::as_str)
             .ok_or_else(|| "load_story 需要 path".to_owned())?;
-        let loaded = model::load(Path::new(path)).map_err(|error| error.to_string())?;
+        let loaded = dao::load(Path::new(path)).map_err(|error| error.to_string())?;
         let result = json!({
             "title": loaded.story.title,
             "moai_count": loaded.moai.len(),

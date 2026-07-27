@@ -1,4 +1,4 @@
-use crate::error::WeftError;
+use super::errors::WeftError;
 use serde::{Deserialize, Serialize};
 
 pub const PHASE_LEN: usize = 6;

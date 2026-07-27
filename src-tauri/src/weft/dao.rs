@@ -1,4 +1,4 @@
-use crate::{calendar, error::WeftError, phase::Phase, plugin::RhaiRuntime};
+use super::{aqueduct, errors::WeftError, phase::Phase, plugin::RhaiRuntime};
 use serde::Serialize;
 use serde_json::{json, Map, Value};
 use serde_yaml::{Mapping, Value as Yaml};
@@ -73,7 +73,7 @@ pub struct LinkGraph {
 #[derive(Debug, Clone, Serialize)]
 pub struct Dao {
     pub story: Story,
-    pub calendar_metadata: calendar::CalendarMetadata,
+    pub calendar_metadata: aqueduct::CalendarMetadata,
     pub moai: BTreeMap<String, Moai>,
     pub drift: BTreeMap<String, Vec<Drift>>,
     pub narrative: BTreeMap<String, Narrative>,
@@ -100,7 +100,7 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
     let title = string(story_raw, "title")?;
     let date_mode = optional_string(story_raw, "date_mode")?.unwrap_or_else(|| "gregorian".into());
     let base_dir = path.parent().unwrap_or_else(|| Path::new("."));
-    let calendar = calendar::Calendar::load(
+    let calendar = aqueduct::Calendar::load(
         &date_mode,
         root.get(Yaml::String("aqueduct".into()))
             .and_then(Yaml::as_mapping),
@@ -176,7 +176,7 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
 fn parse_drifts(
     root: &Mapping,
     moais: &BTreeMap<String, Moai>,
-    calendar: &calendar::Calendar,
+    calendar: &aqueduct::Calendar,
 ) -> Result<BTreeMap<String, Vec<Drift>>, WeftError> {
     let mut result = BTreeMap::new();
     let Some(raw) = root.get(Yaml::String("drift".into())) else {
@@ -347,7 +347,7 @@ fn parse_graph(root: &Mapping, moais: &BTreeMap<String, Moai>) -> Result<LinkGra
 fn populate_journals(
     moais: &mut BTreeMap<String, Moai>,
     drifts: &BTreeMap<String, Vec<Drift>>,
-    calendar: &calendar::Calendar,
+    calendar: &aqueduct::Calendar,
 ) -> Result<(), WeftError> {
     for drift in drifts.values().flatten() {
         for name in drift.moais.as_deref().unwrap_or(&[]) {
