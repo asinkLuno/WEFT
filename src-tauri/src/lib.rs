@@ -91,11 +91,16 @@ fn require_dao<T>(
 
 fn set_story_menu_enabled<R: tauri::Runtime>(app: &tauri::AppHandle<R>, close: bool, reload: bool) {
     let Some(menu) = app.menu() else { return };
-    if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("close") {
-        let _ = item.set_enabled(close);
-    }
-    if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = menu.get("reload") {
-        let _ = item.set_enabled(reload);
+    let Ok(items) = menu.items() else { return };
+    for item in items {
+        if let tauri::menu::MenuItemKind::Submenu(submenu) = item {
+            if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = submenu.get("close") {
+                let _ = item.set_enabled(close);
+            }
+            if let Some(tauri::menu::MenuItemKind::MenuItem(item)) = submenu.get("reload") {
+                let _ = item.set_enabled(reload);
+            }
+        }
     }
 }
 
