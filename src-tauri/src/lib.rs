@@ -233,48 +233,144 @@ fn get_app_state(state: tauri::State<'_, AppState>) -> AppStateInfo {
     }
 }
 
-fn build_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
+struct MenuTexts {
+    file: &'static str,
+    open: &'static str,
+    open_recent: &'static str,
+    close: &'static str,
+    reload: &'static str,
+    settings: &'static str,
+    preferences: &'static str,
+    help: &'static str,
+    help_docs: &'static str,
+    help_issue: &'static str,
+}
+
+fn menu_texts(lang: &str) -> MenuTexts {
+    match lang {
+        "zh-CN" => MenuTexts {
+            file: "文件",
+            open: "打开故事…",
+            open_recent: "打开最近…",
+            close: "关闭故事",
+            reload: "重新加载",
+            settings: "设置",
+            preferences: "偏好设置…",
+            help: "帮助",
+            help_docs: "文档",
+            help_issue: "报告问题",
+        },
+        "zh-TW" => MenuTexts {
+            file: "檔案",
+            open: "開啟故事…",
+            open_recent: "開啟最近…",
+            close: "關閉故事",
+            reload: "重新載入",
+            settings: "設定",
+            preferences: "偏好設定…",
+            help: "幫助",
+            help_docs: "文件",
+            help_issue: "回報問題",
+        },
+        "lzh" => MenuTexts {
+            file: "檔",
+            open: "啟故事…",
+            open_recent: "啟近者…",
+            close: "闔故事",
+            reload: "重載",
+            settings: "設",
+            preferences: "設…",
+            help: "助",
+            help_docs: "文",
+            help_issue: "報謬",
+        },
+        "ja" => MenuTexts {
+            file: "ファイル",
+            open: "ストーリーを開く…",
+            open_recent: "最近を開く…",
+            close: "ストーリーを閉じる",
+            reload: "再読み込み",
+            settings: "設定",
+            preferences: "環境設定…",
+            help: "ヘルプ",
+            help_docs: "ドキュメント",
+            help_issue: "問題を報告",
+        },
+        "eo" => MenuTexts {
+            file: "Dosiero",
+            open: "Malfermi rakonton…",
+            open_recent: "Malfermi lastatempajn…",
+            close: "Fermi rakonton",
+            reload: "Reŝargi",
+            settings: "Agordoj",
+            preferences: "Agordoj…",
+            help: "Helpo",
+            help_docs: "Dokumentaro",
+            help_issue: "Raporto problemon",
+        },
+        _ => MenuTexts {
+            file: "File",
+            open: "Open Story…",
+            open_recent: "Open Recent…",
+            close: "Close Story",
+            reload: "Reload Story",
+            settings: "Settings",
+            preferences: "Preferences…",
+            help: "Help",
+            help_docs: "Documentation",
+            help_issue: "Report Issue",
+        },
+    }
+}
+
+fn build_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>, lang: &str) -> tauri::Result<()> {
+    let t = menu_texts(lang);
     let file = Submenu::with_items(
         app,
-        "File",
+        t.file,
         true,
         &[
-            &MenuItem::with_id(app, "open", "Open Story…", true, Some("CmdOrCtrl+O"))?,
+            &MenuItem::with_id(app, "open", t.open, true, Some("CmdOrCtrl+O"))?,
             &MenuItem::with_id(
                 app,
                 "open_recent",
-                "Open Recent…",
+                t.open_recent,
                 true,
                 Some("CmdOrCtrl+P"),
             )?,
-            &MenuItem::with_id(app, "close", "Close Story", false, Some("CmdOrCtrl+W"))?,
+            &MenuItem::with_id(app, "close", t.close, false, Some("CmdOrCtrl+W"))?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "reload", "Reload Story", false, Some("CmdOrCtrl+R"))?,
+            &MenuItem::with_id(app, "reload", t.reload, false, Some("CmdOrCtrl+R"))?,
         ],
     )?;
     let settings = Submenu::with_items(
         app,
-        "Settings",
+        t.settings,
         true,
         &[&MenuItem::with_id(
             app,
             "preferences",
-            "Preferences…",
+            t.preferences,
             true,
             Some("CmdOrCtrl+,"),
         )?],
     )?;
     let help = Submenu::with_items(
         app,
-        "Help",
+        t.help,
         true,
         &[
-            &MenuItem::with_id(app, "help_docs", "Documentation", true, None::<&str>)?,
-            &MenuItem::with_id(app, "help_issue", "Report Issue", true, None::<&str>)?,
+            &MenuItem::with_id(app, "help_docs", t.help_docs, true, None::<&str>)?,
+            &MenuItem::with_id(app, "help_issue", t.help_issue, true, None::<&str>)?,
         ],
     )?;
     app.set_menu(Menu::with_items(app, &[&file, &settings, &help])?)?;
     Ok(())
+}
+
+#[tauri::command]
+fn set_language(app: tauri::AppHandle, lang: String) -> tauri::Result<()> {
+    build_menu(&app, &lang)
 }
 
 fn register_menu_state_listener<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
@@ -366,7 +462,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            build_menu(app.handle())?;
+            build_menu(app.handle(), "en")?;
             let has_story = app.state::<AppState>().snapshot.read().dao.is_some();
             set_story_menu_enabled(app.handle(), has_story, has_story);
             register_menu_state_listener(app.handle());
@@ -377,6 +473,7 @@ pub fn run() {
             let _ = app.emit("weft-menu", event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
+            set_language,
             has_story,
             get_story,
             get_calendar_metadata,

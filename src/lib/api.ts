@@ -94,3 +94,6 @@ export const openRecentStory = (path: string) =>
 export const closeStory = () => invoke<void>("close_story");
 export const reloadStory = () => invoke<ReloadResult>("reload_story");
 export const getAppState = () => invoke<AppStateInfo>("get_app_state");
+
+export const setLanguage = (lang: string) =>
+  invoke<void>("set_language", { lang });

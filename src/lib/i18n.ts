@@ -65,6 +65,64 @@ export const COPY = {
 
     /* 用户提示 */
     STORY_NOT_LOADED_HINT: "先在桌面应用中打开一个 WEFT 故事文件",
+
+    /* 导航 */
+    nav_story: "故事",
+    nav_moai: "Moai",
+    nav_moai_link: "关系",
+    nav_drift: "Drift",
+    nav_narrative: "叙事",
+
+    /* 故事页 */
+    story_calendar: "历法",
+    story_builtin: "内置",
+    story_plugin: "插件",
+    story_mode: "模式",
+
+    /* Moai 页 */
+    moai_title: "Moai",
+    moai_materials: "素材",
+    moai_timeline: "时间线",
+    moai_count: "第 {n} / 共 {t} 个 Moai",
+    moai_events_empty: "暂无 drift 事件。",
+    moai_event_count: "{n} 个事件",
+    moai_event_count_plural: "{n} 个事件",
+    moai_search_empty: '未找到包含 "{q}" 的 Moai。',
+    moai_empty: "暂无 Moai。",
+
+    /* 关系图页 */
+    graph_title: "关系",
+    graph_subtitle: "选择关系类型，查看并探索 Moai 之间的连接。",
+    graph_search_placeholder: "查找节点",
+    graph_zoom_out: "缩小",
+    graph_zoom_in: "放大",
+    graph_fit_view: "适应视图",
+    graph_reset_view: "重置视图",
+    graph_canvas_hint: "拖动画布 · Ctrl/⌘ + 滚轮缩放",
+    graph_close_detail: "关闭节点详情",
+    graph_type_aria: "关系类型",
+    graph_node_count: "{n} 个节点 · {l} 条关系",
+    graph_view_node: "查看 {name}",
+    link_empty: "暂无 moai 关系。",
+
+    /* Drift 页 */
+    drift_title: "Drift",
+    drift_empty: "暂无 drift 事件。",
+    drift_count: "共 {s} 季 {n} 个事件",
+
+    /* Gantt */
+    gantt_event: "事件",
+    gantt_duration: "持续",
+    gantt_milestone: "节点",
+
+    /* 事件卡片 */
+    event_no_base_time: "无基准时间",
+
+    /* 叙事页 */
+    narrative_title: "叙事",
+    narrative_empty: "暂无叙事时间线。",
+    narrative_count: "共 {s} 条叙事 {n} 个事件",
+    narrative_observer: "观察者：{o} · 主题：{t}",
   },
 
   "zh-TW": {
@@ -130,12 +188,70 @@ export const COPY = {
 
     /* 使用者提示 */
     STORY_NOT_LOADED_HINT: "先在桌面應用程式中開啟 WEFT 故事檔案",
+
+    /* 導覽 */
+    nav_story: "故事",
+    nav_moai: "Moai",
+    nav_moai_link: "關係",
+    nav_drift: "Drift",
+    nav_narrative: "敘事",
+
+    /* 故事頁 */
+    story_calendar: "曆法",
+    story_builtin: "內建",
+    story_plugin: "插件",
+    story_mode: "模式",
+
+    /* Moai 頁 */
+    moai_title: "Moai",
+    moai_materials: "素材",
+    moai_timeline: "時間線",
+    moai_count: "第 {n} / 共 {t} 個 Moai",
+    moai_events_empty: "暫無 drift 事件。",
+    moai_event_count: "{n} 個事件",
+    moai_event_count_plural: "{n} 個事件",
+    moai_search_empty: '未找到包含 "{q}" 的 Moai。',
+    moai_empty: "暫無 Moai。",
+
+    /* 關係圖頁 */
+    graph_title: "關係",
+    graph_subtitle: "選擇關係類型，檢視並探索 Moai 之間的連線。",
+    graph_search_placeholder: "查詢節點",
+    graph_zoom_out: "縮小",
+    graph_zoom_in: "放大",
+    graph_fit_view: "適應檢視",
+    graph_reset_view: "重設檢視",
+    graph_canvas_hint: "拖曳畫布 · Ctrl/⌘ + 滾輪縮放",
+    graph_close_detail: "關閉節點詳情",
+    graph_type_aria: "關係類型",
+    graph_node_count: "{n} 個節點 · {l} 條關係",
+    graph_view_node: "檢視 {name}",
+    link_empty: "暫無 moai 關係。",
+
+    /* Drift 頁 */
+    drift_title: "Drift",
+    drift_empty: "暫無 drift 事件。",
+    drift_count: "共 {s} 季 {n} 個事件",
+
+    /* Gantt */
+    gantt_event: "事件",
+    gantt_duration: "持續",
+    gantt_milestone: "節點",
+
+    /* 事件卡片 */
+    event_no_base_time: "無基準時間",
+
+    /* 敘事頁 */
+    narrative_title: "敘事",
+    narrative_empty: "暫無敘事時間線。",
+    narrative_count: "共 {s} 條敘事 {n} 個事件",
+    narrative_observer: "觀察者：{o} · 主題：{t}",
   },
 
   lzh: {
     /* 首 */
     landing_title: "啟 WEFT 故事",
-    landing_description: "揀 YAML 檔，以觀故事、墨埃、流、敍事之時序。",
+    landing_description: "揀 YAML 檔，以觀故事、Moai、Drift、敍事之時序。",
     landing_formats: "唯 .yaml .yml 可用",
     landing_choose: "選 YAML 檔",
     landing_opening: "啟中…",
@@ -156,11 +272,11 @@ export const COPY = {
     page_error_default: "載入此頁敗",
     page_error_render: "繪製此頁敗",
     error_load_story: "載故事敗",
-    error_load_moai: "載墨埃敗",
-    error_load_drift: "載流敗",
-    error_load_moai_links: "載墨埃繫敗",
+    error_load_moai: "載 Moai 敗",
+    error_load_drift: "載 Drift 敗",
+    error_load_moai_links: "載 Moai 繫敗",
     error_load_narrative: "載敍事敗",
-    moai_search: "索墨埃",
+    moai_search: "索 Moai",
 
     /* 事告 */
     event_reloaded: "故事已重載",
@@ -193,6 +309,64 @@ export const COPY = {
 
     /* 提 */
     STORY_NOT_LOADED_HINT: "請先於桌面程式中啟 WEFT 故事檔",
+
+    /* 導 */
+    nav_story: "故事",
+    nav_moai: "Moai",
+    nav_moai_link: "繫",
+    nav_drift: "Drift",
+    nav_narrative: "敍事",
+
+    /* 故事頁 */
+    story_calendar: "曆",
+    story_builtin: "內建",
+    story_plugin: "插件",
+    story_mode: "式",
+
+    /* 墨埃頁 */
+    moai_title: "Moai",
+    moai_materials: "材",
+    moai_timeline: "時線",
+    moai_count: "{n}/{t} Moai",
+    moai_events_empty: "尚無 Drift 事。",
+    moai_event_count: "{n} 事",
+    moai_event_count_plural: "{n} 事",
+    moai_search_empty: "無「{q}」之 Moai。",
+    moai_empty: "尚無 Moai。",
+
+    /* 繫圖頁 */
+    graph_title: "繫",
+    graph_subtitle: "選繫類，觀 Moai 之交。",
+    graph_search_placeholder: "索點",
+    graph_zoom_out: "縮",
+    graph_zoom_in: "放",
+    graph_fit_view: "適屏",
+    graph_reset_view: "復原",
+    graph_canvas_hint: "拖布 · Ctrl/⌘ + 輥縮",
+    graph_close_detail: "闔點詳",
+    graph_type_aria: "繫類",
+    graph_node_count: "{n} 點 · {l} 繫",
+    graph_view_node: "觀 {name}",
+    link_empty: "尚無 Moai 繫。",
+
+    /* 流頁 */
+    drift_title: "Drift",
+    drift_empty: "尚無 Drift 事。",
+    drift_count: "共 {s} 季 {n} 事",
+
+    /* 時軸 */
+    gantt_event: "事",
+    gantt_duration: "延",
+    gantt_milestone: "點",
+
+    /* 事卡 */
+    event_no_base_time: "無基時",
+
+    /* 敍事頁 */
+    narrative_title: "敍事",
+    narrative_empty: "尚無敍事時線。",
+    narrative_count: "共 {s} 敍事 {n} 事",
+    narrative_observer: "觀者：{o} · 題：{t}",
   },
 
   ja: {
@@ -259,6 +433,64 @@ export const COPY = {
     /* ヒント */
     STORY_NOT_LOADED_HINT:
       "先にデスクトップアプリで WEFT ストーリーファイルを開いてください",
+
+    /* ナビゲーション */
+    nav_story: "ストーリー",
+    nav_moai: "モアイ",
+    nav_moai_link: "リンク",
+    nav_drift: "ドリフト",
+    nav_narrative: "ナラティブ",
+
+    /* ストーリーページ */
+    story_calendar: "カレンダー",
+    story_builtin: "内蔵",
+    story_plugin: "プラグイン",
+    story_mode: "モード",
+
+    /* モアイページ */
+    moai_title: "モアイ",
+    moai_materials: "素材",
+    moai_timeline: "タイムライン",
+    moai_count: "{n}/{t} モアイ",
+    moai_events_empty: "まだドリフトイベントはありません。",
+    moai_event_count: "{n} イベント",
+    moai_event_count_plural: "{n} イベント",
+    moai_search_empty: '"{q}" に一致するモアイはありません。',
+    moai_empty: "モアイが見つかりません。",
+
+    /* リレーショングラフページ */
+    graph_title: "関係",
+    graph_subtitle: "関係タイプを選択して、モアイ間のつながりを表示・探索します。",
+    graph_search_placeholder: "ノードを検索",
+    graph_zoom_out: "縮小",
+    graph_zoom_in: "拡大",
+    graph_fit_view: "表示に合わせる",
+    graph_reset_view: "表示をリセット",
+    graph_canvas_hint: "キャンバスをドラッグ · Ctrl/⌘ + スクロールでズーム",
+    graph_close_detail: "ノード詳細を閉じる",
+    graph_type_aria: "関係タイプ",
+    graph_node_count: "{n} ノード · {l} リンク",
+    graph_view_node: "{name} を表示",
+    link_empty: "モアイリンクが見つかりません。",
+
+    /* ドリフトページ */
+    drift_title: "ドリフト",
+    drift_empty: "ドリフトイベントが見つかりません。",
+    drift_count: "全 {s} シーズン {n} イベント",
+
+    /* ガント */
+    gantt_event: "イベント",
+    gantt_duration: "期間",
+    gantt_milestone: "マイルストーン",
+
+    /* イベントカード */
+    event_no_base_time: "基準時間なし",
+
+    /* ナラティブページ */
+    narrative_title: "ナラティブ",
+    narrative_empty: "ナラティブタイムラインが見つかりません。",
+    narrative_count: "全 {s} ナラティブ {n} イベント",
+    narrative_observer: "観察者: {o} · 主題: {t}",
   },
 
   eo: {
@@ -325,6 +557,64 @@ export const COPY = {
     /* Konsiloj */
     STORY_NOT_LOADED_HINT:
       "Unue malfermu WEFT-rakontodosieron en la labortabla aplikaĵo",
+
+    /* Navigado */
+    nav_story: "Rakonto",
+    nav_moai: "Moai",
+    nav_moai_link: "Ligoj",
+    nav_drift: "Drift",
+    nav_narrative: "Rakontaro",
+
+    /* Rakonta paĝo */
+    story_calendar: "Kalendaro",
+    story_builtin: "Enkonstruita",
+    story_plugin: "Kromaĵo",
+    story_mode: "Reĝimo",
+
+    /* Moai paĝo */
+    moai_title: "Moai",
+    moai_materials: "Materialoj",
+    moai_timeline: "Templinio",
+    moai_count: "{n} el {t} moai-oj",
+    moai_events_empty: "Neniuj drift-eventoj ankoraŭ.",
+    moai_event_count: "{n} evento",
+    moai_event_count_plural: "{n} eventoj",
+    moai_search_empty: 'Neniu moai trovita por "{q}".',
+    moai_empty: "Neniu moai trovita.",
+
+    /* Grafika paĝo de ligoj */
+    graph_title: "Rilatoj",
+    graph_subtitle: "Elektu rilatan tipon por vidi kaj esplori konektojn inter moai-oj.",
+    graph_search_placeholder: "Serĉi nodojn",
+    graph_zoom_out: "Malzomi",
+    graph_zoom_in: "Zomi",
+    graph_fit_view: "Konformigi",
+    graph_reset_view: "Restarigi",
+    graph_canvas_hint: "Treni kanvason · Ctrl/⌘ + rulumi por zomi",
+    graph_close_detail: "Fermi nod-detalojn",
+    graph_type_aria: "Rilata tipo",
+    graph_node_count: "{n} nodoj · {l} ligoj",
+    graph_view_node: "Vidi {name}",
+    link_empty: "Neniuj moai-ligoj trovitaj.",
+
+    /* Drift paĝo */
+    drift_title: "Drift",
+    drift_empty: "Neniuj drift-eventoj trovitaj.",
+    drift_count: "{n} eventoj tra {s} sezonoj",
+
+    /* Gantt */
+    gantt_event: "Evento",
+    gantt_duration: "Daŭro",
+    gantt_milestone: "Mejloŝtono",
+
+    /* Event-karto */
+    event_no_base_time: "Neniu baza tempo",
+
+    /* Rakontara paĝo */
+    narrative_title: "Rakontaro",
+    narrative_empty: "Neniuj rakontaraj templinioj trovitaj.",
+    narrative_count: "{n} eventoj tra {s} rakontaroj",
+    narrative_observer: "Observanto: {o} · Temoj: {t}",
   },
 
   en: {
@@ -390,6 +680,64 @@ export const COPY = {
 
     /* Hints */
     STORY_NOT_LOADED_HINT: "Open a WEFT story file in the desktop app first",
+
+    /* Navigation */
+    nav_story: "Story",
+    nav_moai: "Moai",
+    nav_moai_link: "Link",
+    nav_drift: "Drift",
+    nav_narrative: "Narrative",
+
+    /* Story page */
+    story_calendar: "Calendar",
+    story_builtin: "Built-in",
+    story_plugin: "Plugin",
+    story_mode: "Mode",
+
+    /* Moai page */
+    moai_title: "Moai",
+    moai_materials: "Materials",
+    moai_timeline: "Timeline",
+    moai_count: "{n} of {t} moais",
+    moai_events_empty: "No drift events yet.",
+    moai_event_count: "{n} event",
+    moai_event_count_plural: "{n} events",
+    moai_search_empty: 'No moai found for "{q}".',
+    moai_empty: "No moai found.",
+
+    /* Link graph page */
+    graph_title: "Relationships",
+    graph_subtitle: "Select a relationship type to view and explore connections between moai.",
+    graph_search_placeholder: "Search nodes",
+    graph_zoom_out: "Zoom out",
+    graph_zoom_in: "Zoom in",
+    graph_fit_view: "Fit view",
+    graph_reset_view: "Reset view",
+    graph_canvas_hint: "Drag canvas · Ctrl/⌘ + scroll to zoom",
+    graph_close_detail: "Close node details",
+    graph_type_aria: "Relationship type",
+    graph_node_count: "{n} nodes · {l} links",
+    graph_view_node: "View {name}",
+    link_empty: "No moai links found.",
+
+    /* Drift page */
+    drift_title: "Drift",
+    drift_empty: "No drift events found.",
+    drift_count: "{n} events across {s} seasons",
+
+    /* Gantt */
+    gantt_event: "Event",
+    gantt_duration: "Duration",
+    gantt_milestone: "Milestone",
+
+    /* Event hover card */
+    event_no_base_time: "No base time",
+
+    /* Narrative page */
+    narrative_title: "Narrative",
+    narrative_empty: "No narrative timelines found.",
+    narrative_count: "{n} events across {s} narratives",
+    narrative_observer: "Observer: {o} · Subjects: {t}",
   },
 } as const;
 

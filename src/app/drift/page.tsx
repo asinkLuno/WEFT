@@ -52,7 +52,7 @@ export default function DriftPage() {
   if (events.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center text-muted-foreground">
-        <p>No drift events found.</p>
+        <p>{COPY[initialLanguage()].drift_empty}</p>
       </main>
     );
   }
@@ -61,9 +61,9 @@ export default function DriftPage() {
     <main className="flex-1 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Drift</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{COPY[initialLanguage()].drift_title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {events.length} events across {entries.length} seasons
+            {COPY[initialLanguage()].drift_count.replace("{n}", String(events.length)).replace("{s}", String(entries.length))}
           </p>
         </div>
 

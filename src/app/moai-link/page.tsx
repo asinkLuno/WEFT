@@ -42,7 +42,7 @@ export default function MoaiLinkPage() {
   if (state.graph.nodes.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        <p>No moai links found.</p>
+        <p>{COPY[initialLanguage()].link_empty}</p>
       </div>
     );
   }

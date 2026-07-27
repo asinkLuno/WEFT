@@ -21,6 +21,7 @@ import {
   openRecentStory,
   openStory,
   reloadStory,
+  setLanguage as setMenuLanguage,
   triggerRefetch,
   type AppStateInfo,
   type OpenedStory,
@@ -41,11 +42,11 @@ const DriftPage = lazy(() => import("@/app/drift/page"));
 const NarrativePage = lazy(() => import("@/app/narrative/page"));
 
 const NAV_ITEMS = [
-  { label: "story", path: "/story" },
-  { label: "moai", path: "/moai" },
-  { label: "moai link", path: "/moai-link" },
-  { label: "drift", path: "/drift" },
-  { label: "narrative", path: "/narrative" },
+  { key: "nav_story", path: "/story" },
+  { key: "nav_moai", path: "/moai" },
+  { key: "nav_moai_link", path: "/moai-link" },
+  { key: "nav_drift", path: "/drift" },
+  { key: "nav_narrative", path: "/narrative" },
 ] as const;
 
 const PAGES: Record<string, React.ComponentType> = {
@@ -101,6 +102,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    setMenuLanguage(language).catch(() => undefined);
     hasLoadedStory()
       .then((loaded) => {
         setHasStory(loaded);
@@ -204,6 +206,7 @@ export function App() {
   function changeLanguage(next: Language) {
     setLanguage(next);
     localStorage.setItem(LANGUAGE_KEY, next);
+    setMenuLanguage(next).catch(() => undefined);
   }
 
   function finishOpening(story: OpenedStory) {
@@ -498,7 +501,7 @@ export function App() {
               {NAV_ITEMS.map((item) => (
                 <NavigationMenuItem key={item.path}>
                   <NavigationMenuLink href={`#${item.path}`}>
-                    {item.label}
+                    {COPY[language][item.key as keyof typeof COPY[typeof language]]}
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               ))}

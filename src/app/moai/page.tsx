@@ -57,7 +57,7 @@ export default function MoaiPage() {
   if (entries.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center text-muted-foreground">
-        <p>No moai found.</p>
+        <p>{COPY[initialLanguage()].moai_empty}</p>
       </main>
     );
   }

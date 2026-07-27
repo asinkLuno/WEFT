@@ -1,4 +1,5 @@
 import type { Drift, MoaiMap } from "@/lib/api";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import { EventHoverCard } from "./event-hover-card";
 
 export function compareDriftTime(a: Drift, b: Drift): number {
@@ -58,7 +59,7 @@ export function DriftGantt({
         <div className="min-w-[900px]">
           <div className="grid grid-cols-[240px_1fr] border-b bg-muted/50">
             <div className="flex h-14 items-end border-r px-4 pb-2 text-xs font-medium text-muted-foreground">
-              Event
+              {COPY[initialLanguage()].gantt_event}
             </div>
             <div className="relative h-14 font-mono text-[11px] text-muted-foreground">
               <span className="absolute bottom-2 left-3">
@@ -147,11 +148,11 @@ export function GanttLegend() {
   return (
     <div className="mt-3 flex items-center gap-5 text-xs text-muted-foreground">
       <span className="flex items-center gap-2">
-        <span className="h-2.5 w-5 rounded-sm bg-primary/85" /> Duration
+        <span className="h-2.5 w-5 rounded-sm bg-primary/85" /> {COPY[initialLanguage()].gantt_duration}
       </span>
       <span className="flex items-center gap-2">
         <span className="size-2.5 rotate-45 rounded-[1px] bg-primary" />
-        Milestone
+        {COPY[initialLanguage()].gantt_milestone}
       </span>
     </div>
   );

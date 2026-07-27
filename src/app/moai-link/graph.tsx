@@ -5,6 +5,7 @@ import * as d3 from "d3";
 import { Focus, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { GraphLink, GraphNode, LinkGraph, MoaiMap } from "@/lib/api";
+import { COPY, initialLanguage } from "@/lib/i18n";
 
 interface SubGraph {
   label: string;
@@ -217,7 +218,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
       .attr("class", "node")
       .attr("tabindex", 0)
       .attr("role", "button")
-      .attr("aria-label", (node) => `查看 ${node.name}`)
+      .attr("aria-label", (node) => COPY[initialLanguage()].graph_view_node.replace("{name}", node.name))
       .style("cursor", "grab");
 
     nodeGroups
@@ -387,7 +388,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
         <div>
           <h2 className="text-lg font-semibold">{graph.label}</h2>
           <p className="text-xs text-muted-foreground">
-            {graph.nodes.length} 个节点 · {graph.links.length} 条关系
+            {COPY[initialLanguage()].graph_node_count.replace("{n}", String(graph.nodes.length)).replace("{l}", String(graph.links.length))}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -397,8 +398,8 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="查找节点"
-              aria-label="查找关系图节点"
+              placeholder={COPY[initialLanguage()].graph_search_placeholder}
+              aria-label={COPY[initialLanguage()].graph_search_placeholder}
               list={`nodes-${markerIdRef.current}`}
               className="h-8 w-40 rounded-lg border border-input bg-background pr-2 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
             />
@@ -410,15 +411,15 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
           </form>
           <div
             className="flex items-center rounded-lg border bg-background p-0.5"
-            aria-label="关系图缩放控制"
+            aria-label={COPY[initialLanguage()].graph_zoom_in}
           >
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
               onClick={() => actionsRef.current?.zoomOut()}
-              aria-label="缩小"
-              title="缩小"
+              aria-label={COPY[initialLanguage()].graph_zoom_out}
+              title={COPY[initialLanguage()].graph_zoom_out}
             >
               <Minus />
             </Button>
@@ -427,8 +428,8 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
               variant="ghost"
               size="icon-sm"
               onClick={() => actionsRef.current?.zoomIn()}
-              aria-label="放大"
-              title="放大"
+              aria-label={COPY[initialLanguage()].graph_zoom_in}
+              title={COPY[initialLanguage()].graph_zoom_in}
             >
               <Plus />
             </Button>
@@ -437,8 +438,8 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
               variant="ghost"
               size="icon-sm"
               onClick={() => actionsRef.current?.fit()}
-              aria-label="适应视图"
-              title="适应视图"
+              aria-label={COPY[initialLanguage()].graph_fit_view}
+              title={COPY[initialLanguage()].graph_fit_view}
             >
               <Focus />
             </Button>
@@ -447,8 +448,8 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
               variant="ghost"
               size="icon-sm"
               onClick={() => actionsRef.current?.reset()}
-              aria-label="重置视图"
-              title="重置视图"
+              aria-label={COPY[initialLanguage()].graph_reset_view}
+              title={COPY[initialLanguage()].graph_reset_view}
             >
               <LocateFixed />
             </Button>
@@ -466,7 +467,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
           aria-label={`${graph.label} relationship graph`}
         />
         <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-md bg-background/90 px-2 py-1 text-[11px] whitespace-nowrap text-muted-foreground shadow-sm ring-1 ring-border">
-          拖动画布 · Ctrl/⌘ + 滚轮缩放
+          {COPY[initialLanguage()].graph_canvas_hint}
         </div>
       </div>
       {selectedMoai && (
@@ -477,7 +478,7 @@ function GraphSection({ graph, moais }: { graph: SubGraph; moais: MoaiMap }) {
             size="icon-sm"
             className="absolute top-2 right-2"
             onClick={() => setSelectedNodeId(null)}
-            aria-label="关闭节点详情"
+            aria-label={COPY[initialLanguage()].graph_close_detail}
           >
             <X />
           </Button>
@@ -516,16 +517,16 @@ export function MoaiLinkGraph({
     <main className="flex flex-1 flex-col px-4 py-6 sm:px-6">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight">关系</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{COPY[initialLanguage()].graph_title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            选择关系类型，查看并探索墨埃之间的连接
+            {COPY[initialLanguage()].graph_subtitle}
           </p>
         </div>
         {subGraphs.length > 1 && (
           <div
             className="mb-5 flex gap-1 overflow-x-auto border-b pb-px"
             role="tablist"
-            aria-label="关系类型"
+            aria-label={COPY[initialLanguage()].graph_type_aria}
           >
             {subGraphs.map((graph) => {
               const active = graph.label === activeGraph.label;

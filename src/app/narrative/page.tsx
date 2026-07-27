@@ -57,7 +57,7 @@ export default function NarrativePage() {
   if (entries.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center text-muted-foreground">
-        <p>No narrative timelines found.</p>
+        <p>{COPY[initialLanguage()].narrative_empty}</p>
       </main>
     );
   }
@@ -66,9 +66,9 @@ export default function NarrativePage() {
     <main className="flex-1 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Narrative</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{COPY[initialLanguage()].narrative_title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {eventCount} events across {entries.length} narratives
+            {COPY[initialLanguage()].narrative_count.replace("{n}", String(eventCount)).replace("{s}", String(entries.length))}
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default function NarrativePage() {
               driftKey={name}
               events={events}
               moais={moais}
-              description={`Observer: ${narrative.observer} · Subjects: ${narrative.subject.join(" · ")}`}
+              description={COPY[initialLanguage()].narrative_observer.replace("{o}", narrative.observer).replace("{t}", narrative.subject.join(" · "))}
             />
           ))}
         </div>

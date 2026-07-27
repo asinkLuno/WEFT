@@ -70,12 +70,12 @@ export default function StoryPage() {
               <div>
                 <CardDescription className="mb-1 flex items-center gap-2">
                   <CalendarDays className="size-4" aria-hidden="true" />
-                  Calendar
+                  {COPY[initialLanguage()].story_calendar}
                 </CardDescription>
                 <CardTitle>{calendar.title}</CardTitle>
               </div>
               <Badge variant="secondary">
-                {calendar.source === "builtin" ? "Built-in" : "Plugin"}
+                {calendar.source === "builtin" ? COPY[initialLanguage()].story_builtin : COPY[initialLanguage()].story_plugin}
               </Badge>
             </div>
           </CardHeader>
@@ -86,7 +86,7 @@ export default function StoryPage() {
               </p>
             )}
             <dl className="grid gap-3 text-sm sm:grid-cols-[8rem_1fr]">
-              <dt className="text-muted-foreground">Mode</dt>
+              <dt className="text-muted-foreground">{COPY[initialLanguage()].story_mode}</dt>
               <dd className="font-mono text-xs">{calendar.name}</dd>
             </dl>
           </CardContent>

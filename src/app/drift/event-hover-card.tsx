@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { CalendarRangeIcon, UsersIcon } from "lucide-react";
+import { COPY, initialLanguage } from "@/lib/i18n";
 
 import {
   HoverCard,
@@ -71,7 +72,7 @@ export function EventHoverCard({
                           {offset[1] ? ` — ${offset[1]}` : ""}
                         </>
                       ) : (
-                        "No base time"
+                        COPY[initialLanguage()].event_no_base_time
                       )}
                     </span>
                   </div>
