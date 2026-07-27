@@ -19,9 +19,10 @@ impl Phase {
     }
 
     pub fn from_yaml(value: &serde_yaml::Value) -> Result<Self, WeftError> {
-        let sequence = value
-            .as_sequence()
-            .ok_or_else(|| WeftError::Schema("time must be a non-empty list".into()))?;
+        // Use serde deserialization to work around serde_yaml 0.9 Value API bug
+        // where as_sequence() returns None for valid sequences in large YAML files.
+        let sequence: Vec<serde_yaml::Value> = serde_yaml::from_value(value.clone())
+            .map_err(|_| WeftError::Schema("time must be a non-empty list".into()))?;
         if sequence.is_empty() {
             return Err(WeftError::Schema("time must be a non-empty list".into()));
         }

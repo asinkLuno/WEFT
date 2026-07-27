@@ -138,7 +138,7 @@ React + Vite ──Tauri IPC──> Rust 领域内核 ──> Rhai 故事脚本
 
 ```bash
 # 启动 Tauri 桌面应用
-cargo tauri dev -- examples/红楼梦.yml
+cargo tauri dev -- examples/黑暗的左手.yml
 ```
 
 连接 AI Agent 见 [AI 与 MCP](mcp.md)。

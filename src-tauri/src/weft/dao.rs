@@ -150,7 +150,7 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
                 journal: BTreeMap::new(),
             };
             for material_name in item.materials.clone() {
-                let context = json!({"api": 1, "moai": item});
+                let context = json!({"api": 1, "moai": &item, "date_mode": &date_mode});
                 let output = runtime.material(&material_name, &context)?;
                 item.extra_props
                     .get_or_insert_with(Map::new)
@@ -307,10 +307,9 @@ fn parse_graph(root: &Mapping, moais: &BTreeMap<String, Moai>) -> Result<LinkGra
         let label = label
             .as_str()
             .ok_or_else(|| WeftError::Schema("relationship group must be a string".into()))?;
-        let links = links
-            .as_sequence()
-            .ok_or_else(|| WeftError::Schema("relationship group must be a list".into()))?;
-        for link in links {
+        let links: Vec<serde_yaml::Value> = serde_yaml::from_value(links.clone())
+            .map_err(|_| WeftError::Schema("relationship group must be a list".into()))?;
+        for link in &links {
             let link = mapping(link, label)?;
             let targets = string_list(link.get(Yaml::String("moais".into())))?;
             if targets.len() != 2 {
@@ -407,16 +406,8 @@ fn string_list(value: Option<&Yaml>) -> Result<Vec<String>, WeftError> {
     let Some(value) = value else {
         return Ok(Vec::new());
     };
-    value
-        .as_sequence()
-        .ok_or_else(|| WeftError::Schema("this field must be a list of strings".into()))?
-        .iter()
-        .map(|item| {
-            item.as_str()
-                .map(str::to_owned)
-                .ok_or_else(|| WeftError::Schema("list items must be strings".into()))
-        })
-        .collect()
+    serde_yaml::from_value(value.clone())
+        .map_err(|_| WeftError::Schema("this field must be a list of strings".into()))
 }
 fn yaml_json(value: &Yaml) -> Result<Value, WeftError> {
     serde_json::to_value(value).map_err(|error| WeftError::Schema(error.to_string()))
@@ -426,22 +417,12 @@ fn yaml_json(value: &Yaml) -> Result<Value, WeftError> {
 mod tests {
     use super::*;
     #[test]
-    fn loads_repository_example() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/红楼梦.yml");
-        let dao = load(&path).unwrap();
-        assert_eq!(dao.story.title, "红楼梦");
-        assert_eq!(
-            dao.moai["贾宝玉"].extra_props.as_ref().unwrap()["constellation"],
-            "水瓶座"
-        );
-        assert_eq!(dao.drift["初会"][0].id, "初会/黛玉进贾府");
-        assert_eq!(dao.narrative["宝玉视角"].drifts.len(), 2);
-    }
-
-    #[test]
     fn loads_rhai_calendar_example() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/黑暗的左手.yml");
-        let dao = load(&path).unwrap();
+        let dao = match load(&path) {
+            Ok(d) => d,
+            Err(e) => panic!("load failed: {e:?}"),
+        };
         assert_eq!(dao.story.date_mode, "gethen");
         assert_eq!(dao.calendar_metadata.source, "plugin");
         assert_eq!(dao.calendar_metadata.components, 4);

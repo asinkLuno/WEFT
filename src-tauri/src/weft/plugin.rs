@@ -3,6 +3,10 @@ use rhai::{serde::from_dynamic, serde::to_dynamic, Engine, Scope, AST};
 use serde_json::Value;
 use std::{collections::HashMap, fs, path::Path};
 
+const CONSTELLATION_CN: &str = include_str!("../../rhai/constellation_cn.rhai");
+const CONSTELLATION_EN: &str = include_str!("../../rhai/constellation_en.rhai");
+const CONSTELLATION_JA: &str = include_str!("../../rhai/constellation_ja.rhai");
+
 pub struct RhaiRuntime {
     engine: Engine,
     materials: HashMap<String, (AST, String)>,
@@ -142,13 +146,23 @@ impl RhaiRuntime {
                 materials.insert(name.to_owned(), (ast, entry.into()));
             }
         }
+        for (name, script) in &[
+            ("constellation", CONSTELLATION_CN),
+            ("constellation_cn", CONSTELLATION_CN),
+            ("constellation_en", CONSTELLATION_EN),
+            ("constellation_ja", CONSTELLATION_JA),
+        ] {
+            if !materials.contains_key(*name) {
+                let ast = engine.compile(*script).map_err(|error| {
+                    WeftError::Plugin(format!("failed to compile built-in {name}: {error}"))
+                })?;
+                materials.insert(name.to_string(), (ast, "constellation".into()));
+            }
+        }
         Ok(Self { engine, materials })
     }
 
     pub fn material(&self, name: &str, context: &Value) -> Result<Value, WeftError> {
-        if name == "constellation" {
-            return builtin_constellation(context);
-        }
         let (ast, entry) = self
             .materials
             .get(name)
@@ -208,30 +222,6 @@ fn manifest_string<'a>(config: &'a serde_yaml::Mapping, key: &str) -> Result<&'a
         .get(serde_yaml::Value::String(key.into()))
         .and_then(serde_yaml::Value::as_str)
         .ok_or_else(|| WeftError::Plugin(format!("plugin manifest missing string field {key}")))
-}
-
-fn builtin_constellation(context: &Value) -> Result<Value, WeftError> {
-    let base = context
-        .pointer("/moai/base_time/base_time")
-        .and_then(Value::as_array)
-        .ok_or_else(|| WeftError::Plugin("constellation requires moai.base_time".into()))?;
-    let month = base.get(1).and_then(Value::as_i64).unwrap_or(0);
-    let day = base.get(2).and_then(Value::as_i64).unwrap_or(0);
-    let result = match (month, day) {
-        (1, 20..) | (2, ..=18) => "水瓶座",
-        (2, 19..) | (3, ..=20) => "双鱼座",
-        (3, 21..) | (4, ..=19) => "白羊座",
-        (4, 20..) | (5, ..=20) => "金牛座",
-        (5, 21..) | (6, ..=21) => "双子座",
-        (6, 22..) | (7, ..=22) => "巨蟹座",
-        (7, 23..) | (8, ..=22) => "狮子座",
-        (8, 23..) | (9, ..=22) => "处女座",
-        (9, 23..) | (10, ..=23) => "天秤座",
-        (10, 24..) | (11, ..=22) => "天蝎座",
-        (11, 23..) | (12, ..=21) => "射手座",
-        _ => "摩羯座",
-    };
-    Ok(Value::String(result.into()))
 }
 
 #[cfg(test)]

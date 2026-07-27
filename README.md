@@ -112,7 +112,7 @@ the agent live schema access, validation, and timeline resolution. See
 Requirements: Rust, Node.js, Yarn, and the Tauri prerequisites for your platform.
 
 ```bash
-cargo tauri dev -- examples/红楼梦.yml
+cargo tauri dev -- examples/黑暗的左手.yml
 ```
 
 Build and validate the documentation locally:

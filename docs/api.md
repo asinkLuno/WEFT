@@ -24,7 +24,7 @@
 开发模式可在命令行传入初始故事：
 
 ```bash
-cargo tauri dev -- examples/红楼梦.yml
+cargo tauri dev -- examples/黑暗的左手.yml
 ```
 
 不传文件时桌面端仍会打开，并显示选择故事文件的空状态页面。当前原生文件选择器
