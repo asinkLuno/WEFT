@@ -125,10 +125,6 @@ impl Calendar {
         self.inner.to_tick(&padded)
     }
 
-    pub fn extra(&self, values: &[i64]) -> Result<Value, WeftError> {
-        let padded = self.pad_to_count(values);
-        self.inner.extra(&padded)
-    }
 }
 
 #[cfg(test)]
