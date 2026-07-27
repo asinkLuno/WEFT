@@ -99,18 +99,19 @@ story:
 
 The script must export `metadata()`, `normalize(values)`, `to_tick(values)`, and
 `humanize(values)`. It may also export `extra(values)` for computed metadata
-such as weekday name or holiday detection. Each function receives a fixed
-six-component array; metadata `units` declares the meaningful display levels.
+such as weekday name or holiday detection. Each function receives a
+time-component array whose length is determined by the calendar's component
+count (6 for Gregorian-based calendars, fewer for simpler calendars).
 
 ## Time lists
 
 For the built-in Gregorian calendars, positions are
-`[year, month, day, hour, minute, second]`. Custom calendars receive the same
-six slots but may assign their own meaning to the active prefix.
+`[year, month, day, hour, minute, second]`. Custom calendars may define fewer
+or different components.
 
-A list may omit trailing units and WEFT zero-pads it to the active calendar's
-Brick count. It cannot contain more integer components than that count. Values
-must be integers (not booleans or floats).
+A list may omit trailing components and WEFT zero-pads it to the active
+calendar's component count. It cannot contain more integer components than that
+count. Values must be integers (not booleans or floats).
 
 A trailing nested list makes the preceding integers an offset from that
 reference:

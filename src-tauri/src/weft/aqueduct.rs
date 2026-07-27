@@ -1,6 +1,5 @@
 use super::{
     errors::WeftError,
-    phase::PHASE_LEN,
     plugin::{calendar_source, RhaiCalendar},
 };
 use serde::Serialize;
@@ -18,7 +17,7 @@ pub struct CalendarMetadata {
     pub name: String,
     pub title: String,
     pub description: String,
-    pub units: Vec<String>,
+    pub components: usize,
     pub source: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_props: Option<Map<String, Value>>,
@@ -27,6 +26,7 @@ pub struct CalendarMetadata {
 #[derive(Debug)]
 pub struct Calendar {
     inner: Box<RhaiCalendar>,
+    component_count: usize,
 }
 
 impl Calendar {
@@ -49,14 +49,24 @@ impl Calendar {
                 RhaiCalendar::load(other, &base.join(source))?
             }
         };
+        let component_count = inner
+            .metadata()
+            .ok()
+            .and_then(|v| v.get("components").and_then(Value::as_u64))
+            .unwrap_or(6) as usize;
         Ok(Self {
             inner: Box::new(inner),
+            component_count,
         })
+    }
+
+    pub fn component_count(&self) -> usize {
+        self.component_count
     }
 
     pub fn metadata(&self, name: &str) -> Result<CalendarMetadata, WeftError> {
         let value = self.inner.metadata()?;
-        let known: [&str; 3] = ["title", "description", "units"];
+        let known: [&str; 3] = ["title", "description", "components"];
         let extra_props = value
             .as_object()
             .map(|obj| {
@@ -78,36 +88,46 @@ impl Calendar {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .into(),
-            units: value
-                .get("units")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-                .filter_map(Value::as_str)
-                .map(str::to_owned)
-                .collect(),
+            components: value
+                .get("components")
+                .and_then(Value::as_u64)
+                .unwrap_or(6) as usize,
             source: "plugin".into(),
             extra_props,
         })
     }
 
-    pub fn normalize(&self, value: [i64; PHASE_LEN]) -> Result<[i64; PHASE_LEN], WeftError> {
-        let normalized = self.inner.normalize(&value)?;
-        normalized
-            .try_into()
-            .map_err(|_| WeftError::Plugin("normalize must return six time components".into()))
+    fn pad_to_count(&self, values: &[i64]) -> Vec<i64> {
+        let mut v = values.to_vec();
+        v.resize(self.component_count, 0);
+        v
     }
 
-    pub fn humanize(&self, value: [i64; PHASE_LEN]) -> Result<String, WeftError> {
-        self.inner.humanize(&value.to_vec())
+    pub fn normalize(&self, values: &[i64]) -> Result<Vec<i64>, WeftError> {
+        let padded = self.pad_to_count(values);
+        let result = self.inner.normalize(&padded)?;
+        if result.len() != self.component_count {
+            return Err(WeftError::Plugin(format!(
+                "normalize must return {} time components",
+                self.component_count
+            )));
+        }
+        Ok(result)
     }
 
-    pub fn to_tick(&self, value: [i64; PHASE_LEN]) -> Result<i64, WeftError> {
-        self.inner.to_tick(&value)
+    pub fn humanize(&self, values: &[i64]) -> Result<String, WeftError> {
+        let padded = self.pad_to_count(values);
+        self.inner.humanize(&padded)
     }
 
-    pub fn extra(&self, value: [i64; PHASE_LEN]) -> Result<Value, WeftError> {
-        self.inner.extra(&value.to_vec())
+    pub fn to_tick(&self, values: &[i64]) -> Result<i64, WeftError> {
+        let padded = self.pad_to_count(values);
+        self.inner.to_tick(&padded)
+    }
+
+    pub fn extra(&self, values: &[i64]) -> Result<Value, WeftError> {
+        let padded = self.pad_to_count(values);
+        self.inner.extra(&padded)
     }
 }
 
@@ -118,8 +138,8 @@ mod tests {
     fn leap_year_and_tick_distance() {
         let cal =
             Calendar::load("gregorian", None, Path::new("")).unwrap();
-        let a = cal.to_tick([2024, 2, 28, 0, 0, 0]).unwrap();
-        let b = cal.to_tick([2024, 3, 1, 0, 0, 0]).unwrap();
+        let a = cal.to_tick(&[2024, 2, 28, 0, 0, 0]).unwrap();
+        let b = cal.to_tick(&[2024, 3, 1, 0, 0, 0]).unwrap();
         assert_eq!(b - a, 2 * 86400);
     }
 }

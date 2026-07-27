@@ -88,8 +88,6 @@ export default function StoryPage() {
             <dl className="grid gap-3 text-sm sm:grid-cols-[8rem_1fr]">
               <dt className="text-muted-foreground">Mode</dt>
               <dd className="font-mono text-xs">{calendar.name}</dd>
-              <dt className="text-muted-foreground">Units</dt>
-              <dd>{calendar.units.join(" → ")}</dd>
             </dl>
           </CardContent>
         </Card>

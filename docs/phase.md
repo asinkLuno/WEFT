@@ -25,7 +25,7 @@ Rust `Phase` 沿引用链累加各层分量，得到绝对时间。
 | `gregorian_en` | 英文 | Jul 27, 2026 |
 | `gregorian_ja` | 日文 | 2026年7月27日 |
 
-三者均使用 `[年, 月, 日, 时, 分, 秒]` 六分量。
+三者均使用六分量（`components: 6`）`[年, 月, 日, 时, 分, 秒]`。
 
 `gregorian` 是默认历法；未指定 `story.date_mode` 时使用。
 
@@ -79,7 +79,7 @@ fn metadata() {
     #{
         title: "幻想历法",
         description: "十二个月、每月三十日",
-        units: ["年", "月", "日", "时"]
+        components: 4
     }
 }
 
@@ -101,14 +101,11 @@ fn extra(values) {
 
 | 函数 | 参数 | 返回值 | 必需 |
 |------|------|--------|------|
-| `metadata()` | 无 | Map（包含 title, description, units） | 是 |
-| `normalize(values)` | `[i64;6]` | `[i64;6]` | 是 |
-| `to_tick(values)` | `[i64;6]` | `i64`（单调递增的最小单位坐标） | 是 |
-| `humanize(values)` | `[i64;6]` | String | 是 |
-| `extra(values)` | `[i64;6]` | Map（任意派生信息） | 否，可选 |
-
-所有函数都接收固定六分量数组。`metadata` 中的 `units` 声明有效展示层级，高于
-`units` 长度的分量不会被展示。
+| `metadata()` | 无 | Map（包含 title, description, components） | 是 |
+| `normalize(values)` | `[i64;n]` | `[i64;n]`（n 为该历法的 `components`） | 是 |
+| `to_tick(values)` | `[i64;n]` | `i64`（单调递增的最小单位坐标） | 是 |
+| `humanize(values)` | `[i64;n]` | String | 是 |
+| `extra(values)` | `[i64;n]` | Map（任意派生信息） | 否，可选 |
 
 `extra()` 的返回值会通过 `CalendarMetadata.extra_props` 以 JSON 形式暴露给
 前端和 MCP 调用方。

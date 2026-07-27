@@ -141,7 +141,7 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
                 name: name.clone(),
                 base_time_display: base_time
                     .as_ref()
-                    .map(|phase| calendar.humanize(phase.de_recursive()))
+                    .map(|phase| calendar.humanize(&phase.de_recursive()))
                     .transpose()?,
                 base_time,
                 description: optional_string(raw, "description")?.unwrap_or_default(),
@@ -210,8 +210,8 @@ fn parse_drifts(
             }
             let flat_start = start_time.de_recursive();
             let flat_end = end_time.as_ref().map(Phase::de_recursive);
-            let start_tick = calendar.to_tick(flat_start)?;
-            let end_tick = flat_end.map(|value| calendar.to_tick(value)).transpose()?;
+            let start_tick = calendar.to_tick(&flat_start)?;
+            let end_tick = flat_end.as_deref().map(|v| calendar.to_tick(v)).transpose()?;
             if end_tick.is_some_and(|end| end < start_tick) {
                 return Err(WeftError::Schema(format!(
                     "{group}/{title} end time is before start time"
@@ -224,12 +224,12 @@ fn parse_drifts(
                 end_time,
                 description: optional_string(event, "description")?,
                 moais: (!names.is_empty()).then_some(names),
-                flat_start: flat_start.to_vec(),
-                flat_end: flat_end.map(|v| v.to_vec()),
+                flat_start: flat_start.clone(),
+                flat_end: flat_end.clone(),
                 start_tick,
                 end_tick,
-                start_time_display: calendar.humanize(flat_start)?,
-                end_time_display: flat_end.map(|v| calendar.humanize(v)).transpose()?,
+                start_time_display: calendar.humanize(&flat_start)?,
+                end_time_display: flat_end.as_deref().map(|v| calendar.humanize(v)).transpose()?,
             });
         }
         parsed.sort_by_key(|event| event.start_tick);
@@ -357,26 +357,27 @@ fn populate_journals(
             let Some(base) = moai.base_time.as_ref().map(Phase::de_recursive) else {
                 continue;
             };
-            let mut start = [0; 6];
-            for i in 0..6 {
+            let n = calendar.component_count();
+            let mut start = vec![0; n];
+            for i in 0..n {
                 start[i] = drift.flat_start[i] - base[i];
             }
             let end = drift
                 .flat_end
                 .as_ref()
                 .map(|flat| {
-                    let mut value = [0; 6];
-                    for i in 0..6 {
+                    let mut value = vec![0; n];
+                    for i in 0..n {
                         value[i] = flat[i] - base[i];
                     }
                     calendar
-                        .normalize(value)
-                        .and_then(|value| calendar.humanize(value))
+                        .normalize(&value)
+                        .and_then(|v| calendar.humanize(&v))
                 })
                 .transpose()?;
-            let start = calendar.normalize(start)?;
+            let start = calendar.normalize(&start)?;
             moai.journal
-                .insert(drift.id.clone(), (calendar.humanize(start)?, end));
+                .insert(drift.id.clone(), (calendar.humanize(&start)?, end));
         }
     }
     Ok(())
@@ -443,7 +444,7 @@ mod tests {
         let dao = load(&path).unwrap();
         assert_eq!(dao.story.date_mode, "gethen");
         assert_eq!(dao.calendar_metadata.source, "plugin");
-        assert_eq!(dao.calendar_metadata.units, ["年", "月", "日", "时"]);
+        assert_eq!(dao.calendar_metadata.components, 4);
         assert!(!dao.drift.is_empty());
     }
 

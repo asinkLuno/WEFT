@@ -1,8 +1,6 @@
 use super::errors::WeftError;
 use serde::{Deserialize, Serialize};
 
-pub const PHASE_LEN: usize = 6;
-
 /// Stable public representation. A relative phase points at another phase;
 /// de-recursion adds every offset from the outer node to the anchor.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -13,13 +11,7 @@ pub struct Phase {
 }
 
 impl Phase {
-    pub fn new(mut base_time: Vec<i64>, ref_time: Option<Box<Phase>>) -> Result<Self, WeftError> {
-        if base_time.len() > PHASE_LEN {
-            return Err(WeftError::Schema(format!(
-                "time can have at most {PHASE_LEN} components"
-            )));
-        }
-        base_time.resize(PHASE_LEN, 0);
+    pub fn new(base_time: Vec<i64>, ref_time: Option<Box<Phase>>) -> Result<Self, WeftError> {
         Ok(Self {
             base_time,
             ref_time,
@@ -51,10 +43,13 @@ impl Phase {
         Self::new(base, reference)
     }
 
-    pub fn de_recursive(&self) -> [i64; PHASE_LEN] {
-        let mut result = [0; PHASE_LEN];
+    pub fn de_recursive(&self) -> Vec<i64> {
+        let mut result = Vec::new();
         let mut phase = Some(self);
         while let Some(current) = phase {
+            if current.base_time.len() > result.len() {
+                result.resize(current.base_time.len(), 0);
+            }
             for (target, value) in result.iter_mut().zip(&current.base_time) {
                 *target += value;
             }
@@ -73,7 +68,7 @@ mod tests {
         let anchor = Phase::new(vec![1983, 1, 20], None).unwrap();
         let middle = Phase::new(vec![10, 2], Some(Box::new(anchor))).unwrap();
         let outer = Phase::new(vec![-3, 0, 5], Some(Box::new(middle))).unwrap();
-        assert_eq!(outer.de_recursive(), [1990, 3, 25, 0, 0, 0]);
+        assert_eq!(outer.de_recursive(), vec![1990, 3, 25]);
     }
 
     #[test]
@@ -82,12 +77,7 @@ mod tests {
             serde_yaml::from_str("[2, 3, [10, 4, [1900, 1, 1]]]").unwrap();
         assert_eq!(
             Phase::from_yaml(&value).unwrap().de_recursive(),
-            [1912, 8, 1, 0, 0, 0]
+            vec![1912, 8, 1]
         );
-    }
-
-    #[test]
-    fn rejects_too_many_units() {
-        assert!(Phase::new(vec![0; 7], None).is_err());
     }
 }

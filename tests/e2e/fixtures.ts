@@ -25,7 +25,6 @@ const responses = {
     name: "gethen",
     title: "Karhide Calendar",
     description: "The calendar used by the isolated Playwright fixture.",
-    units: ["year", "month", "day"],
     source: "plugin",
   },
   get_moai: {

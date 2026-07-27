@@ -27,8 +27,6 @@ export interface components {
             title: string;
             /** Description */
             description: string;
-            /** Units */
-            units: string[];
             /**
              * Source
              * @enum {string}

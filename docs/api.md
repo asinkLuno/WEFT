@@ -8,7 +8,7 @@
 | Command | 返回内容 |
 |---------|----------|
 | `get_story` | 当前故事的标题、描述和 `date_mode` |
-| `get_calendar_metadata` | 当前故事所选历法的名称、简介、时间单位和来源 |
+| `get_calendar_metadata` | 当前故事所选历法的名称、简介和来源 |
 | `get_moai` | 当前故事的 Moai 映射 |
 | `get_drift` | 当前故事的 Drift 分组 |
 | `get_narrative` | 当前故事的 Narrative 映射 |

@@ -4,7 +4,7 @@ fn metadata() {
     #{
         title: "Gregorian Calendar",
         description: "Represents time with years, months, days, hours, minutes, and seconds.",
-        units: ["year", "month", "day", "hour", "minute", "second"],
+        components: 6,
         weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     }
 }
