@@ -55,8 +55,8 @@ export function DriftGantt({
           {driftKey} timeline
         </h3>
       )}
-      <div className="overflow-x-auto rounded-lg border bg-background">
-        <div className="min-w-[900px]">
+      <div className="overflow-x-auto">
+        <div className="min-w-[900px] overflow-hidden rounded-lg border bg-background">
           <div className="grid grid-cols-[240px_1fr] border-b bg-muted/50">
             <div className="flex h-14 items-end border-r px-4 pb-2 text-xs font-medium text-muted-foreground">
               {COPY[initialLanguage()].gantt_event}
