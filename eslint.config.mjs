@@ -8,7 +8,7 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
-    "lib/schema.ts",
+    "src/lib/schema.ts",
   ]),
 ]);
 
