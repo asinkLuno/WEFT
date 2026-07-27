@@ -56,10 +56,9 @@ impl WeftError {
             path_display: None,
             hint: None,
             details: match self {
-                Self::Read(msg)
-                | Self::Parse(msg)
-                | Self::Schema(msg)
-                | Self::Reference(msg) => Some(json!({ "detail": msg })),
+                Self::Read(msg) | Self::Parse(msg) | Self::Schema(msg) | Self::Reference(msg) => {
+                    Some(json!({ "detail": msg }))
+                }
                 Self::Plugin(msg) => Some(json!({ "detail": msg, "runtime": "rhai" })),
                 _ => None,
             },

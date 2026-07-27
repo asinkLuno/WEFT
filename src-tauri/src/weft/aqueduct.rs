@@ -88,10 +88,7 @@ impl Calendar {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .into(),
-            components: value
-                .get("components")
-                .and_then(Value::as_u64)
-                .unwrap_or(6) as usize,
+            components: value.get("components").and_then(Value::as_u64).unwrap_or(6) as usize,
             source: "plugin".into(),
             extra_props,
         })
@@ -124,7 +121,6 @@ impl Calendar {
         let padded = self.pad_to_count(values);
         self.inner.to_tick(&padded)
     }
-
 }
 
 #[cfg(test)]
@@ -132,8 +128,7 @@ mod tests {
     use super::*;
     #[test]
     fn leap_year_and_tick_distance() {
-        let cal =
-            Calendar::load("gregorian", None, Path::new("")).unwrap();
+        let cal = Calendar::load("gregorian", None, Path::new("")).unwrap();
         let a = cal.to_tick(&[2024, 2, 28, 0, 0, 0]).unwrap();
         let b = cal.to_tick(&[2024, 3, 1, 0, 0, 0]).unwrap();
         assert_eq!(b - a, 2 * 86400);

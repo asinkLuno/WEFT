@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AppEvents } from "@/app/app-events";
@@ -13,7 +13,7 @@ describe("native app events", () => {
     const refetch = vi.fn();
     const onFileLost = vi.fn();
     const unsubscribe = onRefetch(refetch);
-    render(<AppEvents onFileLost={onFileLost} />);
+    render(<AppEvents onFileLost={onFileLost} language="en" />);
 
     await act(async () => undefined);
     act(() => platform.dispatch("weft-file-lost", { path: "/gone/story.yml" }));
@@ -26,26 +26,26 @@ describe("native app events", () => {
     act(() =>
       platform.dispatch("weft-error", {
         error: {
-          code: "invalid_date",
+          code: "STORY_NOT_LOADED",
           stage: "load",
-          message: "Bad calendar date",
           path_display: "drift.arrival",
           line: 12,
           column: 4,
-          hint: "Check the selected calendar",
         },
       }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Bad calendar date");
+    expect(screen.getByRole("alert")).toHaveTextContent("No story loaded");
     expect(screen.getByRole("alert")).toHaveTextContent(
       "drift.arrival · line 12:4",
     );
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Check the selected calendar",
+      "Open a WEFT story file in the desktop app first",
     );
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Dismiss error" }),
+      within(screen.getByRole("alert")).getByRole("button", {
+        name: "Dismiss",
+      }),
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     unsubscribe();

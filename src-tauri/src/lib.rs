@@ -3,8 +3,6 @@
 mod weft;
 
 use chrono::{DateTime, Local};
-use weft::errors::{ErrorPayload, WeftError};
-use weft::dao::{Dao, Drift, LinkGraph, Moai, Narrative, Story};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -19,6 +17,8 @@ use tauri::{
     DragDropEvent, Emitter, Listener, Manager, WindowEvent,
 };
 use tauri_plugin_dialog::DialogExt;
+use weft::dao::{Dao, Drift, LinkGraph, Moai, Narrative, Story};
+use weft::errors::{ErrorPayload, WeftError};
 
 #[derive(Default)]
 struct AppState {
@@ -118,8 +118,6 @@ fn get_story(state: tauri::State<'_, AppState>) -> Result<Story, ErrorPayload> {
 fn get_calendar_metadata(
     state: tauri::State<'_, AppState>,
 ) -> Result<weft::aqueduct::CalendarMetadata, ErrorPayload> {
-    let name = require_dao(&state, |dao| dao.story.date_mode.clone())?;
-    let _ = name;
     require_dao(&state, |dao| dao.calendar_metadata.clone())
 }
 
@@ -336,13 +334,7 @@ fn build_menu<R: tauri::Runtime>(app: &tauri::AppHandle<R>, lang: &str) -> tauri
         true,
         &[
             &MenuItem::with_id(app, "open", t.open, true, Some("CmdOrCtrl+O"))?,
-            &MenuItem::with_id(
-                app,
-                "open_recent",
-                t.open_recent,
-                true,
-                Some("CmdOrCtrl+P"),
-            )?,
+            &MenuItem::with_id(app, "open_recent", t.open_recent, true, Some("CmdOrCtrl+P"))?,
             &MenuItem::with_id(app, "close", t.close, false, Some("CmdOrCtrl+W"))?,
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(app, "reload", t.reload, false, Some("CmdOrCtrl+R"))?,
@@ -428,6 +420,7 @@ fn start_story_watcher(app: tauri::AppHandle) {
         let modified = fs::metadata(&path).and_then(|meta| meta.modified());
         match modified {
             Ok(modified) if previous.is_some_and(|old| modified > old) => {
+                state.snapshot.write().last_modified = Some(modified);
                 if state.load(path.clone()).is_ok() {
                     let title = state
                         .snapshot

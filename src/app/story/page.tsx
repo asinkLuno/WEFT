@@ -31,7 +31,12 @@ export default function StoryPage() {
     let cancelled = false;
     const load = () => {
       Promise.all([getStory(), getCalendarMetadata()])
-        .then(([story, calendar]) => !cancelled && setData({ story, calendar }))
+        .then(([story, calendar]) => {
+          if (!cancelled) {
+            setError(null);
+            setData({ story, calendar });
+          }
+        })
         .catch((err) => !cancelled && setError(err));
     };
     load();

@@ -24,7 +24,12 @@ export default function DriftPage() {
     const load = () => {
       Promise.all([getDrifts(), getMoais()])
         .then(
-          ([driftsRaw, moais]) => !cancelled && setData({ driftsRaw, moais }),
+          ([driftsRaw, moais]) => {
+            if (!cancelled) {
+              setError(null);
+              setData({ driftsRaw, moais });
+            }
+          },
         )
         .catch((err) => !cancelled && setError(err));
     };

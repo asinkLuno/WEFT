@@ -29,7 +29,10 @@ impl std::fmt::Debug for RhaiCalendar {
 impl RhaiCalendar {
     pub fn load(name: &str, path: &Path) -> Result<Self, WeftError> {
         let script = fs::read_to_string(path).map_err(|error| {
-            WeftError::Plugin(format!("failed to read calendar {}: {error}", path.display()))
+            WeftError::Plugin(format!(
+                "failed to read calendar {}: {error}",
+                path.display()
+            ))
         })?;
         Self::load_script(name, &script)
     }
@@ -100,7 +103,6 @@ impl RhaiCalendar {
             .into_string()
             .map_err(|_| WeftError::Plugin("humanize must return a string".into()))
     }
-
 }
 
 impl std::fmt::Debug for RhaiRuntime {
@@ -120,9 +122,9 @@ impl RhaiRuntime {
                 let name = name
                     .as_str()
                     .ok_or_else(|| WeftError::Plugin("material name must be a string".into()))?;
-                let config = config
-                    .as_mapping()
-                    .ok_or_else(|| WeftError::Plugin(format!("{name} must be a plugin manifest")))?;
+                let config = config.as_mapping().ok_or_else(|| {
+                    WeftError::Plugin(format!("{name} must be a plugin manifest"))
+                })?;
                 require_manifest(config, name, "material")?;
                 let source = manifest_string(config, "source")?;
                 let entry = manifest_string(config, "entry")?;
@@ -157,14 +159,18 @@ impl RhaiRuntime {
             .materials
             .get(name)
             .ok_or_else(|| WeftError::Reference(format!("unknown material: {name:?}")))?;
-        let argument = to_dynamic(context)
-            .map_err(|error| WeftError::Plugin(format!("material input conversion failed: {error}")))?;
+        let argument = to_dynamic(context).map_err(|error| {
+            WeftError::Plugin(format!("material input conversion failed: {error}"))
+        })?;
         let output = self
             .engine
             .call_fn::<rhai::Dynamic>(&mut Scope::new(), ast, entry, (argument,))
-            .map_err(|error| WeftError::Plugin(format!("{name}.{entry} execution failed: {error}")))?;
-        from_dynamic(&output)
-            .map_err(|error| WeftError::Plugin(format!("{name}.material return value is invalid: {error}")))
+            .map_err(|error| {
+                WeftError::Plugin(format!("{name}.{entry} execution failed: {error}"))
+            })?;
+        from_dynamic(&output).map_err(|error| {
+            WeftError::Plugin(format!("{name}.material return value is invalid: {error}"))
+        })
     }
 }
 

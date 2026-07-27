@@ -23,7 +23,12 @@ export default function MoaiLinkPage() {
     let cancelled = false;
     const load = () => {
       Promise.all([getMoaiLinks(), getMoais()])
-        .then(([graph, moais]) => !cancelled && setState({ graph, moais }))
+        .then(([graph, moais]) => {
+          if (!cancelled) {
+            setError(null);
+            setState({ graph, moais });
+          }
+        })
         .catch((err) => !cancelled && setError(err));
     };
     load();

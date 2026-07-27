@@ -24,7 +24,12 @@ export default function MoaiPage() {
     let cancelled = false;
     const load = () => {
       Promise.all([getMoais(), getDrifts()])
-        .then(([moais, drifts]) => !cancelled && setData({ moais, drifts }))
+        .then(([moais, drifts]) => {
+          if (!cancelled) {
+            setError(null);
+            setData({ moais, drifts });
+          }
+        })
         .catch((err) => !cancelled && setError(err));
     };
     load();

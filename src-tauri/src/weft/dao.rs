@@ -211,7 +211,10 @@ fn parse_drifts(
             let flat_start = start_time.de_recursive();
             let flat_end = end_time.as_ref().map(Phase::de_recursive);
             let start_tick = calendar.to_tick(&flat_start)?;
-            let end_tick = flat_end.as_deref().map(|v| calendar.to_tick(v)).transpose()?;
+            let end_tick = flat_end
+                .as_deref()
+                .map(|v| calendar.to_tick(v))
+                .transpose()?;
             if end_tick.is_some_and(|end| end < start_tick) {
                 return Err(WeftError::Schema(format!(
                     "{group}/{title} end time is before start time"
@@ -229,7 +232,10 @@ fn parse_drifts(
                 start_tick,
                 end_tick,
                 start_time_display: calendar.humanize(&flat_start)?,
-                end_time_display: flat_end.as_deref().map(|v| calendar.humanize(v)).transpose()?,
+                end_time_display: flat_end
+                    .as_deref()
+                    .map(|v| calendar.humanize(v))
+                    .transpose()?,
             });
         }
         parsed.sort_by_key(|event| event.start_tick);
@@ -313,11 +319,15 @@ fn parse_graph(root: &Mapping, moais: &BTreeMap<String, Moai>) -> Result<LinkGra
             let link = mapping(link, label)?;
             let targets = string_list(link.get(Yaml::String("moais".into())))?;
             if targets.len() != 2 {
-                return Err(WeftError::Schema("moai_link.moais must have exactly two names".into()));
+                return Err(WeftError::Schema(
+                    "moai_link.moais must have exactly two names".into(),
+                ));
             }
             for target in &targets {
                 if !moais.contains_key(target) {
-                    return Err(WeftError::Reference(format!("relationship references unknown moai {target:?}")));
+                    return Err(WeftError::Reference(format!(
+                        "relationship references unknown moai {target:?}"
+                    )));
                 }
                 node_names.insert(target.clone());
             }
@@ -393,7 +403,8 @@ fn child_mapping<'a>(root: &'a Mapping, key: &str) -> Result<&'a Mapping, WeftEr
         .and_then(|value| mapping(value, key))
 }
 fn string(mapping: &Mapping, key: &str) -> Result<String, WeftError> {
-    optional_string(mapping, key)?.ok_or_else(|| WeftError::Schema(format!("{key} must be a string")))
+    optional_string(mapping, key)?
+        .ok_or_else(|| WeftError::Schema(format!("{key} must be a string")))
 }
 fn optional_string(mapping: &Mapping, key: &str) -> Result<Option<String>, WeftError> {
     match mapping.get(Yaml::String(key.into())) {
@@ -428,5 +439,4 @@ mod tests {
         assert_eq!(dao.calendar_metadata.components, 4);
         assert!(!dao.drift.is_empty());
     }
-
 }

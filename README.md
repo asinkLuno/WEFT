@@ -32,6 +32,36 @@ writers are expected to operate.
 The desktop application then makes the resulting timeline, entity
 relationships, and point-of-view narratives visible.
 
+## Quick start
+
+To try WEFT from source, install Rust, Node.js, Yarn, and the
+[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your
+platform. Then, from the repository root:
+
+```bash
+yarn install
+cargo install tauri-cli --version "^2" --locked
+cargo tauri dev -- "examples/哈利·波特与魔法石.yml"
+```
+
+WEFT opens the example directly so you can explore its timeline, entity
+relationships, and point-of-view narratives. To try another included story,
+replace the final path with one of:
+
+```text
+examples/黑暗的左手.yml
+examples/桃花扇.yml
+examples/你们这些回魂尸.yml
+```
+
+You can also copy an example, edit the YAML, and open your copy with the same
+command:
+
+```bash
+cp "examples/黑暗的左手.yml" my-story.yml
+cargo tauri dev -- my-story.yml
+```
+
 ## Design
 
 WEFT follows two equally important principles.
@@ -109,11 +139,8 @@ the agent live schema access, validation, and timeline resolution. See
 
 ## Development
 
-Requirements: Rust, Node.js, Yarn, and the Tauri prerequisites for your platform.
-
-```bash
-cargo tauri dev -- examples/黑暗的左手.yml
-```
+See [Quick start](#quick-start) to install the prerequisites and run the
+desktop application with an example story.
 
 Build and validate the documentation locally:
 

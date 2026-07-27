@@ -35,12 +35,14 @@ export function AppEvents({ onFileLost, language }: AppEventsProps) {
 
   useEffect(() => {
     const unlisteners: UnlistenFn[] = [];
+    let reloadTimer: number | undefined;
     let disposed = false;
     Promise.all([
       listen<ReloadedPayload>("weft-reloaded", () => {
         triggerRefetch();
         setReloadedAt(new Date().toLocaleTimeString());
-        window.setTimeout(() => setReloadedAt(null), 3000);
+        window.clearTimeout(reloadTimer);
+        reloadTimer = window.setTimeout(() => setReloadedAt(null), 3000);
       }),
       listen<StoryLoadError>("weft-error", (event) =>
         setError(event.payload.error),
@@ -54,6 +56,7 @@ export function AppEvents({ onFileLost, language }: AppEventsProps) {
     });
     return () => {
       disposed = true;
+      window.clearTimeout(reloadTimer);
       unlisteners.forEach((unlisten) => unlisten());
     };
   }, [onFileLost]);

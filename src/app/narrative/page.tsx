@@ -24,7 +24,12 @@ export default function NarrativePage() {
     const load = () => {
       Promise.all([getNarratives(), getMoais()])
         .then(
-          ([narratives, moais]) => !cancelled && setData({ narratives, moais }),
+          ([narratives, moais]) => {
+            if (!cancelled) {
+              setError(null);
+              setData({ narratives, moais });
+            }
+          },
         )
         .catch((err) => !cancelled && setError(err));
     };
