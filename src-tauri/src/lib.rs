@@ -56,6 +56,34 @@ impl AppState {
             }
         }
     }
+
+    fn reload_if_current(
+        &self,
+        path: &PathBuf,
+        modified: SystemTime,
+    ) -> Option<Result<Option<String>, ErrorPayload>> {
+        let loaded = weft::dao::load(path);
+        let mut state = self.snapshot.write();
+        if state.story_path.as_ref() != Some(path) {
+            return None;
+        }
+        state.last_modified = Some(modified);
+        Some(match loaded {
+            Ok(dao) => {
+                let title = Some(dao.story.title.clone());
+                state.dao = Some(dao);
+                state.last_error = None;
+                state.last_reload_at = Some(Local::now());
+                state.file_lost_reported = false;
+                Ok(title)
+            }
+            Err(error) => {
+                let payload = error.payload(Some(path));
+                state.last_error = Some(payload.clone());
+                Err(payload)
+            }
+        })
+    }
 }
 
 #[derive(Serialize)]
@@ -419,18 +447,17 @@ fn start_story_watcher(app: tauri::AppHandle) {
         let Some(path) = path else { continue };
         let modified = fs::metadata(&path).and_then(|meta| meta.modified());
         match modified {
-            Ok(modified) if previous.is_some_and(|old| modified > old) => {
-                state.snapshot.write().last_modified = Some(modified);
-                if state.load(path.clone()).is_ok() {
-                    let title = state
-                        .snapshot
-                        .read()
-                        .dao
-                        .as_ref()
-                        .map(|dao| dao.story.title.clone());
-                    let _ = app.emit("weft-reloaded", serde_json::json!({ "story_title": title }));
-                } else if let Some(error) = state.snapshot.read().last_error.clone() {
-                    let _ = app.emit("weft-error", serde_json::json!({ "error": error }));
+            Ok(modified) if previous != Some(modified) => {
+                if let Some(result) = state.reload_if_current(&path, modified) {
+                    match result {
+                        Ok(title) => {
+                            let _ = app
+                                .emit("weft-reloaded", serde_json::json!({ "story_title": title }));
+                        }
+                        Err(error) => {
+                            let _ = app.emit("weft-error", serde_json::json!({ "error": error }));
+                        }
+                    }
                 }
             }
             Err(_) if !lost_reported => {

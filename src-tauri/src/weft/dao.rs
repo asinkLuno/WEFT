@@ -367,18 +367,12 @@ fn populate_journals(
                 continue;
             };
             let n = calendar.component_count();
-            let mut start = vec![0; n];
-            for i in 0..n {
-                start[i] = drift.flat_start[i] - base[i];
-            }
+            let start = component_offsets(&drift.flat_start, &base, n);
             let end = drift
                 .flat_end
                 .as_ref()
                 .map(|flat| {
-                    let mut value = vec![0; n];
-                    for i in 0..n {
-                        value[i] = flat[i] - base[i];
-                    }
+                    let value = component_offsets(flat, &base, n);
                     calendar
                         .normalize(&value)
                         .and_then(|v| calendar.humanize(&v))
@@ -390,6 +384,15 @@ fn populate_journals(
         }
     }
     Ok(())
+}
+
+fn component_offsets(time: &[i64], base: &[i64], count: usize) -> Vec<i64> {
+    (0..count)
+        .map(|index| {
+            time.get(index).copied().unwrap_or_default()
+                - base.get(index).copied().unwrap_or_default()
+        })
+        .collect()
 }
 
 fn mapping<'a>(value: &'a Yaml, label: &str) -> Result<&'a Mapping, WeftError> {
@@ -438,5 +441,13 @@ mod tests {
         assert_eq!(dao.calendar_metadata.source, "plugin");
         assert_eq!(dao.calendar_metadata.components, 4);
         assert!(!dao.drift.is_empty());
+    }
+
+    #[test]
+    fn pads_missing_components_when_calculating_offsets() {
+        assert_eq!(
+            component_offsets(&[2000, 2, 3], &[1990], 6),
+            [10, 2, 3, 0, 0, 0]
+        );
     }
 }
