@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: 22
           cache: yarn
-          cache-dependency-path: weft-frontend/yarn.lock
+          cache-dependency-path: yarn.lock
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -60,7 +60,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Install frontend dependencies
-        run: yarn --cwd weft-frontend install --frozen-lockfile
+        run: yarn install --frozen-lockfile
 
       - name: Build and publish Tauri bundles
         uses: tauri-apps/tauri-action@v0

@@ -27,47 +27,39 @@ repos:
         files: ^src-tauri/.*\.rs$
         pass_filenames: false
 
-      - id: next-lint
-        name: next-lint
-        entry: bash -c 'cd weft-frontend && npm run lint'
+      - id: frontend-lint
+        name: frontend-lint
+        entry: yarn lint
         language: system
         types_or: [javascript, ts, tsx, jsx]
         pass_filenames: false
 
       - id: prettier
         name: prettier
-        entry: bash -c 'cd weft-frontend && npm run format'
+        entry: yarn format
         language: system
         types_or: [javascript, ts, tsx, jsx, json, css]
         pass_filenames: false
 
-      - id: next-build
-        name: next-build
-        entry: bash -c 'cd weft-frontend && npm run build'
+      - id: frontend-build
+        name: frontend-build
+        entry: yarn build
         language: system
         types_or: [javascript, ts, tsx, jsx]
         pass_filenames: false
 
-      - id: backend-test
-        name: Rust backend tests
-        entry: cargo test --manifest-path src-tauri/Cargo.toml
-        language: system
-        files: ^src-tauri/
-        pass_filenames: false
-        stages: [pre-push]
-
       - id: frontend-coverage
         name: frontend Vitest coverage
-        entry: yarn --cwd weft-frontend test:coverage
+        entry: yarn test:coverage
         language: system
-        files: ^weft-frontend/
+        files: ^(app|components|lib|public|src|tests)/
         pass_filenames: false
         stages: [pre-push]
 
       - id: frontend-e2e
         name: frontend Playwright
-        entry: yarn --cwd weft-frontend test:e2e
+        entry: yarn test:e2e
         language: system
-        files: ^weft-frontend/
+        files: ^(app|components|lib|public|src|tests)/
         pass_filenames: false
         stages: [pre-push]

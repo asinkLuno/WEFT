@@ -39,8 +39,8 @@ narrative:
 ## Top-level fields
 
 - `story`: required mapping. `title` must be a string; `description` is optional. `date_mode` selects a registered aqueduct and defaults to `gregorian`; built-ins are `gregorian` and `gregorian_en`.
-- `aqueduct`: optional mapping from calendar registration names to trusted Python plugin paths. Each module must export an `Aqueduct` instance named `aqueduct`.
-- `material`: optional mapping from material registration names to Python file paths. Material code is executed when loading a story; use only trusted files.
+- `aqueduct`: optional mapping from calendar registration names to Rhai plugin manifests. Each manifest uses `runtime: rhai`, `kind: calendar`, `api: 1`, and a story-relative `source`.
+- `material`: optional mapping from material registration names to Rhai plugin manifests. Each manifest uses `runtime: rhai`, `kind: material`, `api: 1`, a story-relative `source`, and an optional `entry` function name.
 - `moai`: entity mapping keyed by unique entity name.
 - `moai_link`: relationship groups, each containing link objects.
 - `drift`: event groups, each containing events keyed by title.

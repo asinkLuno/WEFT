@@ -87,8 +87,5 @@ of the newly triggered workflow.
 
 ## Packaging expectations
 
-The Linux job must publish `deb`, `rpm`, and `appimage` bundles. Embedded Python
-is prepared by `scripts/fetch-embedded-python.sh`, which installs runtime
-dependencies before pruning build-only files. Do not remove runtime modules
-with an import allowlist; validate MCP and desktop startup after further
-pruning.
+The Linux job must publish `deb`, `rpm`, and `appimage` bundles. Validate MCP
+and desktop startup after packaging changes.

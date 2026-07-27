@@ -4,19 +4,25 @@ build/
 dist/
 Session.vim
 
-# Legacy local Python artifacts (the project no longer uses Python)
-__pycache__/
-*.py[oc]
-*.egg-info/
 site/
 
 # Frontend build
 .next/
-weft-frontend/node_modules/
-weft-frontend/out/
-weft-frontend/coverage/
-weft-frontend/playwright-report/
-weft-frontend/test-results/
+node_modules/
+out/
+coverage/
+playwright-report/
+test-results/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+*.tsbuildinfo
+lib/openapi.json
+.env*
 
 # Test reports
 .coverage

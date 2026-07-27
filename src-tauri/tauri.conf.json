@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.weft.app",
   "build": {
-    "beforeDevCommand": "yarn --cwd weft-frontend dev",
+    "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "yarn --cwd weft-frontend build",
-    "frontendDist": "../weft-frontend/dist",
+    "beforeBuildCommand": "yarn build",
+    "frontendDist": "../dist",
     "features": []
   },
   "app": {

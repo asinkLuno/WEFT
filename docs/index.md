@@ -148,7 +148,10 @@ cargo tauri dev -- examples/红楼梦.yml
 ```
 weft/
 ├── src-tauri/        # Rust 领域内核、Rhai 运行时与 Tauri IPC
-├── weft-frontend/    # Tauri React + Vite 前端
+├── src/              # React + TypeScript 前端入口
+├── app/              # 前端页面
+├── components/       # 前端组件
+├── lib/              # 前端公共模块
 │   ├── app/          # React 页面
 │   └── components/   # 组件
 ├── plugins/          # Code Agent 插件与 skill
