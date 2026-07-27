@@ -95,7 +95,7 @@ impl Calendar {
         let normalized = self.inner.normalize(&value)?;
         normalized
             .try_into()
-            .map_err(|_| WeftError::Plugin("normalize 必须返回六个时间分量".into()))
+            .map_err(|_| WeftError::Plugin("normalize must return six time components".into()))
     }
 
     pub fn humanize(&self, value: [i64; PHASE_LEN]) -> Result<String, WeftError> {

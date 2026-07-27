@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
+import { COPY, type Language } from "@/lib/i18n";
 import type { OpenedStory } from "@/lib/api";
-
-type Language = "zh-CN" | "en";
 
 interface QuickSwitcherProps {
   open: boolean;
@@ -14,29 +13,6 @@ interface QuickSwitcherProps {
   onPick: (story: OpenedStory) => void;
   language: Language;
 }
-
-const COPY: Record<
-  Language,
-  {
-    title: string;
-    placeholder: string;
-    empty: string;
-    noMatch: string;
-  }
-> = {
-  "zh-CN": {
-    title: "切换故事",
-    placeholder: "搜索最近打开的故事…",
-    empty: "还没有最近打开的故事",
-    noMatch: "没有匹配的故事",
-  },
-  en: {
-    title: "Switch story",
-    placeholder: "Search recent stories…",
-    empty: "No recently opened stories yet",
-    noMatch: "No matching story",
-  },
-};
 
 export function QuickSwitcher({
   open,
@@ -79,7 +55,8 @@ export function QuickSwitcher({
     <Modal
       open={open}
       onClose={onClose}
-      label={copy.title}
+      label={copy.switch_title}
+      closeLabel={copy.event_dismiss}
       className="max-w-xl"
     >
       <div className="border-b border-border px-4 py-3">
@@ -91,7 +68,7 @@ export function QuickSwitcher({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={copy.placeholder}
+            placeholder={copy.switch_placeholder}
             className="h-8 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -99,11 +76,11 @@ export function QuickSwitcher({
       <div className="max-h-80 overflow-auto px-2 py-2">
         {recent.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            {copy.empty}
+            {copy.switch_empty}
           </p>
         ) : filtered.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            {copy.noMatch}
+            {copy.switch_no_match}
           </p>
         ) : (
           <ul className="space-y-0.5">

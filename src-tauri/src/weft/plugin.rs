@@ -25,7 +25,7 @@ impl std::fmt::Debug for RhaiCalendar {
 impl RhaiCalendar {
     pub fn load(name: &str, path: &Path) -> Result<Self, WeftError> {
         let script = fs::read_to_string(path).map_err(|error| {
-            WeftError::Plugin(format!("读取历法 {} 失败: {error}", path.display()))
+            WeftError::Plugin(format!("failed to read calendar {}: {error}", path.display()))
         })?;
         Self::load_script(name, &script)
     }
@@ -33,7 +33,7 @@ impl RhaiCalendar {
     pub fn load_script(name: &str, script: &str) -> Result<Self, WeftError> {
         let engine = limited_engine();
         let ast = engine.compile(script).map_err(|error| {
-            WeftError::Plugin(format!("编译历法 {name} 失败: {error}"))
+            WeftError::Plugin(format!("failed to compile calendar {name}: {error}"))
         })?;
         Ok(Self {
             engine,
@@ -46,14 +46,14 @@ impl RhaiCalendar {
         self.engine
             .call_fn(&mut Scope::new(), &self.ast, entry, args)
             .map_err(|error| {
-                WeftError::Plugin(format!("{}.{} 执行失败: {error}", self.name, entry))
+                WeftError::Plugin(format!("{}.{} execution failed: {error}", self.name, entry))
             })
     }
 
     pub fn metadata(&self) -> Result<Value, WeftError> {
         let output = self.call("metadata", ())?;
         from_dynamic(&output)
-            .map_err(|error| WeftError::Plugin(format!("历法 metadata 无效: {error}")))
+            .map_err(|error| WeftError::Plugin(format!("calendar metadata is invalid: {error}")))
     }
 
     pub fn normalize(&self, values: &[i64]) -> Result<Vec<i64>, WeftError> {
@@ -65,12 +65,12 @@ impl RhaiCalendar {
         let output = self.call("normalize", (input,))?;
         let output = output
             .try_cast::<rhai::Array>()
-            .ok_or_else(|| WeftError::Plugin("normalize 必须返回数组".into()))?;
+            .ok_or_else(|| WeftError::Plugin("normalize must return an array".into()))?;
         output
             .into_iter()
             .map(|item| {
                 item.as_int()
-                    .map_err(|_| WeftError::Plugin("normalize 必须返回整数数组".into()))
+                    .map_err(|_| WeftError::Plugin("normalize must return an integer array".into()))
             })
             .collect()
     }
@@ -83,7 +83,7 @@ impl RhaiCalendar {
             .collect::<rhai::Array>();
         self.call("to_tick", (input,))?
             .as_int()
-            .map_err(|_| WeftError::Plugin("to_tick 必须返回整数".into()))
+            .map_err(|_| WeftError::Plugin("to_tick must return an integer".into()))
     }
 
     pub fn humanize(&self, values: &[i64]) -> Result<String, WeftError> {
@@ -94,7 +94,7 @@ impl RhaiCalendar {
             .collect::<rhai::Array>();
         self.call("humanize", (input,))?
             .into_string()
-            .map_err(|_| WeftError::Plugin("humanize 必须返回字符串".into()))
+            .map_err(|_| WeftError::Plugin("humanize must return a string".into()))
     }
 
     pub fn extra(&self, values: &[i64]) -> Result<Value, WeftError> {
@@ -105,7 +105,7 @@ impl RhaiCalendar {
             .collect::<rhai::Array>();
         let output = self.call("extra", (input,))?;
         from_dynamic(&output)
-            .map_err(|error| WeftError::Plugin(format!("extra 返回值无效: {error}")))
+            .map_err(|error| WeftError::Plugin(format!("extra return value is invalid: {error}")))
     }
 }
 
@@ -125,19 +125,19 @@ impl RhaiRuntime {
             for (name, config) in spec {
                 let name = name
                     .as_str()
-                    .ok_or_else(|| WeftError::Plugin("material 注册名必须是字符串".into()))?;
+                    .ok_or_else(|| WeftError::Plugin("material name must be a string".into()))?;
                 let config = config
                     .as_mapping()
-                    .ok_or_else(|| WeftError::Plugin(format!("{name} 必须使用插件清单")))?;
+                    .ok_or_else(|| WeftError::Plugin(format!("{name} must be a plugin manifest")))?;
                 require_manifest(config, name, "material")?;
                 let source = manifest_string(config, "source")?;
                 let entry = manifest_string(config, "entry")?;
                 let path = base.join(source);
                 let script = fs::read_to_string(&path).map_err(|error| {
-                    WeftError::Plugin(format!("读取 {} 失败: {error}", path.display()))
+                    WeftError::Plugin(format!("failed to read {}: {error}", path.display()))
                 })?;
                 let ast = engine.compile(&script).map_err(|error| {
-                    WeftError::Plugin(format!("编译 {} 失败: {error}", path.display()))
+                    WeftError::Plugin(format!("failed to compile {}: {error}", path.display()))
                 })?;
                 materials.insert(name.to_owned(), (ast, entry.into()));
             }
@@ -152,15 +152,15 @@ impl RhaiRuntime {
         let (ast, entry) = self
             .materials
             .get(name)
-            .ok_or_else(|| WeftError::Reference(format!("未知的 material: {name:?}")))?;
+            .ok_or_else(|| WeftError::Reference(format!("unknown material: {name:?}")))?;
         let argument = to_dynamic(context)
-            .map_err(|error| WeftError::Plugin(format!("material 输入转换失败: {error}")))?;
+            .map_err(|error| WeftError::Plugin(format!("material input conversion failed: {error}")))?;
         let output = self
             .engine
             .call_fn::<rhai::Dynamic>(&mut Scope::new(), ast, entry, (argument,))
-            .map_err(|error| WeftError::Plugin(format!("{name}.{entry} 执行失败: {error}")))?;
+            .map_err(|error| WeftError::Plugin(format!("{name}.{entry} execution failed: {error}")))?;
         from_dynamic(&output)
-            .map_err(|error| WeftError::Plugin(format!("{name}.material 返回值无效: {error}")))
+            .map_err(|error| WeftError::Plugin(format!("{name}.material return value is invalid: {error}")))
     }
 }
 
@@ -183,7 +183,7 @@ pub fn calendar_source<'a>(
     let config = spec
         .and_then(|mapping| mapping.get(serde_yaml::Value::String(name.into())))
         .and_then(serde_yaml::Value::as_mapping)
-        .ok_or_else(|| WeftError::Reference(format!("不支持的 date_mode: {name:?}")))?;
+        .ok_or_else(|| WeftError::Reference(format!("unsupported date_mode: {name:?}")))?;
     require_manifest(config, name, "calendar")?;
     manifest_string(config, "source")
 }
@@ -197,7 +197,7 @@ fn require_manifest(config: &serde_yaml::Mapping, name: &str, kind: &str) -> Res
             != Some(1)
     {
         return Err(WeftError::Plugin(format!(
-            "{name} 需要 runtime: rhai、kind: {kind}、api: 1"
+            "{name} requires runtime: rhai, kind: {kind}, api: 1"
         )));
     }
     Ok(())
@@ -207,14 +207,14 @@ fn manifest_string<'a>(config: &'a serde_yaml::Mapping, key: &str) -> Result<&'a
     config
         .get(serde_yaml::Value::String(key.into()))
         .and_then(serde_yaml::Value::as_str)
-        .ok_or_else(|| WeftError::Plugin(format!("插件清单缺少字符串字段 {key}")))
+        .ok_or_else(|| WeftError::Plugin(format!("plugin manifest missing string field {key}")))
 }
 
 fn builtin_constellation(context: &Value) -> Result<Value, WeftError> {
     let base = context
         .pointer("/moai/base_time/base_time")
         .and_then(Value::as_array)
-        .ok_or_else(|| WeftError::Plugin("constellation 需要 moai.base_time".into()))?;
+        .ok_or_else(|| WeftError::Plugin("constellation requires moai.base_time".into()))?;
     let month = base.get(1).and_then(Value::as_i64).unwrap_or(0);
     let day = base.get(2).and_then(Value::as_i64).unwrap_or(0);
     let result = match (month, day) {
@@ -262,5 +262,26 @@ mod tests {
             .call_fn::<rhai::Dynamic>(&mut Scope::new(), &ast, "material", (rhai::Dynamic::UNIT,))
             .unwrap_err();
         assert!(error.to_string().contains("operations"));
+    }
+
+    #[test]
+    fn runs_taohuashan_calendar_script() {
+        let path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/calendars/taohuashan.rhai");
+        let calendar = RhaiCalendar::load("taohuashan", &path).unwrap();
+
+        assert_eq!(
+            calendar.humanize(&[1645, 3, 19, 0, 0, 0]).unwrap(),
+            "弘光元年（乙酉）三月十九"
+        );
+        assert_eq!(
+            calendar.normalize(&[1645, 6, 30, 0, 0, 0]).unwrap(),
+            [1645, 7, 1, 0, 0, 0]
+        );
+        assert_eq!(
+            calendar.to_tick(&[1645, 4, 24, 0, 0, 0]).unwrap()
+                - calendar.to_tick(&[1645, 4, 23, 0, 0, 0]).unwrap(),
+            86_400
+        );
     }
 }

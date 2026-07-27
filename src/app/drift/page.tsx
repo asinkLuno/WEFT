@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageError, PageLoading } from "@/components/page-state";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import {
   getDrifts,
   getMoais,
@@ -35,7 +36,8 @@ export default function DriftPage() {
     };
   }, []);
 
-  if (error) return <PageError title="Failed to load drift" error={error} />;
+  if (error)
+    return <PageError title={COPY[initialLanguage()].error_load_drift} error={error} />;
   if (!data) return <PageLoading />;
 
   const { driftsRaw, moais } = data;

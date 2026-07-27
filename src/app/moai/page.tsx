@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageError, PageLoading } from "@/components/page-state";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import {
   getDrifts,
   getMoais,
@@ -34,7 +35,8 @@ export default function MoaiPage() {
     };
   }, []);
 
-  if (error) return <PageError title="Failed to load moai" error={error} />;
+  if (error)
+    return <PageError title={COPY[initialLanguage()].error_load_moai} error={error} />;
   if (!data) return <PageLoading />;
 
   const { moais, drifts } = data;

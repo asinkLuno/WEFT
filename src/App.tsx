@@ -26,6 +26,13 @@ import {
   type OpenedStory,
 } from "@/lib/api";
 import { emit, listen, openUrl } from "@/lib/platform";
+import {
+  COPY,
+  LANGUAGE_KEY,
+  initialLanguage,
+  formatErrorMessage,
+  type Language,
+} from "@/lib/i18n";
 
 const StoryPage = lazy(() => import("@/app/story/page"));
 const MoaiPage = lazy(() => import("@/app/moai/page"));
@@ -49,56 +56,8 @@ const PAGES: Record<string, React.ComponentType> = {
   "/narrative": NarrativePage,
 };
 
-type Language = "zh-CN" | "en";
-
-const LANGUAGE_KEY = "weft.language";
 const RECENT_STORIES_KEY = "weft.recentStories";
 const MAX_RECENT_STORIES = 5;
-
-const COPY = {
-  "zh-CN": {
-    title: "打开一个 WEFT 故事",
-    description: "选择 YAML 文件后，即可查看故事、墨埃、漂移和叙事时间线。",
-    formats: "支持 .yaml 和 .yml 文件",
-    choose: "选择 YAML 文件",
-    opening: "正在打开…",
-    recent: "最近打开",
-    noRecent: "还没有最近打开的故事",
-    openFailed: "打开失败",
-    fileLostTitle: "当前故事文件不见了",
-    fileLostHint: "它可能被移动或删除。可在文件管理器中确认后再重新定位。",
-    locate: "重新定位…",
-    closeStory: "关闭故事",
-    watching: "正在监听文件变化",
-    invalidDropFile: "只支持 .yaml 或 .yml 文件",
-    dropToOpen: "松开以打开此 YAML",
-  },
-  en: {
-    title: "Open a WEFT story",
-    description:
-      "Choose a YAML file to explore its story, moai, drifts, and narrative timeline.",
-    formats: "Supports .yaml and .yml files",
-    choose: "Choose YAML file",
-    opening: "Opening…",
-    recent: "Recent stories",
-    noRecent: "No recently opened stories yet",
-    openFailed: "Failed to open",
-    fileLostTitle: "Current story file is missing",
-    fileLostHint:
-      "It may have been moved or deleted outside WEFT. Verify it in your file manager and re-locate.",
-    locate: "Locate…",
-    closeStory: "Close story",
-    watching: "Watching file for changes",
-    invalidDropFile: "Only .yaml or .yml files are supported",
-    dropToOpen: "Release to open this YAML",
-  },
-} as const;
-
-function initialLanguage(): Language {
-  const saved = localStorage.getItem(LANGUAGE_KEY);
-  if (saved === "zh-CN" || saved === "en") return saved;
-  return navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
-}
 
 function loadRecentStories(): OpenedStory[] {
   try {
@@ -134,7 +93,6 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [dragPath, setDragPath] = useState<string | null>(null);
-  const copy = COPY[language];
 
   const refreshAppState = useCallback(() => {
     getAppState()
@@ -154,7 +112,7 @@ export function App() {
               const location = error.line
                 ? ` (${error.line}${error.column ? `:${error.column}` : ""})`
                 : "";
-              setOpenError(`${error.message}${location} [${error.code}]`);
+              setOpenError(`${formatErrorMessage(language, error)}${location} [${error.code}]`);
             })
             .catch(() => undefined);
       })
@@ -319,7 +277,7 @@ export function App() {
   async function handleDrop(rawPath: string) {
     const path = rawPath.trim();
     if (!/\.(ya?ml)$/i.test(path)) {
-      setOpenError(copy.invalidDropFile);
+      setOpenError(COPY[language].landing_invalid_drop);
       return;
     }
     setOpenError(null);
@@ -361,7 +319,7 @@ export function App() {
     >
       <div className="pointer-events-none rounded-xl border-2 border-dashed border-primary/50 bg-background/95 px-12 py-8 text-center shadow-lg">
         <FolderOpen className="mx-auto mb-3 size-8 text-primary" />
-        <p className="text-sm font-medium">{copy.dropToOpen}</p>
+        <p className="text-sm font-medium">{COPY[language].landing_drop_to_open}</p>
         <p
           className="mt-1 max-w-xs truncate text-xs text-muted-foreground"
           title={dragPath}
@@ -408,15 +366,15 @@ export function App() {
                 className="mx-auto mb-6"
               />
               <h1 className="text-2xl font-semibold tracking-tight">
-                {copy.title}
+                {COPY[language].landing_title}
               </h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {copy.description}
+                {COPY[language].landing_description}
               </p>
               <div className="mt-8 rounded-xl border border-dashed bg-card/50 px-8 py-10">
                 <FileText className="mx-auto mb-4 size-10 text-muted-foreground" />
                 <p className="mb-5 text-sm text-muted-foreground">
-                  {copy.formats}
+                  {COPY[language].landing_formats}
                 </p>
                 <Button
                   type="button"
@@ -425,7 +383,7 @@ export function App() {
                   disabled={opening}
                 >
                   <FolderOpen data-icon="inline-start" />
-                  {opening ? copy.opening : copy.choose}
+                  {opening ? COPY[language].landing_opening : COPY[language].landing_choose}
                 </Button>
               </div>
             </div>
@@ -436,7 +394,7 @@ export function App() {
                 className="mb-3 flex items-center gap-2 text-sm font-medium"
               >
                 <Clock3 className="size-4 text-muted-foreground" />
-                {copy.recent}
+                {COPY[language].landing_recent}
               </h2>
               {recentStories.length > 0 ? (
                 <div className="overflow-hidden rounded-xl border bg-card">
@@ -462,13 +420,13 @@ export function App() {
                 </div>
               ) : (
                 <p className="rounded-xl border border-dashed px-4 py-5 text-center text-sm text-muted-foreground">
-                  {copy.noRecent}
+                  {COPY[language].landing_no_recent}
                 </p>
               )}
             </section>
             {openError && (
               <p className="mt-4 text-sm text-destructive" role="alert">
-                {copy.openFailed}: {openError}
+                {COPY[language].landing_open_failed}: {openError}
               </p>
             )}
           </div>
@@ -481,35 +439,35 @@ export function App() {
   if (fileLostPath) {
     return (
       <>
-        <AppEvents onFileLost={onFileLost} />
+        <AppEvents onFileLost={onFileLost} language={language} />
         <main className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-md text-center">
             <FileX className="mx-auto mb-4 size-10 text-muted-foreground" />
             <h1 className="text-xl font-semibold tracking-tight">
-              {copy.fileLostTitle}
+              {COPY[language].landing_file_lost_title}
             </h1>
             <p className="mt-3 break-all rounded-md bg-muted px-3 py-2 font-mono text-xs text-muted-foreground">
               {fileLostPath}
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              {copy.fileLostHint}
+              {COPY[language].landing_file_lost_hint}
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button type="button" onClick={handleLocate} disabled={opening}>
                 <FolderOpen data-icon="inline-start" />
-                {opening ? copy.opening : copy.locate}
+                {opening ? COPY[language].landing_opening : COPY[language].landing_locate}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleCloseStory}
               >
-                {copy.closeStory}
+                {COPY[language].landing_close_story}
               </Button>
             </div>
             {openError && (
               <p className="mt-4 text-sm text-destructive" role="alert">
-                {copy.openFailed}: {openError}
+                {COPY[language].landing_open_failed}: {openError}
               </p>
             )}
           </div>
@@ -526,7 +484,7 @@ export function App() {
   return (
     <>
       <div className="min-h-screen flex flex-col">
-        <AppEvents onFileLost={onFileLost} />
+        <AppEvents onFileLost={onFileLost} language={language} />
         <header className="flex items-center gap-6 border-b border-border px-6 py-3">
           <a
             href="#/story"
@@ -552,7 +510,7 @@ export function App() {
                 className="max-w-80 truncate text-sm text-destructive"
                 title={openError}
               >
-                {copy.openFailed}: {openError}
+                {COPY[language].landing_open_failed}: {openError}
               </span>
             )}
             {fileName && (
@@ -562,7 +520,7 @@ export function App() {
               >
                 <span
                   className="size-1.5 rounded-full bg-emerald-500"
-                  aria-label={copy.watching}
+                  aria-label={COPY[language].landing_watching}
                 />
                 <span className="truncate">{fileName}</span>
               </span>

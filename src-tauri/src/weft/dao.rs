@@ -89,13 +89,13 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
         Some("yaml" | "yml")
     ) {
         return Err(WeftError::Schema(
-            "新 Rust 后端仅接受 YAML/YML 故事文件".into(),
+            "only YAML/YML story files are accepted".into(),
         ));
     }
     let source = fs::read_to_string(path).map_err(|error| WeftError::Read(error.to_string()))?;
     let root: Yaml =
         serde_yaml::from_str(&source).map_err(|error| WeftError::Parse(error.to_string()))?;
-    let root = mapping(&root, "故事文件顶层")?;
+    let root = mapping(&root, "story file root")?;
     let story_raw = child_mapping(root, "story")?;
     let title = string(story_raw, "title")?;
     let date_mode = optional_string(story_raw, "date_mode")?.unwrap_or_else(|| "gregorian".into());
@@ -122,7 +122,7 @@ pub fn load(path: &Path) -> Result<Dao, WeftError> {
         for (raw_name, raw_value) in mapping(raw_moais, "moai")? {
             let name = raw_name
                 .as_str()
-                .ok_or_else(|| WeftError::Schema("moai 名称必须是字符串".into()))?
+                .ok_or_else(|| WeftError::Schema("moai name must be a string".into()))?
                 .to_owned();
             let raw = mapping(raw_value, &format!("moai.{name}"))?;
             let base_time = raw
@@ -185,16 +185,16 @@ fn parse_drifts(
     for (group, events) in mapping(raw, "drift")? {
         let group = group
             .as_str()
-            .ok_or_else(|| WeftError::Schema("drift 分组必须是字符串".into()))?;
+            .ok_or_else(|| WeftError::Schema("drift group must be a string".into()))?;
         let mut parsed = Vec::new();
         for (title, event) in mapping(events, group)? {
             let title = title
                 .as_str()
-                .ok_or_else(|| WeftError::Schema("drift 标题必须是字符串".into()))?;
+                .ok_or_else(|| WeftError::Schema("drift title must be a string".into()))?;
             let event = mapping(event, title)?;
             let start_time =
                 Phase::from_yaml(event.get(Yaml::String("start_time".into())).ok_or_else(
-                    || WeftError::Schema(format!("{group}/{title} 缺少 start_time")),
+                    || WeftError::Schema(format!("{group}/{title} missing start_time")),
                 )?)?;
             let end_time = event
                 .get(Yaml::String("end_time".into()))
@@ -204,7 +204,7 @@ fn parse_drifts(
             for name in &names {
                 if !moais.contains_key(name) {
                     return Err(WeftError::Reference(format!(
-                        "{group}/{title} 引用了 {name:?}"
+                        "{group}/{title} references unknown moai {name:?}"
                     )));
                 }
             }
@@ -214,7 +214,7 @@ fn parse_drifts(
             let end_tick = flat_end.map(|value| calendar.to_tick(value)).transpose()?;
             if end_tick.is_some_and(|end| end < start_tick) {
                 return Err(WeftError::Schema(format!(
-                    "{group}/{title} 的结束时间早于开始时间"
+                    "{group}/{title} end time is before start time"
                 )));
             }
             parsed.push(Drift {
@@ -255,12 +255,12 @@ fn parse_narratives(
     for (name, raw) in mapping(raw, "narrative")? {
         let name = name
             .as_str()
-            .ok_or_else(|| WeftError::Schema("narrative 名称必须是字符串".into()))?;
+            .ok_or_else(|| WeftError::Schema("narrative name must be a string".into()))?;
         let raw = mapping(raw, name)?;
         let observer = string(raw, "observer")?;
         if !moais.contains_key(&observer) {
             return Err(WeftError::Reference(format!(
-                "narrative observer {observer:?} 不存在"
+                "narrative observer {observer:?} not found"
             )));
         }
         let subject = string_list(raw.get(Yaml::String("subject".into())))?;
@@ -272,7 +272,7 @@ fn parse_narratives(
                 selected.push(event.clone());
             } else {
                 return Err(WeftError::Reference(format!(
-                    "narrative subject {reference:?} 不存在"
+                    "narrative subject {reference:?} not found"
                 )));
             }
         }
@@ -281,7 +281,7 @@ fn parse_narratives(
             .find(|d| !d.moais.as_deref().unwrap_or(&[]).contains(&observer))
         {
             return Err(WeftError::Reference(format!(
-                "{observer:?} 未在事件 {:?} 中",
+                "{observer:?} not in event {:?}",
                 absent.id
             )));
         }
@@ -306,19 +306,19 @@ fn parse_graph(root: &Mapping, moais: &BTreeMap<String, Moai>) -> Result<LinkGra
     for (label, links) in mapping(raw, "moai_link")? {
         let label = label
             .as_str()
-            .ok_or_else(|| WeftError::Schema("关系分组必须是字符串".into()))?;
+            .ok_or_else(|| WeftError::Schema("relationship group must be a string".into()))?;
         let links = links
             .as_sequence()
-            .ok_or_else(|| WeftError::Schema("关系分组必须是列表".into()))?;
+            .ok_or_else(|| WeftError::Schema("relationship group must be a list".into()))?;
         for link in links {
             let link = mapping(link, label)?;
             let targets = string_list(link.get(Yaml::String("moais".into())))?;
             if targets.len() != 2 {
-                return Err(WeftError::Schema("moai_link.moais 必须有两个名称".into()));
+                return Err(WeftError::Schema("moai_link.moais must have exactly two names".into()));
             }
             for target in &targets {
                 if !moais.contains_key(target) {
-                    return Err(WeftError::Reference(format!("关系引用了 {target:?}")));
+                    return Err(WeftError::Reference(format!("relationship references unknown moai {target:?}")));
                 }
                 node_names.insert(target.clone());
             }
@@ -385,21 +385,21 @@ fn populate_journals(
 fn mapping<'a>(value: &'a Yaml, label: &str) -> Result<&'a Mapping, WeftError> {
     value
         .as_mapping()
-        .ok_or_else(|| WeftError::Schema(format!("{label} 必须是映射")))
+        .ok_or_else(|| WeftError::Schema(format!("{label} must be a mapping")))
 }
 fn child_mapping<'a>(root: &'a Mapping, key: &str) -> Result<&'a Mapping, WeftError> {
     root.get(Yaml::String(key.into()))
-        .ok_or_else(|| WeftError::Schema(format!("缺少 {key}")))
+        .ok_or_else(|| WeftError::Schema(format!("missing {key}")))
         .and_then(|value| mapping(value, key))
 }
 fn string(mapping: &Mapping, key: &str) -> Result<String, WeftError> {
-    optional_string(mapping, key)?.ok_or_else(|| WeftError::Schema(format!("{key} 必须是字符串")))
+    optional_string(mapping, key)?.ok_or_else(|| WeftError::Schema(format!("{key} must be a string")))
 }
 fn optional_string(mapping: &Mapping, key: &str) -> Result<Option<String>, WeftError> {
     match mapping.get(Yaml::String(key.into())) {
         None | Some(Yaml::Null) => Ok(None),
         Some(Yaml::String(value)) => Ok(Some(value.clone())),
-        Some(_) => Err(WeftError::Schema(format!("{key} 必须是字符串"))),
+        Some(_) => Err(WeftError::Schema(format!("{key} must be a string"))),
     }
 }
 fn string_list(value: Option<&Yaml>) -> Result<Vec<String>, WeftError> {
@@ -408,12 +408,12 @@ fn string_list(value: Option<&Yaml>) -> Result<Vec<String>, WeftError> {
     };
     value
         .as_sequence()
-        .ok_or_else(|| WeftError::Schema("此字段必须是字符串列表".into()))?
+        .ok_or_else(|| WeftError::Schema("this field must be a list of strings".into()))?
         .iter()
         .map(|item| {
             item.as_str()
                 .map(str::to_owned)
-                .ok_or_else(|| WeftError::Schema("列表元素必须是字符串".into()))
+                .ok_or_else(|| WeftError::Schema("list items must be strings".into()))
         })
         .collect()
 }
@@ -446,4 +446,5 @@ mod tests {
         assert_eq!(dao.calendar_metadata.units, ["年", "月", "日", "时"]);
         assert!(!dao.drift.is_empty());
     }
+
 }

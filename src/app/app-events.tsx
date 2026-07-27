@@ -5,6 +5,12 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { triggerRefetch, type WeftError } from "@/lib/api";
 import { listen } from "@/lib/platform";
+import {
+  COPY,
+  formatErrorMessage,
+  formatErrorHint,
+  type Language,
+} from "@/lib/i18n";
 
 interface StoryLoadError {
   error: WeftError;
@@ -20,9 +26,10 @@ interface ReloadedPayload {
 
 interface AppEventsProps {
   onFileLost: (path: string) => void;
+  language: Language;
 }
 
-export function AppEvents({ onFileLost }: AppEventsProps) {
+export function AppEvents({ onFileLost, language }: AppEventsProps) {
   const [error, setError] = useState<WeftError | null>(null);
   const [reloadedAt, setReloadedAt] = useState<string | null>(null);
 
@@ -59,12 +66,12 @@ export function AppEvents({ onFileLost }: AppEventsProps) {
           role="status"
         >
           <CheckCircle2 className="size-4 text-emerald-600" />
-          <span>Story reloaded at {reloadedAt}</span>
+          <span>{COPY[language].event_reloaded} {reloadedAt}</span>
           <button
             type="button"
             className="ml-auto rounded-sm p-1 text-muted-foreground hover:bg-emerald-500/10 hover:text-foreground"
             onClick={() => setReloadedAt(null)}
-            aria-label="Dismiss reload notice"
+            aria-label={COPY[language].event_dismiss}
           >
             <X className="size-4" />
           </button>
@@ -78,30 +85,33 @@ export function AppEvents({ onFileLost }: AppEventsProps) {
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="min-w-0 flex-1">
             <div className="font-medium">
-              Story reload failed{" "}
+              {COPY[language].event_reload_failed}{" "}
               <code className="ml-1 text-xs text-destructive">
                 {error.code}
               </code>
             </div>
             <p className="mt-0.5 break-words text-muted-foreground">
-              {error.message}
+              {formatErrorMessage(language, error)}
             </p>
             {errorLocation(error) && (
               <p className="mt-1 font-mono text-xs text-muted-foreground">
                 {errorLocation(error)}
               </p>
             )}
-            {error.hint && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Hint: {error.hint}
-              </p>
-            )}
+            {(() => {
+              const hint = formatErrorHint(language, error);
+              return hint ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {hint}
+                </p>
+              ) : null;
+            })()}
           </div>
           <button
             type="button"
             className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-foreground"
             onClick={() => setError(null)}
-            aria-label="Dismiss error"
+            aria-label={COPY[language].event_dismiss}
           >
             <X className="size-4" />
           </button>

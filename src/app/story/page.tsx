@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageError, PageLoading } from "@/components/page-state";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import {
   getCalendarMetadata,
   getStory,
@@ -41,7 +42,8 @@ export default function StoryPage() {
     };
   }, []);
 
-  if (error) return <PageError title="Failed to load story" error={error} />;
+  if (error)
+    return <PageError title={COPY[initialLanguage()].error_load_story} error={error} />;
   if (!data) return <PageLoading />;
 
   const { story, calendar } = data;

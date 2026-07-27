@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Drift, Moai, MoaiMap } from "@/lib/api";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import {
   Card,
   CardContent,
@@ -62,8 +63,8 @@ export function MoaiGantts({
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search moai…"
-          aria-label="Search moai"
+          placeholder={COPY[initialLanguage()].moai_search + "…"}
+          aria-label={COPY[initialLanguage()].moai_search}
           className="mt-4 h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
         />
       </div>

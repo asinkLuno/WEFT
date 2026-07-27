@@ -16,7 +16,7 @@ impl Phase {
     pub fn new(mut base_time: Vec<i64>, ref_time: Option<Box<Phase>>) -> Result<Self, WeftError> {
         if base_time.len() > PHASE_LEN {
             return Err(WeftError::Schema(format!(
-                "时间最多包含 {PHASE_LEN} 个分量"
+                "time can have at most {PHASE_LEN} components"
             )));
         }
         base_time.resize(PHASE_LEN, 0);
@@ -29,9 +29,9 @@ impl Phase {
     pub fn from_yaml(value: &serde_yaml::Value) -> Result<Self, WeftError> {
         let sequence = value
             .as_sequence()
-            .ok_or_else(|| WeftError::Schema("时间必须是非空列表".into()))?;
+            .ok_or_else(|| WeftError::Schema("time must be a non-empty list".into()))?;
         if sequence.is_empty() {
-            return Err(WeftError::Schema("时间必须是非空列表".into()));
+            return Err(WeftError::Schema("time must be a non-empty list".into()));
         }
         let (components, reference) = match sequence.last() {
             Some(serde_yaml::Value::Sequence(_)) => {
@@ -44,7 +44,7 @@ impl Phase {
             base.push(
                 component
                     .as_i64()
-                    .ok_or_else(|| WeftError::Schema("时间分量必须是整数".into()))?,
+                    .ok_or_else(|| WeftError::Schema("time components must be integers".into()))?,
             );
         }
         let reference = reference.map(Self::from_yaml).transpose()?.map(Box::new);

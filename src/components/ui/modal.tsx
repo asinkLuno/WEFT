@@ -13,6 +13,8 @@ interface ModalProps {
   lockBackdrop?: boolean;
   /** Accessible label announced when the modal opens. */
   label?: string;
+  /** Accessible label for the close button. */
+  closeLabel?: string;
 }
 
 export function Modal({
@@ -22,6 +24,7 @@ export function Modal({
   className,
   lockBackdrop = false,
   label,
+  closeLabel = "Close",
 }: ModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -56,7 +59,7 @@ export function Modal({
           type="button"
           className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={closeLabel}
         >
           <X className="size-4" />
         </button>

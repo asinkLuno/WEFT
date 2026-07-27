@@ -1,0 +1,107 @@
+aqueduct:
+  taohuashan:
+    runtime: rhai
+    kind: calendar
+    api: 1
+    source: ./calendars/taohuashan.rhai
+
+story:
+  title: 桃花扇
+  description: 以侯方域、李香君的离合映照明末南明兴亡；月级剧情以该月初一作为排序锚点，日级史事依剧本卷首考据。
+  date_mode: taohuashan
+
+moai:
+  侯方域:
+    description: 字朝宗，复社文人，剧中与李香君因扇定情。
+  李香君:
+    description: 秦淮歌妓，拒受阮大铖资助，守楼抗婚，血溅诗扇。
+  杨龙友:
+    description: 画家，在染血诗扇上点成桃花。
+  史可法:
+    description: 南明重臣，督师扬州。
+  阮大铖:
+    description: 剧中借拥立之势重返政坛，迫害复社人物。
+  弘光帝:
+    description: 福王朱由崧，南明弘光政权君主。
+  媚香楼:
+    description: 李香君居所，侯李爱情线的主要空间。
+  南京:
+    description: 侯李离合与南明兴亡交汇之城。
+  扬州:
+    description: 史可法督师抗清之地。
+
+moai_link:
+  侯李:
+    - moais: [侯方域, 李香君]
+      relations: 因扇定情
+  复社与阮党:
+    - moais: [侯方域, 阮大铖]
+      relations: 政见相敌
+  南明朝局:
+    - moais: [史可法, 弘光帝]
+      relations: 君臣
+    - moais: [阮大铖, 弘光帝]
+      relations: 借拥立而进用
+  地点:
+    - moais: [李香君, 媚香楼]
+      relations: 居于
+    - moais: [媚香楼, 南京]
+      relations: 位于
+    - moais: [史可法, 扬州]
+      relations: 督师于
+
+drift:
+  离合:
+    却奁:
+      # 第七出仅系“癸未三月”，以初一作为月级排序锚点。
+      start_time: [1643, 3, 1]
+      moais: [侯方域, 李香君, 阮大铖, 媚香楼]
+      description: 李香君识破妆奁出自阮大铖，坚决退还；日期精度为月。
+    血溅诗扇:
+      # 剧情系于乙酉正月；以同月搜选旧院妓女的初七作为历史锚点。
+      start_time: [1645, 1, 7]
+      moais: [李香君, 杨龙友, 阮大铖, 媚香楼]
+      description: 阮党搜选旧院女子，香君守楼抗婚，鲜血溅扇，杨龙友点染成桃花。
+
+  甲申国变:
+    议立福王:
+      start_time: [1644, 4, 13]
+      moais: [史可法, 弘光帝, 阮大铖, 南京]
+      description: 南京诸臣议立福王，南明政局由此展开。
+    福王迎驾:
+      start_time: [1644, 4, 29]
+      moais: [弘光帝, 史可法, 南京]
+      description: 福王抵达南京。
+    孝陵设朝:
+      start_time: [1644, 5, 1]
+      moais: [弘光帝, 史可法, 南京]
+      description: 福王谒孝陵并设朝。
+
+  乙酉覆亡:
+    设坛祭帝:
+      start_time: [1645, 3, 19]
+      moais: [弘光帝, 史可法, 南京]
+      description: 南明设坛祭祀崇祯帝。
+    清兵渡淮:
+      start_time: [1645, 4, 23]
+      moais: [史可法, 扬州, 南京]
+      description: 清军渡过淮河，逼近扬州与南京。
+    史可法誓师:
+      start_time: [1645, 4, 24]
+      moais: [史可法, 扬州]
+      description: 史可法在扬州誓师抗清。
+    弘光夜遁:
+      start_time: [1645, 5, 10]
+      moais: [弘光帝, 阮大铖, 南京]
+      description: 弘光帝夜出南京，南明朝廷迅速瓦解。
+
+narrative:
+  香君守节:
+    subject: [离合]
+    observer: 李香君
+  史可法所见国变:
+    subject: [甲申国变]
+    observer: 史可法
+  史可法所见覆亡:
+    subject: [乙酉覆亡/清兵渡淮, 乙酉覆亡/史可法誓师]
+    observer: 史可法

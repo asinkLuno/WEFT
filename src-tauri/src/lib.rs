@@ -187,7 +187,7 @@ fn open_recent_story(
 ) -> Result<OpenedStory, ErrorPayload> {
     let path = PathBuf::from(
         path.or_else(|| body.map(|body| body.path))
-            .ok_or_else(|| WeftError::Schema("缺少故事路径".into()).payload(None))?,
+            .ok_or_else(|| WeftError::Schema("missing story path".into()).payload(None))?,
     );
     state.load(path.clone())?;
     set_story_menu_enabled(&app, true, true);

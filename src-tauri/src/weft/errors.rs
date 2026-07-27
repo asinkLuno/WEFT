@@ -5,19 +5,19 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum WeftError {
-    #[error("故事文件不存在: {0}")]
+    #[error("story file not found: {0}")]
     FileNotFound(String),
-    #[error("读取故事文件失败: {0}")]
+    #[error("failed to read story file: {0}")]
     Read(String),
-    #[error("解析故事文件失败: {0}")]
+    #[error("failed to parse story file: {0}")]
     Parse(String),
-    #[error("故事结构无效: {0}")]
+    #[error("invalid story structure: {0}")]
     Schema(String),
-    #[error("引用不存在: {0}")]
+    #[error("reference not found: {0}")]
     Reference(String),
-    #[error("插件失败: {0}")]
+    #[error("plugin failed: {0}")]
     Plugin(String),
-    #[error("尚未加载故事")]
+    #[error("no story loaded")]
     StoryNotLoaded,
 }
 
@@ -25,7 +25,6 @@ pub enum WeftError {
 pub struct ErrorPayload {
     pub code: String,
     pub stage: String,
-    pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,13 +51,18 @@ impl WeftError {
         ErrorPayload {
             code: code.into(),
             stage: stage.into(),
-            message: self.to_string(),
             source: source.map(|p| p.display().to_string()),
             path: None,
             path_display: None,
-            hint: matches!(self, Self::StoryNotLoaded)
-                .then(|| "先在桌面应用中打开一个 WEFT 故事文件".into()),
-            details: matches!(self, Self::Plugin(_)).then(|| json!({ "runtime": "rhai" })),
+            hint: None,
+            details: match self {
+                Self::Read(msg)
+                | Self::Parse(msg)
+                | Self::Schema(msg)
+                | Self::Reference(msg) => Some(json!({ "detail": msg })),
+                Self::Plugin(msg) => Some(json!({ "detail": msg, "runtime": "rhai" })),
+                _ => None,
+            },
         }
     }
 }

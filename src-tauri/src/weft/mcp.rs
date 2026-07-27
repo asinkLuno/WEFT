@@ -65,7 +65,7 @@ fn tools() -> Value {
     json!([
         {
             "name": "load_story",
-            "description": "加载并验证一个 WEFT YAML 故事文件",
+            "description": "Load and validate a WEFT YAML story file",
             "inputSchema": {
                 "type": "object",
                 "properties": { "path": { "type": "string" } },
@@ -74,22 +74,22 @@ fn tools() -> Value {
         },
         {
             "name": "get_story",
-            "description": "返回已加载故事的元信息",
+            "description": "Return metadata of the loaded story",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
             "name": "list_moai",
-            "description": "返回已加载故事的全部 Moai",
+            "description": "Return all Moai of the loaded story",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
             "name": "get_timeline",
-            "description": "返回按分组解析的 Drift 时间线",
+            "description": "Return the Drift timeline grouped by category",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
             "name": "get_narratives",
-            "description": "返回已解析的叙事大纲",
+            "description": "Return resolved narrative outlines",
             "inputSchema": { "type": "object", "properties": {} }
         }
     ])
@@ -102,7 +102,7 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, String> {
         let path = arguments
             .get("path")
             .and_then(Value::as_str)
-            .ok_or_else(|| "load_story 需要 path".to_owned())?;
+            .ok_or_else(|| "load_story requires path".to_owned())?;
         let loaded = dao::load(Path::new(path)).map_err(|error| error.to_string())?;
         let result = json!({
             "title": loaded.story.title,
@@ -114,13 +114,13 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, String> {
     }
     let dao = dao
         .as_ref()
-        .ok_or_else(|| "尚未加载故事，请先调用 load_story".to_owned())?;
+        .ok_or_else(|| "no story loaded, call load_story first".to_owned())?;
     match name {
         "get_story" => serde_json::to_value(&dao.story),
         "list_moai" => serde_json::to_value(&dao.moai),
         "get_timeline" => serde_json::to_value(&dao.drift),
         "get_narratives" => serde_json::to_value(&dao.narrative),
-        _ => return Err(format!("未知工具: {name}")),
+        _ => return Err(format!("unknown tool: {name}")),
     }
     .map_err(|error| error.to_string())
 }

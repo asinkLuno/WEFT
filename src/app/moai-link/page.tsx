@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageError, PageLoading } from "@/components/page-state";
+import { COPY, initialLanguage } from "@/lib/i18n";
 import {
   getMoaiLinks,
   getMoais,
@@ -34,7 +35,7 @@ export default function MoaiLinkPage() {
   }, []);
 
   if (error) {
-    return <PageError title="Failed to load moai links" error={error} />;
+    return <PageError title={COPY[initialLanguage()].error_load_moai_links} error={error} />;
   }
   if (!state) return <PageLoading />;
 

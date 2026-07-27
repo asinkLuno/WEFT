@@ -19,7 +19,6 @@ export type NarrativeMap = Record<string, Narrative>;
 export interface WeftError {
   code: string;
   stage: string;
-  message: string;
   source?: string;
   path?: Array<string | number>;
   path_display?: string;
@@ -47,13 +46,8 @@ export interface ReloadResult {
 
 export function formatWeftError(error: unknown): string {
   if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return String(error.code);
   }
   return String(error);
 }
