@@ -1,0 +1,4 @@
+interface:
+  display_name: "WEFT YAML"
+  short_description: "Create and validate WEFT story timeline files"
+  default_prompt: "Use $weft-yaml to create or update a WEFT story file and validate its timeline."

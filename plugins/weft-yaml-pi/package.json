@@ -1,0 +1,23 @@
+{
+  "name": "weft-yaml",
+  "version": "0.1.1",
+  "description": "Create, edit, and validate WEFT story timeline files.",
+  "keywords": [
+    "pi-package",
+    "weft",
+    "story",
+    "timeline",
+    "yaml",
+    "worldbuilding"
+  ],
+  "author": {
+    "name": "asinkLuno",
+    "url": "https://github.com/asinkLuno"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/asinkLuno/WEFT",
+  "repository": "https://github.com/asinkLuno/WEFT",
+  "pi": {
+    "skills": ["./skills"]
+  }
+}
