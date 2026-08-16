@@ -1,4 +1,7 @@
-use super::dao::{self, Dao};
+use super::{
+    dao::{self, Dao},
+    errors::{ErrorPayload, WeftError},
+};
 use serde_json::{json, Value};
 use std::{
     error::Error,
@@ -38,10 +41,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         id,
                         json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&value)? }] }),
                     ),
-                    Err(message) => ok(
-                        id,
-                        json!({ "isError": true, "content": [{ "type": "text", "text": message }] }),
-                    ),
+                    Err(payload) => {
+                        let text = serde_json::to_string_pretty(&payload)?;
+                        ok(
+                            id,
+                            json!({ "isError": true, "content": [{ "type": "text", "text": text }] }),
+                        )
+                    }
                 }
             }
             _ => json!({
@@ -95,15 +101,16 @@ fn tools() -> Value {
     ])
 }
 
-fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, String> {
+fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, ErrorPayload> {
     let name = params.get("name").and_then(Value::as_str).unwrap_or("");
     let arguments = params.get("arguments").cloned().unwrap_or_default();
     if name == "load_story" {
         let path = arguments
             .get("path")
             .and_then(Value::as_str)
-            .ok_or_else(|| "load_story requires path".to_owned())?;
-        let loaded = dao::load(Path::new(path)).map_err(|error| error.to_string())?;
+            .ok_or_else(|| WeftError::Schema("load_story requires path".into()).payload(None))?;
+        let loaded =
+            dao::load(Path::new(path)).map_err(|error| error.payload(Some(Path::new(path))))?;
         let result = json!({
             "title": loaded.story.title,
             "moai_count": loaded.moai.len(),
@@ -114,15 +121,17 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, String> {
     }
     let dao = dao
         .as_ref()
-        .ok_or_else(|| "no story loaded, call load_story first".to_owned())?;
+        .ok_or_else(|| WeftError::StoryNotLoaded.payload(None))?;
     match name {
         "get_story" => serde_json::to_value(&dao.story),
         "list_moai" => serde_json::to_value(&dao.moai),
         "get_timeline" => serde_json::to_value(&dao.drift),
         "get_narratives" => serde_json::to_value(&dao.narrative),
-        _ => return Err(format!("unknown tool: {name}")),
+        _ => return Err(WeftError::Schema(format!("unknown tool: {name}")).payload(None)),
     }
-    .map_err(|error| error.to_string())
+    .map_err(|error| {
+        WeftError::Plugin(format!("failed to serialize result: {error}")).payload(None)
+    })
 }
 
 #[cfg(test)]
@@ -136,5 +145,26 @@ mod tests {
             .unwrap()
             .iter()
             .any(|tool| tool["name"] == "load_story"));
+    }
+
+    #[test]
+    fn load_story_error_is_structured() {
+        let mut dao = None;
+        let params = json!({
+            "name": "load_story",
+            "arguments": { "path": "/definitely/missing/story.yml" }
+        });
+        let payload = call_tool(&params, &mut dao).unwrap_err();
+        assert_eq!(payload.code, "FILE_NOT_FOUND");
+        assert_eq!(payload.stage, "io");
+        assert!(payload.source.is_some());
+    }
+
+    #[test]
+    fn call_before_load_reports_story_not_loaded() {
+        let mut dao = None;
+        let params = json!({"name": "get_story", "arguments": {}});
+        let payload = call_tool(&params, &mut dao).unwrap_err();
+        assert_eq!(payload.code, "STORY_NOT_LOADED");
     }
 }

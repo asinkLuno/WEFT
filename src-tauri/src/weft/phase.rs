@@ -11,11 +11,11 @@ pub struct Phase {
 }
 
 impl Phase {
-    pub fn new(base_time: Vec<i64>, ref_time: Option<Box<Phase>>) -> Result<Self, WeftError> {
-        Ok(Self {
+    pub fn new(base_time: Vec<i64>, ref_time: Option<Box<Phase>>) -> Self {
+        Self {
             base_time,
             ref_time,
-        })
+        }
     }
 
     pub fn from_yaml(value: &serde_yaml::Value) -> Result<Self, WeftError> {
@@ -41,7 +41,7 @@ impl Phase {
             );
         }
         let reference = reference.map(Self::from_yaml).transpose()?.map(Box::new);
-        Self::new(base, reference)
+        Ok(Self::new(base, reference))
     }
 
     pub fn de_recursive(&self) -> Vec<i64> {
@@ -66,9 +66,9 @@ mod tests {
 
     #[test]
     fn recursively_flattens_offsets() {
-        let anchor = Phase::new(vec![1983, 1, 20], None).unwrap();
-        let middle = Phase::new(vec![10, 2], Some(Box::new(anchor))).unwrap();
-        let outer = Phase::new(vec![-3, 0, 5], Some(Box::new(middle))).unwrap();
+        let anchor = Phase::new(vec![1983, 1, 20], None);
+        let middle = Phase::new(vec![10, 2], Some(Box::new(anchor)));
+        let outer = Phase::new(vec![-3, 0, 5], Some(Box::new(middle)));
         assert_eq!(outer.de_recursive(), vec![1990, 3, 25]);
     }
 
