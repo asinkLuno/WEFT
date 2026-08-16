@@ -253,10 +253,10 @@ fn parse_narratives(
     let Some(raw) = root.get(Yaml::String("narrative".into())) else {
         return Ok(result);
     };
-    let by_id: BTreeMap<_, _> = drifts
+    let by_id: BTreeMap<&str, &Drift> = drifts
         .values()
         .flatten()
-        .map(|drift| (drift.id.clone(), drift.clone()))
+        .map(|drift| (drift.id.as_str(), drift))
         .collect();
     for (name, raw) in mapping(raw, "narrative")? {
         let name = name
@@ -274,8 +274,8 @@ fn parse_narratives(
         for reference in &subject {
             if let Some(group) = drifts.get(reference) {
                 selected.extend(group.clone());
-            } else if let Some(event) = by_id.get(reference) {
-                selected.push(event.clone());
+            } else if let Some(event) = by_id.get(reference.as_str()) {
+                selected.push((*event).clone());
             } else {
                 return Err(WeftError::Reference(format!(
                     "narrative subject {reference:?} not found"

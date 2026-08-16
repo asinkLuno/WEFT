@@ -178,6 +178,27 @@ fn get_load_error(state: tauri::State<'_, AppState>) -> Option<ErrorPayload> {
     state.snapshot.read().last_error.clone()
 }
 
+fn open_story_from_path<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    state: &AppState,
+    path: PathBuf,
+) -> Result<OpenedStory, ErrorPayload> {
+    state.load(path.clone())?;
+    set_story_menu_enabled(app, true, true);
+    let title = {
+        let snapshot = state.snapshot.read();
+        snapshot
+            .dao
+            .as_ref()
+            .map(|dao| dao.story.title.clone())
+            .ok_or_else(|| ErrorPayload::from(WeftError::StoryNotLoaded))?
+    };
+    Ok(OpenedStory {
+        title,
+        path: path.display().to_string(),
+    })
+}
+
 #[tauri::command]
 async fn open_story(
     app: tauri::AppHandle,
@@ -195,13 +216,7 @@ async fn open_story(
     let path = file
         .into_path()
         .map_err(|error| WeftError::Read(error.to_string()).payload(None))?;
-    state.load(path.clone())?;
-    set_story_menu_enabled(&app, true, true);
-    let title = require_dao(&state, |dao| dao.story.title.clone())?;
-    Ok(Some(OpenedStory {
-        title,
-        path: path.display().to_string(),
-    }))
+    open_story_from_path(&app, &state, path).map(Some)
 }
 
 #[derive(Deserialize)]
@@ -220,13 +235,7 @@ fn open_recent_story(
         path.or_else(|| body.map(|body| body.path))
             .ok_or_else(|| WeftError::Schema("missing story path".into()).payload(None))?,
     );
-    state.load(path.clone())?;
-    set_story_menu_enabled(&app, true, true);
-    let title = require_dao(&state, |dao| dao.story.title.clone())?;
-    Ok(OpenedStory {
-        title,
-        path: path.display().to_string(),
-    })
+    open_story_from_path(&app, &state, path)
 }
 
 #[tauri::command]
