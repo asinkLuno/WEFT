@@ -1,0 +1,32 @@
+{
+  "name": "weft-yaml-dsh",
+  "version": "0.1.1",
+  "description": "WEFT YAML skill for DeepSeek Harness (dsh): create, edit, and validate WEFT story timeline files.",
+  "keywords": [
+    "dsh-plugin",
+    "weft",
+    "story",
+    "timeline",
+    "yaml",
+    "worldbuilding"
+  ],
+  "author": {
+    "name": "asinkLuno",
+    "url": "https://github.com/asinkLuno"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "skills"
+  ],
+  "homepage": "https://github.com/asinkLuno/WEFT",
+  "repository": "https://github.com/asinkLuno/WEFT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
