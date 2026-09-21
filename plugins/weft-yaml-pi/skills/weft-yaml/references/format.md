@@ -1,6 +1,6 @@
 # WEFT format reference
 
-Use this bundled reference for the stable file shape. Prefer the installed WEFT `get_story_schema` MCP result when available.
+Use this bundled reference for the stable file shape.
 
 ## Minimal example
 
@@ -70,7 +70,7 @@ Each event accepts:
 - `moais`: optional list of participating existing entities.
 - `description`: optional text.
 
-An event ID is `group/event`. Keep the event title at 20 characters or fewer.
+An event ID is `group/event`.
 
 ## Calendar selection and plugins
 
@@ -123,8 +123,8 @@ end_time: [0, 0, 0, 2, *arrival] # two hours after arrival
 
 YAML aliases expand to the referenced list before WEFT parses the time. Absolute
 times, offsets, and their references all use the story's selected calendar.
-Validate every calendar or relative-time edit with the real timeline resolver,
-then inspect its `date_mode` and formatted results.
+After every calendar or relative-time edit, load the file with the WEFT MCP,
+then inspect `get_story`, `get_timeline`, and `list_moai` results.
 
 ## Narratives
 
@@ -133,5 +133,5 @@ then inspect its `date_mode` and formatted results.
 - The observer must occur in every selected event's `moais`.
 
 Use a group reference for a whole arc and an event ID for precise selection.
-Group references expand in the event order written in the story file; WEFT does
-not currently re-sort a narrative by resolved time.
+Events within a group are resolved in chronological `start_time` order before
+the group is expanded into a narrative.
