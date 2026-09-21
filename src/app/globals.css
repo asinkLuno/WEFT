@@ -192,24 +192,6 @@
     contain-intrinsic-size: auto 500px;
   }
 
-  /* Selvage tape down the window's left edge — the woven edge of the cloth,
-   * with one gamboge marker thread. The app's single ornament. */
-  .selvage {
-    position: fixed;
-    inset-block: 0;
-    left: 0;
-    width: 4px;
-    z-index: 40;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--primary) 72%, transparent) 0 16px,
-      transparent 16px 22px,
-      color-mix(in oklab, var(--chart-3) 75%, transparent) 22px 25px,
-      transparent 25px 38px
-    );
-  }
-
   /* The book face for what the author wrote: titles, names, prose. */
   .prose-book {
     font-family: var(--font-display);

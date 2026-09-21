@@ -107,7 +107,6 @@ export const test = base.extend<{ nativeFixture: void }>({
               handlers.set(event, listeners);
               return () => listeners.delete(handler);
             },
-            async emit() {},
             async openUrl() {},
           },
         });

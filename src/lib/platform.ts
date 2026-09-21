@@ -1,8 +1,4 @@
-import {
-  emit as tauriEmit,
-  listen as tauriListen,
-  type UnlistenFn,
-} from "@tauri-apps/api/event";
+import { listen as tauriListen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { openUrl as tauriOpenUrl } from "@tauri-apps/plugin-opener";
 
@@ -16,14 +12,12 @@ export interface PlatformAdapter {
     event: string,
     handler: (event: PlatformEvent<T>) => void,
   ): Promise<UnlistenFn>;
-  emit(event: string, payload?: unknown): Promise<void>;
   openUrl(url: string): Promise<void>;
 }
 
 const tauriAdapter: PlatformAdapter = {
   invoke: (command, args) => tauriInvoke(command, args),
   listen: (event, handler) => tauriListen(event, handler),
-  emit: (event, payload) => tauriEmit(event, payload),
   openUrl: (url) => tauriOpenUrl(url),
 };
 
@@ -44,9 +38,6 @@ export const listen = <T>(
   event: string,
   handler: (event: PlatformEvent<T>) => void,
 ): Promise<UnlistenFn> => adapter.listen(event, handler);
-
-export const emit = (event: string, payload?: unknown): Promise<void> =>
-  adapter.emit(event, payload);
 
 export const openUrl = (url: string): Promise<void> => adapter.openUrl(url);
 

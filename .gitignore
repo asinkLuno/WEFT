@@ -21,7 +21,7 @@ test-results/
 !.yarn/releases
 !.yarn/versions
 *.tsbuildinfo
-lib/openapi.json
+src/lib/openapi.json
 .env*
 
 # Test reports

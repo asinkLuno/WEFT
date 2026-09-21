@@ -27,7 +27,7 @@ import {
   type AppStateInfo,
   type OpenedStory,
 } from "@/lib/api";
-import { emit, listen, openUrl } from "@/lib/platform";
+import { listen, openUrl } from "@/lib/platform";
 import {
   COPY,
   LANGUAGE_KEY,
@@ -207,7 +207,10 @@ export function App() {
   function finishOpening(story: OpenedStory) {
     rememberStory(story);
     window.location.hash = "/story";
-    window.location.reload();
+    setFileLostPath(null);
+    setHasStory(true);
+    triggerRefetch();
+    refreshAppState();
   }
 
   async function handleOpenStory() {
@@ -298,14 +301,6 @@ export function App() {
     setFileLostPath(lostPath);
   }, []);
 
-  useEffect(() => {
-    if (hasStory === null) return;
-    void emit("weft-menu-state", {
-      close: hasStory,
-      reload: hasStory && !fileLostPath,
-    });
-  }, [hasStory, fileLostPath]);
-
   if (hasStory === null) {
     return <div className="min-h-screen bg-background" />;
   }
@@ -353,7 +348,6 @@ export function App() {
   if (!hasStory) {
     return (
       <>
-        <div className="selvage" aria-hidden="true" />
         <main className="flex min-h-screen items-center justify-center px-6 py-12">
           <div className="w-full max-w-lg">
             <header className="text-center">
@@ -433,7 +427,6 @@ export function App() {
   if (fileLostPath) {
     return (
       <>
-        <div className="selvage" aria-hidden="true" />
         <AppEvents onFileLost={onFileLost} language={language} />
         <main className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-md text-center">
@@ -480,7 +473,6 @@ export function App() {
     <>
       <LanguageProvider value={language}>
         <div className="min-h-screen flex flex-col">
-          <div className="selvage" aria-hidden="true" />
           <AppEvents onFileLost={onFileLost} language={language} />
           <header className="flex flex-wrap items-stretch border-b border-border ps-4 pe-4 sm:flex-nowrap sm:ps-6 sm:pe-6">
             <a

@@ -14,7 +14,7 @@ use std::{
 };
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
-    DragDropEvent, Emitter, Listener, Manager, WindowEvent,
+    DragDropEvent, Emitter, Manager, WindowEvent,
 };
 use tauri_plugin_dialog::DialogExt;
 use weft::dao::{Dao, Drift, LinkGraph, Moai, Narrative, Story};
@@ -224,7 +224,7 @@ struct OpenRecentStoryRequest {
     path: String,
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn open_recent_story(
     body: Option<OpenRecentStoryRequest>,
     path: Option<String>,
@@ -244,7 +244,7 @@ fn close_story(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
     set_story_menu_enabled(&app, false, false);
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn reload_story(state: tauri::State<'_, AppState>) -> Result<ReloadResult, ErrorPayload> {
     let path = state
         .snapshot
@@ -407,21 +407,6 @@ fn set_language(app: tauri::AppHandle, lang: String) -> tauri::Result<()> {
     build_menu(&app, &lang)
 }
 
-fn register_menu_state_listener<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
-    #[derive(Deserialize)]
-    struct MenuState {
-        close: bool,
-        reload: bool,
-    }
-    let handle = app_handle.clone();
-    app_handle.listen("weft-menu-state", move |event| {
-        let Ok(payload) = serde_json::from_str::<MenuState>(event.payload()) else {
-            return;
-        };
-        set_story_menu_enabled(&handle, payload.close, payload.reload);
-    });
-}
-
 fn forward_drag_drop<R: tauri::Runtime>(window: &tauri::Window<R>, event: &DragDropEvent) {
     match event {
         DragDropEvent::Enter { paths, .. } => {
@@ -460,6 +445,7 @@ fn start_story_watcher(app: tauri::AppHandle) {
                 if let Some(result) = state.reload_if_current(&path, modified) {
                     match result {
                         Ok(title) => {
+                            set_story_menu_enabled(&app, true, true);
                             let _ = app
                                 .emit("weft-reloaded", serde_json::json!({ "story_title": title }));
                         }
@@ -471,6 +457,7 @@ fn start_story_watcher(app: tauri::AppHandle) {
             }
             Err(_) if !lost_reported => {
                 state.snapshot.write().file_lost_reported = true;
+                set_story_menu_enabled(&app, true, false);
                 let _ = app.emit(
                     "weft-file-lost",
                     serde_json::json!({ "path": path.display().to_string() }),
@@ -499,7 +486,6 @@ pub fn run() {
             build_menu(app.handle(), "en")?;
             let has_story = app.state::<AppState>().snapshot.read().dao.is_some();
             set_story_menu_enabled(app.handle(), has_story, has_story);
-            register_menu_state_listener(app.handle());
             start_story_watcher(app.handle().clone());
             Ok(())
         })

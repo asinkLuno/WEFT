@@ -20,7 +20,6 @@ export function createPlatformMock(
       handlers.set(event, listeners);
       return () => listeners.delete(handler);
     }) as PlatformAdapter["listen"],
-    emit: vi.fn(async () => undefined),
     openUrl: vi.fn(async () => undefined),
     dispatch<T>(event: string, payload: T) {
       handlers.get(event)?.forEach((handler) => handler({ payload }));

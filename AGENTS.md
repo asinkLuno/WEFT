@@ -10,10 +10,10 @@
 
 - **前端 `src/`**：React + TypeScript + Tailwind，入口 `src/App.tsx`，页面在 `src/app/`，组件在 `src/components/`，工具在 `src/lib/`。包管理用 **yarn v1**，不要用 npm / pnpm。
 - **后端 `src-tauri/`**：Rust（Tauri 2），含 rhai 脚本与能力配置。
-- **示例故事 `examples/*.yml`**：`cargo tauri dev -- "examples/哈利·波特与魔法石.yml"` 直接打开。
+- **示例故事 `examples/*.yml`**：`yarn tauri dev -- "examples/哈利·波特与魔法石.yml"` 直接打开。
 - **文档 `docs/`**（mdBook）：`mdbook build` 本地构建，CI（`.github/workflows/docs.yml`）发布到 GitHub Pages。
 - **分支约定**：`main` 为默认开发分支；`release` 分支专门分发 `weft-yaml` skill（插件市场，由 `.github/workflows/release.yml` 处理），日常开发不要动它；`rust-archive` 存放归档代码，仅作历史保留。
-- **质量检查**：提交前至少跑 `yarn lint`、`yarn test`（vitest）、`yarn build`（tsc + vite）；改动涉及桌面端时用 `cargo tauri dev` 验证。
+- **质量检查**：提交前至少跑 `yarn lint`、`yarn test`（vitest）、`yarn build`（tsc + vite）；改动涉及桌面端时用 `yarn tauri dev` 验证。
 
 ## 账号分工
 

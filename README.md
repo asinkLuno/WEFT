@@ -41,7 +41,7 @@ platform. Then, from the repository root:
 ```bash
 yarn install
 cargo install tauri-cli --version "^2" --locked
-cargo tauri dev -- "examples/哈利·波特与魔法石.yml"
+yarn tauri dev -- "examples/哈利·波特与魔法石.yml"
 ```
 
 WEFT opens the example directly so you can explore its timeline, entity
@@ -59,7 +59,7 @@ command:
 
 ```bash
 cp "examples/黑暗的左手.yml" my-story.yml
-cargo tauri dev -- my-story.yml
+yarn tauri dev -- my-story.yml
 ```
 
 ## Design

@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "gen:types": "openapi-typescript lib/openapi.json -o lib/schema.ts"
+    "tauri": "tauri",
+    "gen:types": "openapi-typescript src/lib/openapi.json -o src/lib/schema.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@playwright/test": "1.62.0",
     "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "2.11.5",
     "@testing-library/dom": "10",
     "@testing-library/jest-dom": "6",
     "@testing-library/react": "16",
