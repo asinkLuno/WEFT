@@ -1,6 +1,6 @@
 # WEFT format reference
 
-Use this bundled reference for the stable file shape. Prefer the installed WEFT `get_story_schema` MCP result when available.
+Use this bundled reference for the stable file shape. When the WEFT MCP server is available, `load_story` the file and let its validation be authoritative over this reference.
 
 ## Minimal example
 

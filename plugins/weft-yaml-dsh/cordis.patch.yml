@@ -1,5 +1,0 @@
-# Bundle patch: mounts the weft-yaml skill provider plugin.
-# Applied when a profile lists this bundle (see docs/user/develop/basic/publish.md).
-- insert:
-    - id: weft-yaml
-      name: 'weft-yaml-dsh'

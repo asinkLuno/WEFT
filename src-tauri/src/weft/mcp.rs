@@ -119,6 +119,10 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, ErrorPayloa
         *dao = Some(loaded);
         return Ok(result);
     }
+    match name {
+        "get_story" | "list_moai" | "get_timeline" | "get_narratives" => {}
+        _ => return Err(WeftError::Schema(format!("unknown tool: {name}")).payload(None)),
+    }
     let dao = dao
         .as_ref()
         .ok_or_else(|| WeftError::StoryNotLoaded.payload(None))?;
@@ -127,7 +131,7 @@ fn call_tool(params: &Value, dao: &mut Option<Dao>) -> Result<Value, ErrorPayloa
         "list_moai" => serde_json::to_value(&dao.moai),
         "get_timeline" => serde_json::to_value(&dao.drift),
         "get_narratives" => serde_json::to_value(&dao.narrative),
-        _ => return Err(WeftError::Schema(format!("unknown tool: {name}")).payload(None)),
+        _ => unreachable!(),
     }
     .map_err(|error| {
         WeftError::Plugin(format!("failed to serialize result: {error}")).payload(None)

@@ -10,7 +10,7 @@ Build structurally valid WEFT stories while preserving author intent and referen
 ## Workflow
 
 1. Inspect the target file and nearby project instructions. For a new story, read [format.md](references/format.md) before drafting.
-2. If the WEFT MCP tools are available, call `get_story_schema` before creating unfamiliar structures. Treat its schema as authoritative when it differs from the bundled reference.
+2. If the WEFT MCP tools are available, `load_story` the target file first: loading runs the full WEFT validator, and the bundled [format.md](references/format.md) then serves as the structural reference for anything the loaded story does not yet model.
 3. Determine the active calendar from `story.date_mode` before interpreting or writing any time list. It defaults to `gregorian`; a different name must be a built-in calendar or be registered by top-level `aqueduct`.
 4. When a story uses a custom calendar, inspect its restricted Rhai script (resolved relative to the story file) to learn its metadata, normalization, display rules, and timeline conversion. Do not assume Gregorian unit meanings.
 5. Make the smallest coherent edit. Preserve existing names, YAML anchors, comments, ordering conventions, calendar selection, and prose style.
@@ -20,9 +20,9 @@ Build structurally valid WEFT stories while preserving author intent and referen
    - Each narrative subject must be a drift group or `group/event` ID.
    - The observer must appear in every selected event.
 7. Validate after every edit:
-   - Prefer the WEFT MCP `validate_story` tool using an absolute path.
+   - Prefer the WEFT MCP `load_story` tool with an absolute path; loading re-runs the full structural and cross-reference validation and returns structured errors on failure.
    - If the tool is unavailable, state that validation was not executed; do not substitute generic YAML parsing for WEFT validation.
-8. After changing `story.date_mode`, `aqueduct`, `base_time`, `start_time`, `end_time`, anchors, or relative-time references, call MCP `resolve_timeline`. Inspect the selected calendar, formatted absolute times, chronology, and entity offsets, not merely tool success.
+8. After changing `story.date_mode`, `aqueduct`, `base_time`, `start_time`, `end_time`, anchors, or relative-time references, `load_story` the file and then call MCP `get_timeline`. Inspect the resolved event chronology, not merely tool success.
 9. Fix all validation errors introduced by the edit. Never claim the file is valid unless the real WEFT validator succeeds.
 
 ## Editing Rules
@@ -44,11 +44,12 @@ Build structurally valid WEFT stories while preserving author intent and referen
 
 ## Tool Selection
 
-- `inspect_story`: summarize a valid file before a broad edit.
+The MCP server is stateful: `load_story <absolute path>` first, then the other tools operate on the loaded story. Available tools:
+
+- `load_story`: load and validate a story file; required first call (also the required final validation check).
+- `get_story`: return the loaded story's `story` metadata for a quick summary before a broad edit.
 - `list_moai`: inspect entity names, anchors, materials, and derived properties.
-- `get_narrative`: verify the resolved order and observer for one narrative.
-- `get_story_schema`: resolve uncertainty about the current installed WEFT version.
-- `validate_story`: required final structural and cross-reference check.
-- `resolve_timeline`: required after time or relative-reference edits.
+- `get_timeline`: return the resolved drift timeline grouped by category; required review after time or relative-reference edits.
+- `get_narratives`: verify the resolved order and observer for narratives.
 
 When reporting completion, name the file changed, summarize validation performed, and flag any unresolved chronology or missing facts.
