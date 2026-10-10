@@ -4,10 +4,26 @@
   "notYaml": "Not a YAML file",
   "recentFiles": "Recent Files",
   "noRecentFiles": "No recent files yet",
+  "theme": {
+    "neutral": "Neutral",
+    "blue": "Blue",
+    "violet": "Violet",
+    "teal": "Teal",
+    "green": "Green",
+    "orange": "Orange",
+    "rose": "Rose"
+  },
+  "status": {
+    "unbound": "No file bound",
+    "loaded": "Loaded",
+    "refreshed": "Refreshed"
+  },
   "menu": {
     "file": "File",
     "openFile": "Open File...",
     "closeFile": "Close File",
-    "language": "Language"
+    "settings": "Settings",
+    "language": "Language",
+    "theme": "Theme"
   }
 }

@@ -3,8 +3,11 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { type LastLoad, StatusBar } from "@/components/status-bar";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { ViewerScreen } from "@/components/viewer-screen";
+import { WelcomeScreen } from "@/components/welcome-screen";
 import { getRecentFiles, rememberRecentFile } from "./settings";
-import "./App.css";
 
 type OpenedFile = { path: string; content: string };
 
@@ -13,6 +16,25 @@ function App() {
   const [file, setFile] = useState<OpenedFile | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [lastLoad, setLastLoad] = useState<LastLoad | null>(null);
+
+  const load = useCallback(
+    async (path: string, refresh = false) => {
+      try {
+        const content = await invoke<string>("read_yaml_file", { path });
+        setFile({ path, content });
+        setLastLoad({ at: new Date(), refresh });
+        setError("");
+        return true;
+      } catch (e) {
+        setError(
+          `${t("openFileFailed")}: ${e === "notYaml" ? t("notYaml") : e}`,
+        );
+        return false;
+      }
+    },
+    [t],
+  );
 
   const openFile = useCallback(
     async (path?: string) => {
@@ -23,20 +45,9 @@ function App() {
           filters: [{ name: "YAML", extensions: ["yaml", "yml"] }],
         }));
       if (typeof chosen !== "string") return; // dialog cancelled
-      try {
-        const content = await invoke<string>("read_yaml_file", {
-          path: chosen,
-        });
-        setFile({ path: chosen, content });
-        setRecent(await rememberRecentFile(chosen));
-        setError("");
-      } catch (e) {
-        setError(
-          `${t("openFileFailed")}: ${e === "notYaml" ? t("notYaml") : e}`,
-        );
-      }
+      if (await load(chosen)) setRecent(await rememberRecentFile(chosen));
     },
-    [t],
+    [load, t],
   );
 
   useEffect(() => {
@@ -54,33 +65,43 @@ function App() {
     };
   }, [openFile]);
 
+  // Bind the open file so external edits come back as events, and unbind on close.
+  // Keyed on the path, so a reload caused by a change does not re-arm the watch mid-save.
+  useEffect(() => {
+    const path = file?.path;
+    invoke("bind_yaml_file", { path: path ?? null }).catch((e) =>
+      setError(String(e)),
+    );
+    if (!path) return;
+    let disposed = false;
+    const unlistens: UnlistenFn[] = [];
+    const track = (u: UnlistenFn) => (disposed ? u() : unlistens.push(u));
+    // Rust already debounced the burst, so one event means one re-read.
+    listen("file-changed", () => load(path, true)).then(track);
+    return () => {
+      disposed = true;
+      for (const u of unlistens) u();
+    };
+  }, [file?.path, load]);
+
   return (
-    <main className="container">
-      <h1>weft</h1>
+    <div className="flex min-h-screen flex-col">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
+        {/* Bound -> viewer, unbound -> welcome. Closing the file switches back. */}
+        {file ? (
+          <ViewerScreen path={file.path} content={file.content} />
+        ) : (
+          <WelcomeScreen recent={recent} onOpen={openFile} />
+        )}
 
-      <h2>{t("recentFiles")}</h2>
-      {recent.length === 0 ? (
-        <p>{t("noRecentFiles")}</p>
-      ) : (
-        <ul>
-          {recent.map((path) => (
-            <li key={path}>
-              <button type="button" onClick={() => openFile(path)}>
-                {path}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {file && (
-        <>
-          <h2>{file.path}</h2>
-          <pre>{file.content}</pre>
-        </>
-      )}
-      {error && <p>{error}</p>}
-    </main>
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>{error}</AlertTitle>
+          </Alert>
+        )}
+      </main>
+      <StatusBar path={file?.path ?? null} lastLoad={lastLoad} />
+    </div>
   );
 }
 

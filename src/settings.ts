@@ -17,6 +17,33 @@ export async function setLanguage(lng: Language) {
   await (await store).set("language", lng);
 }
 
+// Must match the [data-theme=...] blocks in src/index.css.
+export const THEMES = [
+  "neutral",
+  "blue",
+  "violet",
+  "teal",
+  "green",
+  "orange",
+  "rose",
+] as const;
+
+export type Theme = (typeof THEMES)[number];
+
+export function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+}
+
+export async function getTheme(): Promise<Theme> {
+  const saved = await (await store).get<string>("theme");
+  return THEMES.find((theme) => theme === saved) ?? "neutral";
+}
+
+export async function setTheme(theme: Theme) {
+  applyTheme(theme);
+  await (await store).set("theme", theme);
+}
+
 export async function getRecentFiles(): Promise<string[]> {
   return (await (await store).get<string[]>("recentFiles")) ?? [];
 }

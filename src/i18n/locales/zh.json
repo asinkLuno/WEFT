@@ -4,10 +4,26 @@
   "notYaml": "不是 YAML 文件",
   "recentFiles": "最近打开",
   "noRecentFiles": "还没有最近打开的文件",
+  "theme": {
+    "neutral": "中性",
+    "blue": "蓝色",
+    "violet": "紫色",
+    "teal": "青色",
+    "green": "绿色",
+    "orange": "橙色",
+    "rose": "玫红"
+  },
+  "status": {
+    "unbound": "未绑定文件",
+    "loaded": "已载入",
+    "refreshed": "已刷新"
+  },
   "menu": {
     "file": "文件",
     "openFile": "打开文件…",
     "closeFile": "关闭文件",
-    "language": "语言"
+    "settings": "设置",
+    "language": "语言",
+    "theme": "主题色"
   }
 }
