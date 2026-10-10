@@ -5,11 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LastLoad, StatusBar } from "@/components/status-bar";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { ViewerScreen } from "@/components/viewer-screen";
+import { type Problem, ViewerScreen } from "@/components/viewer-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { getRecentFiles, rememberRecentFile } from "./settings";
 
-type OpenedFile = { path: string; content: string };
+type OpenedFile = { path: string; content: string; problems: Problem[] };
 
 function App() {
   const { t } = useTranslation();
@@ -21,8 +21,11 @@ function App() {
   const load = useCallback(
     async (path: string, refresh = false) => {
       try {
-        const content = await invoke<string>("read_yaml_file", { path });
-        setFile({ path, content });
+        const { content, problems } = await invoke<{
+          content: string;
+          problems: Problem[];
+        }>("read_yaml_file", { path });
+        setFile({ path, content, problems });
         setLastLoad({ at: new Date(), refresh });
         setError("");
         return true;
@@ -89,7 +92,7 @@ function App() {
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
         {/* Bound -> viewer, unbound -> welcome. Closing the file switches back. */}
         {file ? (
-          <ViewerScreen path={file.path} content={file.content} />
+          <ViewerScreen path={file.path} problems={file.problems} />
         ) : (
           <WelcomeScreen recent={recent} onOpen={openFile} />
         )}

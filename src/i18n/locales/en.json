@@ -20,6 +20,14 @@
     "loaded": "Loaded",
     "refreshed": "Refreshed"
   },
+  "problems": {
+    "title_one": "{{count}} problem",
+    "title_other": "{{count}} problems",
+    "none": "No problems found",
+    "parse": {
+      "syntax": "YAML syntax error"
+    }
+  },
   "menu": {
     "file": "File",
     "openFile": "Open File...",

@@ -1,10 +1,12 @@
 use notify_debouncer_full::notify::{RecommendedWatcher, RecursiveMode};
 use notify_debouncer_full::{DebounceEventResult, Debouncer, RecommendedCache, new_debouncer};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::{CheckMenuItem, IsMenuItem, Menu, MenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Runtime, State};
+
+mod validate;
 
 // Theme ids and names come from the frontend too, so the list of theme colors
 // lives only in src/settings.ts, next to the CSS that defines them.
@@ -98,12 +100,22 @@ fn build_menu<R: Runtime>(
     Menu::with_items(app, &[&file_menu, &settings_menu])
 }
 
+// Validation problems ride along with the content, so what the frontend shows and
+// what it checked can never be out of sync (a watched-file reload re-checks for free).
+#[derive(Serialize)]
+struct LoadedFile {
+    content: String,
+    problems: Vec<validate::Problem>,
+}
+
 #[tauri::command]
-async fn read_yaml_file(path: String) -> Result<String, String> {
+async fn read_yaml_file(path: String) -> Result<LoadedFile, String> {
     if !path.ends_with(".yaml") && !path.ends_with(".yml") {
         return Err("notYaml".into()); // a code, the frontend translates it
     }
-    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let problems = validate::validate(&content); // problems are not load failures
+    Ok(LoadedFile { content, problems })
 }
 
 // Holding the debouncer is what keeps the watch alive; dropping it stops it.
