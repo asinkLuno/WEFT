@@ -31,7 +31,9 @@ function App() {
         setRecent(await rememberRecentFile(chosen));
         setError("");
       } catch (e) {
-        setError(`${t("openFileFailed")}: ${e}`);
+        setError(
+          `${t("openFileFailed")}: ${e === "notYaml" ? t("notYaml") : e}`,
+        );
       }
     },
     [t],

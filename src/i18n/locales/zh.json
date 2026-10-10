@@ -1,6 +1,13 @@
 {
   "openFile": "打开文件",
   "openFileFailed": "打开文件失败",
+  "notYaml": "不是 YAML 文件",
   "recentFiles": "最近打开",
-  "noRecentFiles": "还没有最近打开的文件"
+  "noRecentFiles": "还没有最近打开的文件",
+  "menu": {
+    "file": "文件",
+    "openFile": "打开文件…",
+    "closeFile": "关闭文件",
+    "language": "语言"
+  }
 }

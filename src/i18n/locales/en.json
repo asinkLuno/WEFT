@@ -1,6 +1,13 @@
 {
   "openFile": "Open File",
   "openFileFailed": "Failed to open file",
+  "notYaml": "Not a YAML file",
   "recentFiles": "Recent Files",
-  "noRecentFiles": "No recent files yet"
+  "noRecentFiles": "No recent files yet",
+  "menu": {
+    "file": "File",
+    "openFile": "Open File...",
+    "closeFile": "Close File",
+    "language": "Language"
+  }
 }
