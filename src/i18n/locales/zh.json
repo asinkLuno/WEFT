@@ -2,8 +2,10 @@
   "openFile": "打开文件",
   "openFileFailed": "打开文件失败",
   "notYaml": "不是 YAML 文件",
+  "tagline": "YAML 故事文件阅读器",
   "recentFiles": "最近打开",
   "noRecentFiles": "还没有最近打开的文件",
+  "yamlOnly": "支持 .yaml 与 .yml 文件",
   "theme": {
     "neutral": "中性",
     "blue": "蓝色",

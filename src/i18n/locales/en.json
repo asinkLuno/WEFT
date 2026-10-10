@@ -2,8 +2,10 @@
   "openFile": "Open File",
   "openFileFailed": "Failed to open file",
   "notYaml": "Not a YAML file",
+  "tagline": "A reader for YAML story files",
   "recentFiles": "Recent Files",
   "noRecentFiles": "No recent files yet",
+  "yamlOnly": "Supports .yaml and .yml files",
   "theme": {
     "neutral": "Neutral",
     "blue": "Blue",
